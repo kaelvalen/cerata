@@ -34,7 +34,6 @@ def load_tasks(cache_path: str):
     return meta, tasks
 
 
-
 def iter_batches(feats, labels, batch_size, generator=None):
     perm = torch.randperm(feats.size(0), generator=generator)
     for start in range(0, feats.size(0) - batch_size + 1, batch_size):

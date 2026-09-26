@@ -1,7 +1,7 @@
 # PAL-MoE sunum notları
 
 Güncel sayılar, sınırlamalar ve muhtemel sorular burada. Ayrıntılı metodoloji `BENCHMARK.md`, deney planı
-`EXPERIMENT_PLAN.md`, literatür eşlemesi `RESEARCH_MAP.md`, sonuç dizinleri
+`EXPERIMENT_PLAN.md`, literatür eşlemesi `../RESEARCH_MAP.md`, sonuç dizinleri
 `RESULTS_INVENTORY.md` dosyalarında.
 
 ## 1. PAL-MoE nedir?

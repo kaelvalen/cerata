@@ -162,6 +162,7 @@ def run_cell(cell: dict, args, device, source_cache: dict) -> dict:
         "num_classes": sum(len(t["classes"]) for t in tasks),
     }
 
+
 # ---------------------------------------------------------------------------
 # small-sample statistics: moved to `pal_moe.eval.stats` (v3 restructure, phase 1)
 # ---------------------------------------------------------------------------

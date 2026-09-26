@@ -94,9 +94,12 @@ class PalMoELM(GuardedEditor):
             c = self.edit.contribution(rid, K, V - Y0)
             self.edit.add(c)
             self._install()
-            return EditRecord(
-                rid, "medium", h, meta={"prompts": prompts, "targets": targets}
-            ), c
+            return (
+                EditRecord(
+                    rid, "medium", h, meta={"prompts": prompts, "targets": targets}
+                ),
+                c,
+            )
         text = item.x if isinstance(item, Example) else str(item)
         if isinstance(item, Example) and item.y is not None:
             text = f"{item.x} {item.y}"
@@ -183,7 +186,7 @@ class PalMoELM(GuardedEditor):
             ref = self._canary_outputs()[1]
             g = torch.Generator().manual_seed(len(ids))
             perm = [ids[i] for i in torch.randperm(len(ids), generator=g).tolist()]
-            permuted = self.edit._solve_rows(perm)
+            permuted = self.edit.permuted_solution(perm)  # solved by order_report
             dtype = self.lm._deltas[self.lm.edit_layer % len(self.lm.layers)].dtype
             self.lm.set_delta(self.lm.edit_layer, permuted.to(self.lm.device, dtype))
             rep["argmax_identical"] = bool(torch.equal(ref, self._canary_outputs()[1]))

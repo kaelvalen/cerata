@@ -24,6 +24,13 @@ forgotten the accumulators are reset to `(lambda I, 0)` exactly.
 
 E-TID2 (G3) measured max|dW| = 1.26e-3 between continual and one-shot ridge in
 float32; hence float64.
+
+Feature maps. `feature_map` (e.g. `pal_moe.core.random_features.RandomProjection`)
+fits the ridge on `phi(K)` instead of `K`. An edit then stores its raw keys `Z`
+(`n x dim`, far smaller than `phi(Z)` or `dA` when `phi` expands to 10^4 dimensions)
+and `delta()` recomputes `phi(Z)` deterministically, so a removal subtracts the same
+values the addition added. With `feature_map=None` nothing here changes: the stored
+results that go through this class reproduce bitwise.
 """
 
 from __future__ import annotations
@@ -44,14 +51,18 @@ class Contribution:
     V: torch.Tensor | None = None  # [n, m] float64
     dA: torch.Tensor | None = None  # [d', d'] (when n > d')
     dB: torch.Tensor | None = None  # [d', m]
+    Z: torch.Tensor | None = None  # [n, dim] raw keys, float64 (with a feature map)
 
-    def delta(self) -> tuple[torch.Tensor, torch.Tensor]:
+    def delta(self, augment=None) -> tuple[torch.Tensor, torch.Tensor]:
         if self.dA is not None:
             return self.dA, self.dB
+        if self.Z is not None:
+            K = augment(self.Z)
+            return K.t() @ K, K.t() @ self.V
         return self.K.t() @ self.K, self.K.t() @ self.V
 
     def nbytes(self) -> int:
-        ts = [t for t in (self.K, self.V, self.dA, self.dB) if t is not None]
+        ts = [t for t in (self.K, self.V, self.dA, self.dB, self.Z) if t is not None]
         return sum(t.numel() * t.element_size() for t in ts)
 
 
@@ -71,11 +82,16 @@ class LinearStats:
         bias: bool = True,
         device: str | torch.device = "cpu",
         dtype: torch.dtype = torch.float64,
+        feature_map=None,
     ):
         self.dim, self.out_dim = int(dim), int(out_dim)
         self.ridge, self.bias = float(ridge), bool(bias)
         self.device, self.dtype = torch.device(device), dtype
-        self.d1 = self.dim + int(self.bias)
+        self.feature_map = feature_map
+        if feature_map is not None and int(feature_map.in_dim) != self.dim:
+            raise ValueError("feature_map.in_dim must equal dim")
+        feat = self.dim if feature_map is None else int(feature_map.out_dim)
+        self.d1 = feat + int(self.bias)
         self.A0 = self.ridge * torch.eye(self.d1, device=self.device, dtype=dtype)
         self.A = self.A0.clone()
         self.B = torch.zeros(self.d1, self.out_dim, device=self.device, dtype=dtype)
@@ -87,6 +103,8 @@ class LinearStats:
 
     def _augment(self, k: torch.Tensor) -> torch.Tensor:
         k = k.to(self.device, self.dtype)
+        if self.feature_map is not None:
+            k = self.feature_map(k)
         if not self.bias:
             return k
         ones = torch.ones(k.size(0), 1, device=k.device, dtype=k.dtype)
@@ -96,9 +114,13 @@ class LinearStats:
     def contribution(
         self, edit_id: str, K: torch.Tensor, V: torch.Tensor
     ) -> Contribution:
+        h = digest(K.detach(), V.detach())
+        if self.feature_map is not None:
+            Z = K.detach().reshape(-1, self.dim).to(self.device, self.dtype)
+            V64 = V.detach().to(self.device, self.dtype).reshape(Z.size(0), -1)
+            return Contribution(edit_id, h, Z.size(0), V=V64, Z=Z)
         Ka = self._augment(K.detach().reshape(-1, self.dim))
         V64 = V.detach().to(self.device, self.dtype).reshape(Ka.size(0), self.out_dim)
-        h = digest(K.detach(), V.detach())
         if Ka.size(0) <= self.d1:
             return Contribution(edit_id, h, Ka.size(0), K=Ka, V=V64)
         return Contribution(edit_id, h, Ka.size(0), dA=Ka.t() @ Ka, dB=Ka.t() @ V64)
@@ -107,7 +129,7 @@ class LinearStats:
     def add(self, c: Contribution) -> None:
         if c.edit_id in self._contrib:
             raise KeyError(f"duplicate edit id {c.edit_id!r}")
-        dA, dB = c.delta()
+        dA, dB = c.delta(self._augment)
         self.A += dA
         self.B += dB
         self._contrib[c.edit_id] = c
@@ -123,7 +145,7 @@ class LinearStats:
             self.A = self.A0.clone()
             self.B.zero_()
         else:
-            dA, dB = c.delta()
+            dA, dB = c.delta(self._augment)
             self.A -= dA
             self.B -= dB
         self._W = None
@@ -163,7 +185,7 @@ class LinearStats:
         """Reference solution: the live contributions re-summed in `order`."""
         A, B = self.A0.clone(), torch.zeros_like(self.B)
         for eid in order:
-            dA, dB = self._contrib[eid].delta()
+            dA, dB = self._contrib[eid].delta(self._augment)
             A += dA
             B += dB
         return torch.linalg.solve(A, B).t().contiguous()
@@ -173,7 +195,9 @@ class LinearStats:
         return self._augment(K.reshape(-1, self.dim)) @ self.solve().t()
 
     def state_digest(self) -> str:
-        return digest(self.A, self.B)
+        if self.feature_map is None:
+            return digest(self.A, self.B)
+        return digest(self.A, self.B, self.feature_map.digest)
 
     def _argmax_identical(self, Wa, Wb, canary) -> bool | None:
         if canary is None:
@@ -230,6 +254,51 @@ class LinearStats:
 
     def parameter_count(self) -> int:
         return 0  # statistics are buffers, never optimised
+
+
+@torch.no_grad()
+def select_ridge(
+    Z: torch.Tensor,
+    y: torch.Tensor,
+    num_classes: int,
+    feature_map=None,
+    grid=None,
+    frac: float = 0.8,
+    seed: int = 0,
+    bias: bool = True,
+    device: str | torch.device = "cpu",
+) -> dict:
+    """Pick the ridge penalty once, on data available before the stream is fixed.
+
+    RanPAC's rule (fit on the first `frac` of the samples, MSE on the rest, grid
+    `10^-8 .. 10^8`), applied to one batch - the first task - and then pinned, so the
+    stream's solution stays order-invariant and removable. Samples are split by a
+    seeded permutation, not by loader order.
+    """
+    grid = [10.0**e for e in range(-8, 9)] if grid is None else list(grid)
+    g = torch.Generator().manual_seed(seed)
+    perm = torch.randperm(Z.size(0), generator=g)
+    cut = int(Z.size(0) * frac)
+    tr, va = perm[:cut], perm[cut:]
+    probe = LinearStats(
+        Z.size(1),
+        num_classes,
+        ridge=1.0,
+        bias=bias,
+        device=device,
+        feature_map=feature_map,
+    )
+    Ktr, Kva = probe._augment(Z[tr]), probe._augment(Z[va])
+    Ytr = one_hot(y[tr].to(probe.device), num_classes)
+    Yva = one_hot(y[va].to(probe.device), num_classes)
+    G, Q = Ktr.t() @ Ktr, Ktr.t() @ Ytr
+    eye = torch.eye(G.size(0), dtype=G.dtype, device=G.device)
+    losses = []
+    for lam in grid:
+        W = torch.linalg.solve(G + lam * eye, Q)
+        losses.append(float(((Kva @ W - Yva) ** 2).mean()))
+    best = min(range(len(grid)), key=lambda i: losses[i])
+    return {"ridge": grid[best], "grid": grid, "val_mse": losses, "seed": seed}
 
 
 def one_hot(y: torch.Tensor, num_classes: int, dtype=torch.float64) -> torch.Tensor:

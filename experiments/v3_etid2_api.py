@@ -145,9 +145,9 @@ def run_cell(regime, seed, args, device, base):
                 ),
                 "storage_bytes": model.stats.storage_bytes(),
                 "consolidation_reversible": report.record.reversibility_report["pass"],
-                "router_trainable_params": 0
-                if report.record.purity_report["pass"]
-                else None,
+                "router_trainable_params": (
+                    0 if report.record.purity_report["pass"] else None
+                ),
                 "experts": report.experts_added,
                 "frozen_parameters": report.frozen_parameters,
             },

@@ -181,3 +181,67 @@ the harness change:
    Only parsing was checked (every case has a prompt with the subject filled and a
    space-prefixed target; >= 99 % have paraphrases and neighbourhood prompts; every zsRE
    case has a `loc` answer). No model was run on them.
+
+## Amendment 2 (proposed 2026-09-26 in a repository review; NOT adopted)
+
+Nothing has been evaluated. This amendment is a proposal: the owner adopts, edits or
+rejects it, with a dated note here, before the development smoke runs. Sections 1-4
+are unchanged unless a point below is adopted.
+
+1. **Calibrate the retrieval threshold with the key layer, not after.** The FAST
+   path's `tau = 0.95` is a raw cosine on LM hidden states, which are anisotropic
+   (they share dominant directions; Ethayarajh, EMNLP-IJCNLP 2019): unrelated prompts
+   can clear 0.95 and paraphrases can miss it. Proposed: on the same 50 disjoint smoke
+   cases that pick `L_key`, also pick the key transform (raw, mean-centred, or
+   whitened with a mean / covariance estimated on the section 2 WikiText sample) and
+   `tau`, by the paraphrase hit rate subject to a neighbourhood false-hit rate
+   `<= 0.02` (the margin section 4 allows `S(fast)` to lose). The transform is a fixed
+   buffer, content-hashed into `base_hash`; the router stays at 0 trainable
+   parameters. Pinned with `L_key` in the pre-run amendment.
+2. **Read E together with PS for the FAST path.** The FAST memory stores
+   `prompt + " " + target_new`, so retrieval on the rewrite prompt is near-exact by
+   construction and `E(fast)` is close to a tautology. Proposed: PS joins E and S as a
+   primary endpoint, and the outcome table gains one row, checked first:
+
+   | result | reading |
+   | :-- | :-- |
+   | `E(fast) >= 0.9` and `PS(fast) < 0.5` at N = 1000 | the FAST path is an exact-match memory, not generalising retrieval; no row that rests on `E(fast)` alone applies |
+
+3. **Measure feasibility per call before pinning the grid.** A guarded MEDIUM write in
+   `accumulate` mode currently runs about six canary passes (pre, post, order
+   reference, permuted order, trial undo, trial redo) and about five dense float64
+   solves of the `d_ff = 18944` system (the write, `order_report`, the facade's
+   permuted solve, undo, redo), and the two permutation checks re-sum every live
+   edit. One dense LU at that size is about `(2/3) d_ff^3 = 4.5e12` flop; at an
+   assumed 100-200 GFLOP/s float64 on the CPU that is 20-45 s per solve, i.e.
+   minutes per write. That estimate, not a measurement, puts the N = 1000 regime and
+   the 2000 isolated N = 1 write/forget pairs well past the 24 h veto. Proposed: the
+   smoke records wall time per FAST write, MEDIUM write and forget at N = 1, 100 and
+   1000 in both `accumulate` and `woodbury` mode; the pre-run amendment pins the mode
+   and, if the projection still exceeds 24 h, a guard schedule fixed in advance (for
+   example: locality and reversibility on every call, the permuted-order check on
+   every k-th write and at the end of each regime, with k stated). A guard is never
+   skipped after the first evaluation case is scored.
+
+### Amendment 2, measurement note (2026-09-26; still proposed, nothing evaluated)
+
+Point 3's estimate is now a measurement, from `experiments/v3_lm_cost.py` on the review
+container (4 CPU threads, float64, synthetic corpus prior; no LM, so canary passes are
+excluded). The code change it motivated is in the same commit: the facade's canary
+order check reused nothing and re-solved the permutation `order_report` had just
+solved (same seed), so a guarded MEDIUM write now does 4 dense solves, not 5.
+
+```text
+dense solve, d_ff = 4096          0.28 s    -> 27 s projected at d_ff = 18944 (x d^3)
+guarded write, accumulate mode    4 solves  -> ~109 s per write at 18944, before canaries
+guarded write, woodbury mode      0.008 s (1 live edit) / 0.92 s (1000 live edits) at 4096
+                                  -> ~0.2 s / ~20 s at 18944 (x d^2), plus a one-time
+                                  C0^-1 of ~90 s (2.9 GB float64)
+```
+
+Reading: in `accumulate` mode the N = 1000 regime alone is ~30 h and the 2000 isolated
+N = 1 writes ~60 h of solves on this CPU, past the 24 h veto before a single canary
+pass. `woodbury` brings the solve side of the whole grid to a few hours. If point 3 is
+adopted, the proposal is to pin `mode="woodbury"` and to re-run this script on the
+study machine (with `--canary_seconds` from one measured canary pass) before pinning
+the guard schedule.
