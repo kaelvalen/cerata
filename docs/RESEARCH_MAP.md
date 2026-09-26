@@ -1,8 +1,8 @@
-# Research Map - PAL-MoE components and their literature lineage
+# Research Map - CERATA (formerly PAL-MoE) components and their literature lineage
 
 Which research line each part of the codebase comes from, what is
 implemented vs adapted vs absent, and where the evidence lives. Sections 1-4
-map the v1 components (now in `pal_moe/legacy/`); sections 5-6 map the prior
+map the v1 components (now in `cerata/legacy/`); sections 5-6 map the prior
 work closest to the Stage 1 results and to the v3 paths. Companion to
 `v1/BENCHMARK.md` (protocol/design facts) and `v1/EXPERIMENT_PLAN.md` (paper plan).
 Bibliographic details must be verified against the original papers before
@@ -12,26 +12,26 @@ they enter a bibliography (see the checklist in `v1/EXPERIMENT_PLAN.md` section 
 
 | Literature line | Representative work | In this repo | Evidence |
 | :-- | :-- | :-- | :-- |
-| Regularization | EWC (Kirkpatrick et al., 2017) | `pal_moe/legacy/baselines/ewc.py` (multi-task + online Fisher) | v1 MNIST/CIFAR tables |
+| Regularization | EWC (Kirkpatrick et al., 2017) | `cerata/legacy/baselines/ewc.py` (multi-task + online Fisher) | v1 MNIST/CIFAR tables |
 | Regularization | SI (Zenke et al., 2017) | not implemented | - |
 | Distillation | LwF (Li & Hoiem, 2017) | `--lambda_lwf` in `legacy/adaptation/ttt.py` (opt-in) | design facts 11-13 |
-| Gradient projection | GEM / A-GEM (Lopez-Paz 2017; Chaudhry 2019) | `pal_moe/legacy/baselines/agem.py` | v1 tables |
-| Replay | ER (Chaudhry 2019 / Rolnick 2019) | `pal_moe/legacy/baselines/replay.py` + `legacy/baselines/buffer.py` | v1 tables |
-| Replay + distillation | DER / DER++ (Buzzega et al., 2020) | `pal_moe/legacy/baselines/der.py` (`DERPP`) | v1 tables |
-| Asymmetric replay | ER-ACE (Caccia et al., 2022) | `pal_moe/legacy/baselines/der.py` (`ERACE`) | v1 tables |
-| Interference-based selection | MIR (Aljundi et al., 2019) | `pal_moe/legacy/baselines/mir.py` | wave-2 runs |
-| Prototypes / NCM | iCaRL (Rebuffi et al., 2017) | `pal_moe/legacy/baselines/icarl.py`; prototype anchors `v_p`, `o_p` in `legacy/memory/prototype_memory.py` | v1 tables, E8 |
-| Latent replay | Latent Replay (Pellegrini et al., 2020) | `pal_moe/legacy/baselines/latent_replay.py`; latent exemplars `x_p`; design fact 19 | E5, E4 |
+| Gradient projection | GEM / A-GEM (Lopez-Paz 2017; Chaudhry 2019) | `cerata/legacy/baselines/agem.py` | v1 tables |
+| Replay | ER (Chaudhry 2019 / Rolnick 2019) | `cerata/legacy/baselines/replay.py` + `legacy/baselines/buffer.py` | v1 tables |
+| Replay + distillation | DER / DER++ (Buzzega et al., 2020) | `cerata/legacy/baselines/der.py` (`DERPP`) | v1 tables |
+| Asymmetric replay | ER-ACE (Caccia et al., 2022) | `cerata/legacy/baselines/der.py` (`ERACE`) | v1 tables |
+| Interference-based selection | MIR (Aljundi et al., 2019) | `cerata/legacy/baselines/mir.py` | wave-2 runs |
+| Prototypes / NCM | iCaRL (Rebuffi et al., 2017) | `cerata/legacy/baselines/icarl.py`; prototype anchors `v_p`, `o_p` in `legacy/memory/prototype_memory.py` | v1 tables, E8 |
+| Latent replay | Latent Replay (Pellegrini et al., 2020) | `cerata/legacy/baselines/latent_replay.py`; latent exemplars `x_p`; design fact 19 | E5, E4 |
 | Coreset selection | k-center / uncertainty | `--proto_selection`, `--proto_candidate_pool` | toolbox tests |
 
 ## 2. Capacity expansion and parameter isolation
 
 | Literature line | Representative work | In this repo | Evidence |
 | :-- | :-- | :-- | :-- |
-| Progressive networks | PNN (Rusu et al., 2016) | function-preserving clone in `pal_moe/legacy/models/expert.py` (`clone_function_preserving`, `widen`) | tests; `--expansion_action widen` |
-| Expert selection | Expert Gate (Aljundi et al., 2017) | `pal_moe/legacy/trigger/` + `pal_moe/legacy/builder/expert_builder.py` (validation gate) | E7 (gated vs forced) |
+| Progressive networks | PNN (Rusu et al., 2016) | function-preserving clone in `cerata/legacy/models/expert.py` (`clone_function_preserving`, `widen`) | tests; `--expansion_action widen` |
+| Expert selection | Expert Gate (Aljundi et al., 2017) | `cerata/legacy/trigger/` + `cerata/legacy/builder/expert_builder.py` (validation gate) | E7 (gated vs forced) |
 | Parameter isolation | PackNet (Mallya & Lazebnik, 2018), HAT (Serra et al., 2018) | expert freezing + exact routing lock (`freeze_historical_experts`, zero-weight-decay router group) | design fact 15 |
-| Merging | model soup / TIES / task arithmetic | `pal_moe/legacy/merge.py`, `experiments/merge_experts.py` | toolbox tests |
+| Merging | model soup / TIES / task arithmetic | `cerata/legacy/merge.py`, `experiments/merge_experts.py` | toolbox tests |
 
 ## 3. Mixture-of-Experts in continual learning
 
@@ -48,8 +48,8 @@ they enter a bibliography (see the checklist in `v1/EXPERIMENT_PLAN.md` section 
 | :-- | :-- | :-- | :-- |
 | Benchmark framework | Mammoth (Boschini et al., 2022) | protocol inspiration; all methods re-implemented in one codebase | `experiments/run_benchmark.py` |
 | Equal-byte fairness | equal-byte non-inferiority protocol (2026) | `memory_bytes`/`state_bytes`/`stored_bytes` in every result; `--buffer_size`/`--icarl_k`; E4 sweep | `results/equalbyte*` |
-| Online / task-free CL | MOSE (Yan et al., CVPR 2024) | `pal_moe/eval/task_free.py`, `--task_free_eval`, `--trigger energy` | domain-shift pilot |
-| Foundation backbones | frozen ImageNet ResNet-18 / ViT-B/16 | `pal_moe/legacy/models/encoder.py`, `--encoder_weights imagenet`, feature cache | ViT promotion (fact 18) |
+| Online / task-free CL | MOSE (Yan et al., CVPR 2024) | `cerata/eval/task_free.py`, `--task_free_eval`, `--trigger energy` | domain-shift pilot |
+| Foundation backbones | frozen ImageNet ResNet-18 / ViT-B/16 | `cerata/legacy/models/encoder.py`, `--encoder_weights imagenet`, feature cache | ViT promotion (fact 18) |
 
 ## 5. Pretrained-model continual learning (closest to Stage 1 and E-TID2)
 
@@ -60,9 +60,9 @@ isolation, P2-BOUND), not the readout.
 
 | Literature line | Representative work | In this repo | Evidence |
 | :-- | :-- | :-- | :-- |
-| NCM on frozen pretrained features | Janson et al., "A Simple Baseline that Questions the Use of Pretrained-Models in Continual Learning" (NeurIPS 2022 workshop) | `L0_ncm` in `pal_moe/experts/ladder.py` | S2: 70.34 vs v1 59.30 |
+| NCM on frozen pretrained features | Janson et al., "A Simple Baseline that Questions the Use of Pretrained-Models in Continual Learning" (NeurIPS 2022 workshop) | `L0_ncm` in `cerata/experts/ladder.py` | S2: 70.34 vs v1 59.30 |
 | Prototype classifier + first-session adaptation | SimpleCIL / APER (Zhou et al., "Revisiting Class-Incremental Learning with Pre-Trained Models", IJCV 2024) | `L0_ncm`; no first-session adaptation arm | S2 |
-| Random projection + continual Gram-matrix ridge | RanPAC (McDonnell et al., NeurIPS 2023): 92.2 % on CIFAR-100 with PETL | `core/random_features.py` + `LinearStats(feature_map=...)` / `PalMoE(random_features=M)`, with the penalty pinned after task 0 (RanPAC re-selects it per task) | built; `PTM_CIL_PREREG.md` (not run) |
+| Random projection + continual Gram-matrix ridge | RanPAC (McDonnell et al., NeurIPS 2023): 92.2 % on CIFAR-100 with PETL | `core/random_features.py` + `LinearStats(feature_map=...)` / `Cerata(random_features=M)`, with the penalty pinned after task 0 (RanPAC re-selects it per task) | built; `PTM_CIL_PREREG.md` (not run) |
 | Analytic (closed-form) CL: recursive least squares equals joint training | ACIL (Zhuang et al., NeurIPS 2022), DS-AL (AAAI 2024), G-ACIL / GACL (2024) | the MEDIUM path's continual ridge is this statement; E-TID2's G3 guard is its check | E-TID2 G3 |
 | Analytic readout with feature adaptation | AnaCP (NeurIPS 2025 spotlight) | not implemented; the strongest analytic rival for a readout arm | - |
 | Exact, gradient-free continual unlearning | ACU, "Analytic Continual Unlearning" (Zhuang group, 2025) | `forget` as a downdate of the statistics is this idea; our addition is measuring it as a guard | vision guards |
@@ -86,7 +86,7 @@ uses an ImageNet-1K ViT-B/16; the literature uses ImageNet-21K weights.
 
 | Literature line | Representative work | In this repo | Evidence |
 | :-- | :-- | :-- | :-- |
-| Locate-and-edit, rank-one | ROME (Meng et al., NeurIPS 2022) | CounterFact loader and metrics (`pal_moe/eval/editing.py`) | loaders only |
+| Locate-and-edit, rank-one | ROME (Meng et al., NeurIPS 2022) | CounterFact loader and metrics (`cerata/eval/editing.py`) | loaders only |
 | Mass editing, closed form with a key-covariance prior | MEMIT (Meng et al., ICLR 2023) | `edit/down_proj.py` (`DownProjEdit`): the MEMIT closed form, stated as such, plus an exact downdate | tiny-model tests only |
 | Null-space constrained editing | AlphaEdit (Fang et al., ICLR 2025) | not implemented; the fix to try if the MEDIUM path loses specificity at N = 1000 | - |
 | Memory-based editing with a scope decision | SERAC (Mitchell et al., ICML 2022) | the FAST path: retrieval over frozen keys, the `tau` threshold as the scope decision | tiny-model tests only |
@@ -137,11 +137,11 @@ function-preserving expansion, routing locks - all individually established.
 
 | If you add... | Put it in... | Wire it via |
 | :-- | :-- | :-- |
-| a router | `pal_moe/router/` | `PalMoE(router=...)`; it must pass the purity guard (0 trainable parameters) |
-| a retrieval index (ANN) | `pal_moe/address/` | behind the `ExactCosineIndex` calls; the exact index stays the reference |
-| a closed-form edit path | `pal_moe/edit/` | additive statistics with an exact downdate, float64 |
-| a consolidation policy | `pal_moe/experts/policies.py` | `consolidate(policy, prereg=...)`; gate it on its pre-registration |
-| a backbone or LM adapter | `pal_moe/core/` | content-hashed, frozen |
-| a metric or statistic | `pal_moe/eval/` | the measurement contract (`eval/schema.py`) |
+| a router | `cerata/router/` | `Cerata(router=...)`; it must pass the purity guard (0 trainable parameters) |
+| a retrieval index (ANN) | `cerata/address/` | behind the `ExactCosineIndex` calls; the exact index stays the reference |
+| a closed-form edit path | `cerata/edit/` | additive statistics with an exact downdate, float64 |
+| a consolidation policy | `cerata/experts/policies.py` | `consolidate(policy, prereg=...)`; gate it on its pre-registration |
+| a backbone or LM adapter | `cerata/core/` | content-hashed, frozen |
+| a metric or statistic | `cerata/eval/` | the measurement contract (`eval/schema.py`) |
 | an experiment | `docs/<NAME>_PREREG.md`, then `experiments/<name>.py` | commit both before the run; results stay in untracked `results/` |
-| anything v1 | nowhere: `pal_moe/legacy/` is frozen bitwise | - |
+| anything v1 | nowhere: `cerata/legacy/` is frozen bitwise | - |

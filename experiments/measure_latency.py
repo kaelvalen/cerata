@@ -31,7 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch
 
-from pal_moe.factory import build_encoder, build_moe, build_single_head
+from cerata.legacy.factory import build_encoder, build_moe, build_single_head
 
 DATASET_NORM = {
     "cifar10": ((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)),

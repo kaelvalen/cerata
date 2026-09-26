@@ -35,12 +35,13 @@ ruff check . && black --check .
 ## Rules the codebase depends on
 
 1. **A refactor that changes a number is a bug, not a finding.** Code that stored
-   results depend on (`pal_moe/experts/ladder.py`, `pal_moe/core/`, `pal_moe/eval/stats.py`,
+   results depend on (`cerata/experts/ladder.py`, `cerata/core/`, `cerata/eval/stats.py`,
    the routers) must reproduce them: run `experiments/v3_anchors.py` on the machine
    that has `results/` and report the deltas (`docs/V3_ARCHITECTURE.md` section 7).
-2. **`pal_moe/legacy/` is frozen bitwise.** It is the v1 record; the old import paths
-   (`pal_moe.models`, `pal_moe.adaptation`, ...) are `sys.modules` aliases onto it so
-   old checkpoints still unpickle. `tests/fixtures/*_stage1.pt` prove that; regenerate
+2. **`cerata/legacy/` is frozen bitwise.** It is the v1 (PAL-MoE) record; the old
+   import paths (`pal_moe.models`, `pal_moe.adaptation`, ...) are `sys.modules` aliases
+   onto it, registered by the `pal_moe` compatibility package, so old checkpoints still
+   unpickle. New code never imports `pal_moe`. `tests/fixtures/*_stage1.pt` prove that; regenerate
    them only with `tests/fixtures/make_v1_fixtures.py` against the stage1-final tree.
 3. **One variable per experiment; a failing arm is reported, not tuned**
    (`docs/STAGE1_PLAN.md` section 1).

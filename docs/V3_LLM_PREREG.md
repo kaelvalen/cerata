@@ -1,8 +1,8 @@
 # V3-LLM-1: single-fact learning after deployment on a frozen 7B LM - pre-registration
 
 Status: **proposed, not started, not approved.** Written in the v3 restructure (phase
-4) together with the harness it would use (`pal_moe/core/hf_lm.py`,
-`pal_moe/api/lm.py`, `pal_moe/edit/down_proj.py`, `pal_moe/eval/editing.py`). No LLM
+4) together with the harness it would use (`cerata/core/hf_lm.py`,
+`cerata/api/lm.py`, `cerata/edit/down_proj.py`, `cerata/eval/editing.py`). No LLM
 number exists in this repository yet; nothing below is a result.
 
 ## 1. The question

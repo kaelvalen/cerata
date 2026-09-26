@@ -2,7 +2,7 @@
 
 Every experiment config is a validated JSON (unknown keys, wrong types and
 out-of-range values are hard errors; explicit CLI flags override config values,
-config values override argparse defaults - see `pal_moe/config.py`).
+config values override argparse defaults - see `cerata/config.py`).
 
 **Canonical configs** (referenced by the paper plan / recipes):
 

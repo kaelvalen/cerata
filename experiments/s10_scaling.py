@@ -60,7 +60,7 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 import s2_ladder  # noqa: E402
-from pal_moe.evaluation.schema import build_run_record, satisfied_blocks  # noqa: E402
+from cerata.eval.schema import build_run_record, satisfied_blocks  # noqa: E402
 
 DATASETS = {
     "cifar100": {

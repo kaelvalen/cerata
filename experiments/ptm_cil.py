@@ -4,7 +4,7 @@ PTM-CIL: when does an expert bank earn its keep over an analytic readout?
     docs/PTM_CIL_PREREG.md
 
 Per (benchmark, backbone, seed), on frozen ViT-B/16 features with the literature's
-protocol (`pal_moe.data.ptm_benchmarks`):
+protocol (`cerata.data.ptm_benchmarks`):
 
     ncm     SimpleCIL: cosine to class means, training-free
     ridge   closed-form ridge on the raw features (ACIL / RanPAC without RP)
@@ -16,9 +16,9 @@ Each readout is reported as average incremental accuracy and final accuracy.
 Every bank - this repository's L3 bank (the S11 recipe) and any external bank given
 as an `ExpertDump` (EASE, MOS, MoTE, ... exported under every forced expert) - is
 routed by each readout (the owner of its argmax class) and decomposed:
-P2 = m * rho + P(not r, not tau) * rho' - P(r) * beta (`pal_moe.eval.decomposition`).
+P2 = m * rho + P(not r, not tau) * rho' - P(r) * beta (`cerata.eval.decomposition`).
 
-`--api` also runs the rp readout through `PalMoE` (one guarded write per task) and
+`--api` also runs the rp readout through `Cerata` (one guarded write per task) and
 vetoes any prediction difference from the direct computation; it records the guard
 reports and the wall time per write.
 
@@ -38,25 +38,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch  # noqa: E402
 
-from pal_moe.api import Batch, GuardConfig, PalMoE  # noqa: E402
-from pal_moe.arch.readouts import mask_unseen  # noqa: E402
-from pal_moe.core.random_features import RandomProjection  # noqa: E402
-from pal_moe.data.ptm_benchmarks import (  # noqa: E402
+from cerata.api import Batch, Cerata, GuardConfig  # noqa: E402
+from cerata.arch.readouts import mask_unseen  # noqa: E402
+from cerata.core.random_features import RandomProjection  # noqa: E402
+from cerata.data.ptm_benchmarks import (  # noqa: E402
     BENCHMARKS,
     class_order,
     load_raw_cache,
     split_tasks,
 )
-from pal_moe.edit.stats import LinearStats, one_hot, select_ridge  # noqa: E402
-from pal_moe.eval.decomposition import ExpertDump, decompose  # noqa: E402
-from pal_moe.eval.stats import paired_stats  # noqa: E402
-from pal_moe.experts.ladder import train_model  # noqa: E402
+from cerata.edit.stats import LinearStats, one_hot, select_ridge  # noqa: E402
+from cerata.eval.decomposition import ExpertDump, decompose  # noqa: E402
+from cerata.eval.stats import paired_stats  # noqa: E402
+from cerata.experts.ladder import train_model  # noqa: E402
 
 PREREG = "docs/PTM_CIL_PREREG.md"
 READOUTS = ("ncm", "ridge", "rp")
 S11_RECIPE = {"epochs": 10, "lr": 1e-3, "batch_size": 128, "lambda_func": 1.0}
 IDENTITY_BAND = 1e-12
 API_BAND = 1e-8
+SANITY_BAND = 0.02  # ncm final accuracy vs the published SimpleCIL number
+FEASIBILITY_S = 48 * 3600
 
 
 def git_rev() -> str:
@@ -202,7 +204,7 @@ def api_arm(tasks, C, lam_rp, M, rf_seed, device, direct_logits) -> dict:
     g = torch.Generator().manual_seed(rf_seed)
     pool = torch.cat([k["splits"]["train"][0] for k in tasks])
     canary = pool[torch.randperm(pool.size(0), generator=g)[:200]].to(device)
-    model = PalMoE(
+    model = Cerata(
         dim=D,
         num_classes=C,
         ridge=lam_rp,
@@ -291,6 +293,27 @@ def run_cell(cache, benchmark, backbone, seed, args, device) -> dict:
             tasks, C, lam["rp"], args.M, seed, device, arms["final_logits"]["rp"]
         )
     return cell
+
+
+def sanity_veto(cells, reference: dict | None) -> dict:
+    """ncm (SimpleCIL) final accuracy, mean over seeds, within SANITY_BAND of the
+    published number for the same benchmark and backbone (docs/PTM_CIL_PREREG.md,
+    amendment 1). A benchmark without a reference fails: the veto is not optional."""
+    groups = {}
+    for c in cells:
+        groups.setdefault(f"{c['benchmark']}__{c['backbone']}", []).append(
+            c["readouts"]["ncm"]["final"]
+        )
+    out = {}
+    for key, accs in groups.items():
+        got = sum(accs) / len(accs)
+        ref = None if reference is None else reference.get(key)
+        out[key] = {
+            "ncm_final": got,
+            "reference": ref,
+            "pass": ref is not None and abs(got - ref) <= SANITY_BAND,
+        }
+    return out
 
 
 def vetoes(cells) -> dict:
@@ -389,6 +412,11 @@ def main():
     ap.add_argument("--api", action="store_true")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--out", default="results/ptm_cil/ptm_cil_study.json")
+    ap.add_argument(
+        "--simplecil_reference",
+        default=None,
+        help="JSON {benchmark__backbone: accuracy in [0, 1]} copied into amendment 1",
+    )
     args = ap.parse_args()
     seeds = [int(s) for s in args.seeds.split(",")]
     t0 = time.time()
@@ -402,16 +430,38 @@ def main():
                 run_cell(synthetic_cache(), "synthetic", "none", s, args, args.device)
             )
     else:
-        for bm in args.benchmarks.split(","):
-            for bb in args.backbones.split(","):
-                cache = load_raw_cache(Path(args.cache_dir) / f"{bm}__{bb}.pt")
-                for s in seeds:
-                    cells.append(run_cell(cache, bm, bb, s, args, args.device))
-                    print(
-                        f"[{bm} {bb} seed {s}] done {time.time() - t0:.0f}s", flush=True
+        grid = [
+            (bm, bb)
+            for bm in args.benchmarks.split(",")
+            for bb in args.backbones.split(",")
+        ]
+        n_cells = len(grid) * len(seeds)
+        for bm, bb in grid:
+            cache = load_raw_cache(Path(args.cache_dir) / f"{bm}__{bb}.pt")
+            for s in seeds:
+                cells.append(run_cell(cache, bm, bb, s, args, args.device))
+                elapsed = time.time() - t0
+                print(f"[{bm} {bb} seed {s}] done {elapsed:.0f}s", flush=True)
+                projected = elapsed / len(cells) * n_cells
+                if projected > FEASIBILITY_S:
+                    raise SystemExit(
+                        f"veto: feasibility - {projected / 3600:.1f} h projected for "
+                        f"{n_cells} cells > {FEASIBILITY_S / 3600:.0f} h"
                     )
     v = vetoes(cells)
+    if not args.synthetic:
+        ref = None
+        if args.simplecil_reference:
+            ref = json.loads(Path(args.simplecil_reference).read_text())
+        v["sanity"] = sanity_veto(cells, ref)
+        v["sanity_pass"] = all(x["pass"] for x in v["sanity"].values())
+        v["feasibility_seconds"] = round(time.time() - t0, 1)
     result = {
+        "status": (
+            "veto_failed"
+            if any(k.endswith("_pass") and not val for k, val in v.items())
+            else "ok"
+        ),
         "prereg": PREREG,
         "git": git_rev(),
         "args": vars(args),
@@ -426,6 +476,10 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=1, default=str))
     failed = [k for k, val in v.items() if k.endswith("_pass") and not val]
+    print("vetoes:", json.dumps(v))
+    if failed:
+        # The record is written for diagnosis, but nothing is read from it.
+        raise SystemExit(f"veto failed: {failed}; no result is reported")
     for key, agg in result["aggregate"].items():
         ro = agg["readouts"]
         print(
@@ -441,9 +495,6 @@ def main():
                     f"  {bank} routed by {r}: P2={d['P2']['mean']:+.4f} m={d['m']:.4f} "
                     f"rho={d['rho']:.3f} beta={d['beta']:.4f}"
                 )
-    print("vetoes:", json.dumps(v))
-    if failed:
-        raise SystemExit(f"veto failed: {failed}")
 
 
 if __name__ == "__main__":

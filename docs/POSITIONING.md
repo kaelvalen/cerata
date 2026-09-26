@@ -1,4 +1,4 @@
-# Positioning: what PAL can claim in the literature, and the plan to get there
+# Positioning: what CERATA can claim in the literature, and the plan to get there
 
 Written 2026-09-26 after a literature search (links in section 6). It is a plan, not a
 result: nothing below has been run on a real benchmark or model.
@@ -58,7 +58,7 @@ Protocol problems a reviewer sees at once:
 
 Pre-registration: [`PTM_CIL_PREREG.md`](PTM_CIL_PREREG.md). Code: built and smoke-tested
 (`experiments/ptm_cil.py`, `experiments/extract_ptm_features.py`,
-`pal_moe/eval/decomposition.py`, `pal_moe/data/ptm_benchmarks.py`). What remains is on
+`cerata/eval/decomposition.py`, `cerata/data/ptm_benchmarks.py`). What remains is on
 the GPU machine, in this order:
 
 1. Download the processed splits linked from the RevisitingCIL README into `data/ptm/`
@@ -71,7 +71,8 @@ the GPU machine, in this order:
    published config on the same splits, and add a small exporter per method under
    `experiments/external/` that writes an `ExpertDump` (section 8 of the
    pre-registration). Commit the exporters before running them.
-5. `python experiments/ptm_cil.py --benchmarks cifar100,cub,imagenet_r,imagenet_a,objectnet,omnibenchmark,vtab --backbones in21k_1k --external_dir results/ptm_cil/external --api --device cuda`.
+5. `python experiments/ptm_cil.py --benchmarks cifar100,cub,imagenet_r,imagenet_a,objectnet,omnibenchmark,vtab --backbones in21k_1k --external_dir results/ptm_cil/external --simplecil_reference results/ptm_cil/simplecil_reference.json --api --device cuda`
+   (the reference file holds amendment 1's numbers as `{"<benchmark>__<backbone>": accuracy}`).
 6. Write `PTM_CIL_RESULTS.md` against the outcome table, whatever row lands.
 
 Venues: TMLR, CoLLAs, the CLVision workshop; an analysis track at a main conference if
@@ -89,14 +90,18 @@ Prerequisites, in order:
 3. Add GRACE, WISE, MEMOIR and AlphaEdit through EasyEdit on the same CounterFact / zsRE
    cases and N, plus two metrics the others do not report: parametric distance after
    `forget`, and guard cost per call.
-4. The vision side of B reuses paper A's `rp` readout through `PalMoE` (its API arm
+4. The vision side of B reuses paper A's `rp` readout through `Cerata` (its API arm
    already records guard reports and write time).
 
 ## 5. The name
 
-"MoE" in the title states the one thing the evidence does not support. Keeping "PAL"
-(the prototype-anchored, parameter-free router is real) and dropping "MoE" from the
-expansion is the owner's call; renaming the package is not needed for either paper.
+"PAL-MoE" stated the one thing the evidence does not support, so the project became
+**CERATA** (Closed-form, Exactly Reversible, Auditable learning after deployment) on
+2026-09-26, after checking for collisions: TABULA was rejected (TabuLa and TabuLa-8B
+are tabular-data LLM papers; `tabula`, `tabula-py`, `tabulaml` are taken on PyPI).
+The v1 design keeps its name, PAL-MoE, as a historical record (`docs/v1/`); the
+`pal_moe` package keeps old imports and checkpoints working. The GitHub repository
+itself is renamed in its settings by the owner (GitHub redirects the old URL).
 
 ## 6. Sources (searched 2026-09-26)
 

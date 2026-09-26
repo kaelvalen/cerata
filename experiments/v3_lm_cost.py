@@ -24,8 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch  # noqa: E402
 
-from pal_moe.core.hashing import digest  # noqa: E402
-from pal_moe.edit.down_proj import DownProjEdit, KeyPrior  # noqa: E402
+from cerata.core.hashing import digest  # noqa: E402
+from cerata.edit.down_proj import DownProjEdit, KeyPrior  # noqa: E402
 
 PREREG_WRITES = {"N=1 (2000 isolated)": 2000, "N=100": 100, "N=1000": 1000}
 

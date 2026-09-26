@@ -60,7 +60,7 @@ jobs:
     # on 3.12, the LM backend. Tests that need untracked results/ or data/ skip.
     - name: Run the test suite with coverage
       run: |
-        pytest --cov=pal_moe --cov-report=xml -rs
+        pytest --cov=cerata --cov-report=xml -rs
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4

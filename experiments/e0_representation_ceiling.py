@@ -2,7 +2,7 @@
 E0 - representation ceiling and adapter headroom on cached frozen features.
 
 Prerequisite for PAL-MoE v2 (docs/v1/PALMOE_V2_SPEC.md section 10, E0). Standalone
-on purpose: it does NOT import pal_moe/v2, so it can run before M1 is written.
+on purpose: it does NOT import cerata/v2, so it can run before M1 is written.
 It answers one question before any v2 package code exists:
 
     frozen pretrained representation + small residual adapters
@@ -56,7 +56,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from pal_moe.arch import ResidualAdapter
+from cerata.arch import ResidualAdapter
 
 DEFAULT_CACHE = "results/feature_cache/cifar100_vit_b16/feature_cache.pt"
 
@@ -1075,7 +1075,7 @@ def emit_contracts(results: dict, args, meta: dict, tasks) -> dict:
     explicitly instead of being inferred from a runner result dict, which is
     how a new experiment is supposed to enter the framework.
     """
-    from pal_moe.evaluation.schema import build_run_record, satisfied_blocks
+    from cerata.eval.schema import build_run_record, satisfied_blocks
 
     class_order = [list(t["classes"]) for t in tasks]
     records = {}

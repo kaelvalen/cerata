@@ -9,10 +9,10 @@ import torch
 
 transformers = pytest.importorskip("transformers")
 
-from pal_moe.api import Batch, GuardConfig  # noqa: E402
-from pal_moe.api.lm import PalMoELM  # noqa: E402
-from pal_moe.core.hf_lm import HFCausalLM  # noqa: E402
-from pal_moe.edit.down_proj import DownProjEdit, estimate_key_covariance  # noqa: E402
+from cerata.api import Batch, GuardConfig  # noqa: E402
+from cerata.api.lm import CerataLM  # noqa: E402
+from cerata.core.hf_lm import HFCausalLM  # noqa: E402
+from cerata.edit.down_proj import DownProjEdit, estimate_key_covariance  # noqa: E402
 
 
 class CharTokenizer:
@@ -85,7 +85,7 @@ def test_hooks_expose_keys_and_down_proj_io(lm):
 
 
 def test_lm_fast_write_retrieve_forget_is_bitwise(lm):
-    m = PalMoELM(
+    m = CerataLM(
         lm,
         _prior(lm),
         canary_prompts=["zzz qqq", "xyz"],
@@ -101,7 +101,7 @@ def test_lm_fast_write_retrieve_forget_is_bitwise(lm):
 
 
 def test_lm_medium_edit_changes_target_and_forgets_exactly(lm):
-    m = PalMoELM(
+    m = CerataLM(
         lm,
         _prior(lm),
         canary_prompts=["zzz qqq", "xyz"],
@@ -128,7 +128,7 @@ def test_lm_medium_is_order_invariant(lm):
     pairs = [("the sky is", "g"), ("grass is", "b"), ("snow is", "k")]
     digests = []
     for order in (pairs, list(reversed(pairs))):
-        m = PalMoELM(
+        m = CerataLM(
             lm, _prior(lm), value_steps=5, guards=GuardConfig(trial_reversibility=False)
         )
         recs = [m.write(Batch([p], [t])) for p, t in order]
@@ -180,7 +180,7 @@ def test_corpus_prior_protects_unseen_keys_better_than_an_edit_only_prior(lm):
 
 
 def test_lm_forget_is_downdate_and_forget_all_removes_the_hook(lm):
-    m = PalMoELM(
+    m = CerataLM(
         lm,
         _prior(lm),
         canary_prompts=["zzz qqq", "xyz"],

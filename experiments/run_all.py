@@ -137,7 +137,7 @@ def build_stages(args) -> list[Stage]:
                     PY,
                     "-c",
                     "import glob, sys; sys.path.insert(0, '.'); "
-                    "from pal_moe.evaluation.schema import load_run_records, validate_run_record; "
+                    "from cerata.eval.schema import load_run_records, validate_run_record; "
                     "ok=bad=0\n"
                     "for f in sorted(glob.glob('results/**/benchmark_results_*.json', recursive=True)):\n"
                     "    for r in load_run_records(f):\n"

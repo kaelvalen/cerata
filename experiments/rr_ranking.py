@@ -53,8 +53,8 @@ import s2_ladder  # noqa: E402
 import s6b_difficulty  # noqa: E402
 import s10_scaling  # noqa: E402
 import s11_confirmatory as s11  # noqa: E402
-from pal_moe.evaluation.schema import build_run_record, satisfied_blocks  # noqa: E402
-from pal_moe.models.router import DynamicRouter  # noqa: E402
+from cerata.eval.schema import build_run_record, satisfied_blocks  # noqa: E402
+from cerata.legacy.models.router import DynamicRouter  # noqa: E402
 
 SOURCE_CACHE = "results/feature_cache/cifar100_vit_b16/feature_cache.pt"
 REGIMES = ["coherent", "dispersed"]
