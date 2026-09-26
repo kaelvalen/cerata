@@ -22,8 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch  # noqa: E402
 
-from pal_moe.arch import build_projected_backbone  # noqa: E402
-from pal_moe.data.split_cifar100 import get_split_cifar100_tasks  # noqa: E402
+from cerata.arch import build_projected_backbone  # noqa: E402
+from cerata.data.split_cifar100 import get_split_cifar100_tasks  # noqa: E402
 
 CIFAR100_MEAN = (0.5071, 0.4867, 0.4408)
 CIFAR100_STD = (0.2675, 0.2565, 0.2761)

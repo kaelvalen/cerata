@@ -1,7 +1,15 @@
 # Documentation map
 
+**The name.** The project and package were renamed from PAL-MoE / `pal_moe` to CERATA /
+`cerata` on 2026-09-26 (`POSITIONING.md` section 5). Documents that are still open -
+the architecture, the positioning, the unrun pre-registrations, the indices - use the
+new names. Records of studies that already ran (their pre-registrations, results,
+Stage 1, the contracts, `v1/`) are left as written: their `pal_moe/...` paths name the
+code at the commits they cite (`git show <commit>:pal_moe/...`), and the current file
+is the same path under `cerata/` (v1 modules under `cerata/legacy/`).
+
 Pre-registrations and results stay at their paths: the results documents cite them by
-path and commit hash, and `pal_moe/experts/policies.py` gates `by_confusion` on the
+path and commit hash, and `cerata/experts/policies.py` gates `by_confusion` on the
 literal path `docs/P2_BOUND_PREREG.md`. Do not move them.
 
 ## Start here
@@ -20,8 +28,8 @@ literal path `docs/P2_BOUND_PREREG.md`. Do not move them.
 | Document | What it is |
 | :-- | :-- |
 | [`STAGE1_PLAN.md`](STAGE1_PLAN.md) | The stage order, the two experiment rules and the per-stage write-ups |
-| [`MEASUREMENT_CONTRACT.md`](MEASUREMENT_CONTRACT.md) | S0: what every run must report (`pal_moe/eval/schema.py`) |
-| [`ARCHITECTURE_CONTRACT.md`](ARCHITECTURE_CONTRACT.md) | S1: the four interfaces and their registries (`pal_moe/arch/`) |
+| [`MEASUREMENT_CONTRACT.md`](MEASUREMENT_CONTRACT.md) | S0: what every run must report (`cerata/eval/schema.py`) |
+| [`ARCHITECTURE_CONTRACT.md`](ARCHITECTURE_CONTRACT.md) | S1: the four interfaces and their registries (`cerata/arch/`) |
 | [`RESULTS_INVENTORY.md`](RESULTS_INVENTORY.md) | What every `results/` directory contains and its status (up to AC3) |
 | [`RESEARCH_MAP.md`](RESEARCH_MAP.md) | The literature line behind each component, and the closest prior work to the current results |
 

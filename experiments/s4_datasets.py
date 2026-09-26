@@ -41,16 +41,16 @@ from torchvision import transforms  # noqa: E402
 
 import s2_ladder  # noqa: E402
 import s7_transfer  # noqa: E402
-from pal_moe.arch import build_projected_backbone  # noqa: E402
-from pal_moe.data.feature_cache import (
+from cerata.arch import build_projected_backbone  # noqa: E402
+from cerata.data.feature_cache import (
     build_feature_cache,
     save_feature_cache,
 )  # noqa: E402
-from pal_moe.data.split_cifar import get_split_cifar10_tasks  # noqa: E402
-from pal_moe.data.split_cifar100 import get_split_cifar100_tasks  # noqa: E402
-from pal_moe.data.split_folder import get_split_folder_tasks  # noqa: E402
-from pal_moe.data.split_mnist import get_split_mnist_tasks  # noqa: E402
-from pal_moe.evaluation.schema import build_run_record, satisfied_blocks  # noqa: E402
+from cerata.data.split_cifar import get_split_cifar10_tasks  # noqa: E402
+from cerata.data.split_cifar100 import get_split_cifar100_tasks  # noqa: E402
+from cerata.data.split_folder import get_split_folder_tasks  # noqa: E402
+from cerata.data.split_mnist import get_split_mnist_tasks  # noqa: E402
+from cerata.eval.schema import build_run_record, satisfied_blocks  # noqa: E402
 
 DATASET_NORM = {
     "mnist": ((0.1307,), (0.3081,)),

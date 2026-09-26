@@ -4,7 +4,7 @@ PTM-CIL: when does an expert bank earn its keep over an analytic readout?
     docs/PTM_CIL_PREREG.md
 
 Per (benchmark, backbone, seed), on frozen ViT-B/16 features with the literature's
-protocol (`pal_moe.data.ptm_benchmarks`):
+protocol (`cerata.data.ptm_benchmarks`):
 
     ncm     SimpleCIL: cosine to class means, training-free
     ridge   closed-form ridge on the raw features (ACIL / RanPAC without RP)
@@ -16,9 +16,9 @@ Each readout is reported as average incremental accuracy and final accuracy.
 Every bank - this repository's L3 bank (the S11 recipe) and any external bank given
 as an `ExpertDump` (EASE, MOS, MoTE, ... exported under every forced expert) - is
 routed by each readout (the owner of its argmax class) and decomposed:
-P2 = m * rho + P(not r, not tau) * rho' - P(r) * beta (`pal_moe.eval.decomposition`).
+P2 = m * rho + P(not r, not tau) * rho' - P(r) * beta (`cerata.eval.decomposition`).
 
-`--api` also runs the rp readout through `PalMoE` (one guarded write per task) and
+`--api` also runs the rp readout through `Cerata` (one guarded write per task) and
 vetoes any prediction difference from the direct computation; it records the guard
 reports and the wall time per write.
 
@@ -38,19 +38,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch  # noqa: E402
 
-from pal_moe.api import Batch, GuardConfig, PalMoE  # noqa: E402
-from pal_moe.arch.readouts import mask_unseen  # noqa: E402
-from pal_moe.core.random_features import RandomProjection  # noqa: E402
-from pal_moe.data.ptm_benchmarks import (  # noqa: E402
+from cerata.api import Batch, Cerata, GuardConfig  # noqa: E402
+from cerata.arch.readouts import mask_unseen  # noqa: E402
+from cerata.core.random_features import RandomProjection  # noqa: E402
+from cerata.data.ptm_benchmarks import (  # noqa: E402
     BENCHMARKS,
     class_order,
     load_raw_cache,
     split_tasks,
 )
-from pal_moe.edit.stats import LinearStats, one_hot, select_ridge  # noqa: E402
-from pal_moe.eval.decomposition import ExpertDump, decompose  # noqa: E402
-from pal_moe.eval.stats import paired_stats  # noqa: E402
-from pal_moe.experts.ladder import train_model  # noqa: E402
+from cerata.edit.stats import LinearStats, one_hot, select_ridge  # noqa: E402
+from cerata.eval.decomposition import ExpertDump, decompose  # noqa: E402
+from cerata.eval.stats import paired_stats  # noqa: E402
+from cerata.experts.ladder import train_model  # noqa: E402
 
 PREREG = "docs/PTM_CIL_PREREG.md"
 READOUTS = ("ncm", "ridge", "rp")
@@ -202,7 +202,7 @@ def api_arm(tasks, C, lam_rp, M, rf_seed, device, direct_logits) -> dict:
     g = torch.Generator().manual_seed(rf_seed)
     pool = torch.cat([k["splits"]["train"][0] for k in tasks])
     canary = pool[torch.randperm(pool.size(0), generator=g)[:200]].to(device)
-    model = PalMoE(
+    model = Cerata(
         dim=D,
         num_classes=C,
         ridge=lam_rp,

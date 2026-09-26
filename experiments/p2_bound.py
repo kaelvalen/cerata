@@ -33,17 +33,17 @@ from sklearn.metrics import adjusted_rand_score  # noqa: E402
 
 import e_tid2_ridge_router as e2r  # noqa: E402
 import s11_confirmatory as s11  # noqa: E402
-from pal_moe.api import Batch, GuardConfig, PalMoE  # noqa: E402
-from pal_moe.core.constructions import (  # noqa: E402
+from cerata.api import Batch, Cerata, GuardConfig  # noqa: E402
+from cerata.core.constructions import (  # noqa: E402
     args_data_dir,
     build_construction,
     superclass_of,
 )
-from pal_moe.core.features import load_tasks  # noqa: E402
-from pal_moe.eval.decomposition import (  # noqa: E402
+from cerata.core.features import load_tasks  # noqa: E402
+from cerata.eval.decomposition import (  # noqa: E402
     p2_decomposition as decomposition,
 )
-from pal_moe.eval.stats import paired_stats, tost, westfall_young  # noqa: E402
+from cerata.eval.stats import paired_stats, tost, westfall_young  # noqa: E402
 
 PREREG = "docs/P2_BOUND_PREREG.md"
 ETID2_JSON = "results/e_tid2/e_tid2_ridge_router.json"
@@ -159,7 +159,7 @@ def part_b_cell(regime, seed, args, device, base, groups_sc):
     dim = int(tasks[0]["splits"]["train"][0].size(1))
     C = sum(len(t["classes"]) for t in tasks)
     canary = torch.cat([t["splits"]["test"][0][:10] for t in tasks]).to(device)
-    model = PalMoE(
+    model = Cerata(
         dim,
         C,
         router="ridge_class",

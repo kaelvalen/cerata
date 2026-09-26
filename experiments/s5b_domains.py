@@ -48,8 +48,8 @@ import torch  # noqa: E402
 
 import s2_ladder  # noqa: E402
 import s5_protocols  # noqa: E402
-from pal_moe.arch import build_projected_backbone  # noqa: E402
-from pal_moe.evaluation.schema import build_run_record, satisfied_blocks  # noqa: E402
+from cerata.arch import build_projected_backbone  # noqa: E402
+from cerata.eval.schema import build_run_record, satisfied_blocks  # noqa: E402
 
 LEVELS = [
     "L0_ncm",

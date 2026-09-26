@@ -38,9 +38,9 @@ import torch.nn.functional as F  # noqa: E402
 from PIL import Image  # noqa: E402
 from torchvision import datasets  # noqa: E402
 
-from pal_moe.arch import build_projected_backbone  # noqa: E402
-from pal_moe.data.feature_cache import _encode_split  # noqa: E402
-from pal_moe.data.split_cifar100 import get_split_cifar100_tasks  # noqa: E402
+from cerata.arch import build_projected_backbone  # noqa: E402
+from cerata.data.feature_cache import _encode_split  # noqa: E402
+from cerata.data.split_cifar100 import get_split_cifar100_tasks  # noqa: E402
 
 CANONICAL_CACHE = "results/feature_cache/cifar100_vit_b16/feature_cache.pt"
 SHIFT_ROOT = "results/s9/cache"

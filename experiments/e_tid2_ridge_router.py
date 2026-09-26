@@ -46,7 +46,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import s2_ladder
 import s6b_difficulty
 import s11_confirmatory as s11  # noqa: E402
-from pal_moe.arch import RidgeReadout, mask_unseen  # noqa: E402
+from cerata.arch import RidgeReadout, mask_unseen  # noqa: E402
 
 CACHE = "results/feature_cache/cifar100_vit_b16/feature_cache.pt"
 REGIMES = ("coherent", "dispersed")

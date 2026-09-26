@@ -19,14 +19,14 @@ import torch
 from tabulate import tabulate
 from torchvision import datasets, transforms
 
-from pal_moe.adaptation.ttt import ContinualTrainer
-from pal_moe.builder.expert_builder import ExpertBuilder
-from pal_moe.data.split_mnist import get_split_mnist_tasks
-from pal_moe.evaluation.metrics import ContinualEvaluator
-from pal_moe.factory import build_moe, build_prototype_memory
-from pal_moe.models.encoder import SharedEncoder
-from pal_moe.models.moe import DynamicMoE
-from pal_moe.trigger.expert_trigger import QuantitativeTrigger
+from cerata.data.split_mnist import get_split_mnist_tasks
+from cerata.eval.metrics import ContinualEvaluator
+from cerata.legacy.adaptation.ttt import ContinualTrainer
+from cerata.legacy.builder.expert_builder import ExpertBuilder
+from cerata.legacy.factory import build_moe, build_prototype_memory
+from cerata.legacy.models.encoder import SharedEncoder
+from cerata.legacy.models.moe import DynamicMoE
+from cerata.legacy.trigger.expert_trigger import QuantitativeTrigger
 
 
 def set_seed(seed: int = 42):

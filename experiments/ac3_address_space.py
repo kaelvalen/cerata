@@ -35,7 +35,7 @@ import torch  # noqa: E402
 import e2_evidence as e2  # noqa: E402
 import s10_scaling  # noqa: E402
 import s11_confirmatory as s11  # noqa: E402
-from pal_moe.arch.routers import PrototypeRouter  # noqa: E402
+from cerata.arch.routers import PrototypeRouter  # noqa: E402
 
 REGIMES = ["coherent", "dispersed"]
 T = 20

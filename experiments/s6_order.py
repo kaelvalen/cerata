@@ -45,8 +45,8 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 import s2_ladder  # noqa: E402
-from pal_moe.arch import build_readout  # noqa: E402
-from pal_moe.evaluation.schema import build_run_record, satisfied_blocks  # noqa: E402
+from cerata.arch import build_readout  # noqa: E402
+from cerata.eval.schema import build_run_record, satisfied_blocks  # noqa: E402
 
 LEVELS = ["L0_ncm", "L1_ridge", "L2b_shared_seq", "L3_per_task", "L4_oracle"]
 SOURCE_CACHE = "results/feature_cache/cifar100_vit_b16/feature_cache.pt"

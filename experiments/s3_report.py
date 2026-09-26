@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch  # noqa: E402
 
-from pal_moe.arch import build_readout  # noqa: E402
+from cerata.arch import build_readout  # noqa: E402
 
 ORDER = [
     "L0_ncm",

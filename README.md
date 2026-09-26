@@ -1,9 +1,14 @@
-# PAL-MoE: Prototype-Anchored Lifelong Mixture of Experts
+# CERATA
 
-PAL-MoE started as a dynamic Mixture-of-Experts for class-incremental continual
-learning (v1: one expert per task behind a prototype-anchored router, latent replay
-instead of raw images). A pre-registered measurement programme then took that design
-apart, and the code is now organised around what the measurements support:
+**Closed-form, Exactly Reversible, Auditable learning after deployment.** Named after
+the *tabula cerata*, the Roman wax tablet: written on, and wiped clean without a trace.
+
+This project was called **PAL-MoE** (Prototype-Anchored Lifelong Mixture of Experts)
+until 2026-09-26. It started as a dynamic Mixture-of-Experts for class-incremental
+continual learning (v1: one expert per task behind a prototype-anchored router, latent
+replay instead of raw images). A pre-registered measurement programme then took that
+design apart - including the finding that the expert bank adds nothing once routing
+is analytic - and the code, and now the name, follow what the measurements support:
 
 > **v3: learning after deployment is an API call on a frozen base.** One fixed,
 > never-trained address space and three time scales - a FAST key-value memory (one
@@ -53,9 +58,9 @@ uv sync --extra dev            # or: pip install -e ".[dev]"; extras: "lm" (LM b
 ```
 
 ```python
-from pal_moe.api import PalMoE, Batch, Example
+from cerata.api import Cerata, Batch, Example
 
-model = PalMoE(dim=768, num_classes=100, router="ridge_class", canary=canary_feats)
+model = Cerata(dim=768, num_classes=100, router="ridge_class", canary=canary_feats)
 rec = model.write(Batch(z, y, task=0))    # MEDIUM: closed-form edit -> EditRecord
 rec = model.write(Example(z1, 7))         # FAST: one memory row -> EditRecord
 model.forget(rec.id)                      # exact delete / statistics downdate
@@ -65,7 +70,7 @@ st = model.state()                        # base hash, ordered edit log, digest
 ```
 
 Every `EditRecord` carries the locality, reversibility, order and purity reports of
-that call. The LM facade (`pal_moe.api.lm.PalMoELM`) has the same calls:
+that call. The LM facade (`cerata.api.lm.CerataLM`) has the same calls:
 `write("a sentence")` is a FAST memory row retrieved into the context,
 `write(Batch(prompts, targets))` a MEDIUM down-projection edit.
 
@@ -82,9 +87,9 @@ Study outputs go to `results/`, which is not tracked: a fresh clone re-runs the 
 ## Project structure
 
 ```text
-pal-moe/
-├── pal_moe/
-│   ├── api/         # PalMoE / PalMoELM facades, GuardedEditor (the four guards), records
+cerata/
+├── cerata/
+│   ├── api/         # Cerata / CerataLM facades, GuardedEditor (the four guards), records
 │   ├── core/        # frozen backbones, HF causal-LM adapter, features, constructions, hashing
 │   ├── address/     # parameter-free retrieval over frozen keys (ExactCosineIndex)
 │   ├── router/      # prototype, ridge_class, the router-purity guard
@@ -96,7 +101,8 @@ pal-moe/
 │   ├── arch/        # S1 contract: protocols and registries
 │   ├── data/        # split MNIST / CIFAR / CIFAR-100 / folder, feature cache
 │   ├── legacy/      # v1, frozen bitwise (models, memory, trainer, baselines, builder, trigger)
-│   └── ...          # alias shims keep the v1 import paths (pal_moe.models, ...) working
+│   └── ...
+├── pal_moe/         # compatibility only: the old name and the v1 import paths, same module objects
 ├── experiments/     # thin runners: v3, the study chain, Stage 1, the v1 benchmark
 ├── configs/         # validated JSON configs for the v1 benchmark
 ├── docs/            # architecture, pre-registrations, results, contracts; v1/ is the v1 record
@@ -108,17 +114,21 @@ Development workflow and the rules the codebase depends on:
 
 ## Citation
 
-If you use **PAL-MoE** in your research or benchmarks, please cite:
+If you use **CERATA** (or its v1, PAL-MoE) in your research, please cite:
 
 ```bibtex
-@software{pal_moe2026,
+@software{cerata2026,
   author = {Hakbilen, Mehmet Arda},
-  title = {PAL-MoE: Prototype-Anchored Lifelong Mixture of Experts},
+  title = {CERATA: Closed-form, Exactly Reversible, Auditable Learning after Deployment},
+  note = {formerly PAL-MoE: Prototype-Anchored Lifelong Mixture of Experts},
   url = {https://github.com/kaelvalen/pal-moe},
-  version = {0.1.0},
+  version = {0.2.0},
   year = {2026}
 }
 ```
+
+Old code keeps working: `import pal_moe` (with a `DeprecationWarning`) resolves every
+old import path, and old checkpoints unpickle, to the same `cerata` objects.
 
 ## License
 

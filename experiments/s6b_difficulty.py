@@ -46,13 +46,13 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 import s2_ladder  # noqa: E402
-from pal_moe.evaluation.schema import build_run_record, satisfied_blocks  # noqa: E402
+from cerata.eval.schema import build_run_record, satisfied_blocks  # noqa: E402
 
 LEVELS = ["L0_ncm", "L1_ridge", "L2b_shared_seq", "L3_per_task", "L4_oracle"]
 SOURCE_CACHE = "results/feature_cache/cifar100_vit_b16/feature_cache.pt"
 
-# Moved to `pal_moe.core.constructions` in the v3 restructure (phase 1); re-exported.
-from pal_moe.core.constructions import (  # noqa: E402,F401
+# Moved to `cerata.core.constructions` in the v3 restructure (phase 1); re-exported.
+from cerata.core.constructions import (  # noqa: E402,F401
     args_data_dir,
     build_construction,
     separability,

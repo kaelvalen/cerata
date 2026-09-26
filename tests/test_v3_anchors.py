@@ -44,11 +44,11 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def test_moved_names_are_the_same_objects():
+    import cerata.core.constructions as cons
+    import cerata.core.features as feats
+    import cerata.eval.stats as stats
+    import cerata.experts.ladder as ladder
     import e_tid2_ridge_router  # noqa: F401  (imports cleanly through the shims)
-    import pal_moe.core.constructions as cons
-    import pal_moe.core.features as feats
-    import pal_moe.eval.stats as stats
-    import pal_moe.experts.ladder as ladder
     import s2_ladder
     import s6b_difficulty
     import s11_confirmatory as s11
@@ -71,21 +71,31 @@ def test_moved_names_are_the_same_objects():
         assert getattr(s11, name) is getattr(stats, name)
 
 
-def test_legacy_shims_alias_not_copy():
-    import pal_moe.eval.schema as new_schema
-    import pal_moe.evaluation.schema as old_schema
-    import pal_moe.factory as old_factory
-    import pal_moe.legacy.factory as new_factory
-    import pal_moe.legacy.memory.prototype_memory as new_pm
-    import pal_moe.legacy.models.moe as new_moe
-    import pal_moe.memory.prototype_memory as old_pm
-    import pal_moe.models.moe as old_moe
+def test_pal_moe_compat_package_aliases_not_copies():
+    """The pre-rename name and the pre-v3 paths are the same module objects."""
+    import warnings
 
-    assert old_moe is new_moe and old_factory is new_factory
-    assert old_pm is new_pm and old_schema is new_schema
+    import cerata.api.facade as facade
+    import cerata.eval.schema as schema
+    import cerata.legacy.factory as factory
+    import cerata.legacy.memory.prototype_memory as pm
+    import cerata.legacy.models.moe as moe
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        import pal_moe
+        import pal_moe.api.facade as old_facade
+        import pal_moe.evaluation.schema as old_schema
+        import pal_moe.factory as old_factory
+        import pal_moe.memory.prototype_memory as old_pm
+        import pal_moe.models.moe as old_moe
+
+    assert old_moe is moe and old_factory is factory and old_pm is pm
+    assert old_schema is schema and old_facade is facade
+    assert pal_moe.api.PalMoE is facade.Cerata and pal_moe.PALMoE is moe.PALMoE
     files = {}
     for name, mod in list(sys.modules.items()):
-        if name.startswith("pal_moe") and getattr(mod, "__file__", None):
+        if name.startswith(("cerata", "pal_moe")) and getattr(mod, "__file__", None):
             files.setdefault(mod.__file__, set()).add(id(mod))
     assert not [
         f for f, ids in files.items() if len(ids) > 1
@@ -97,7 +107,7 @@ def test_legacy_shims_alias_not_copy():
 
 @needs(ETID2_JSON)
 def test_anchor_etid2_report_recomputes_exactly():
-    from pal_moe.eval.stats import paired_stats
+    from cerata.eval.stats import paired_stats
 
     d = json.loads(ETID2_JSON.read_text())
     for regime, fam in d["report"].items():
@@ -222,10 +232,10 @@ FIXTURES = ROOT / "tests" / "fixtures"
 
 
 def _build_v1():
-    from pal_moe.models.encoder import SharedEncoder
-    from pal_moe.models.expert import MLPExpert
-    from pal_moe.models.moe import DynamicMoE
-    from pal_moe.models.router import DynamicRouter
+    from cerata.legacy.models.encoder import SharedEncoder
+    from cerata.legacy.models.expert import MLPExpert
+    from cerata.legacy.models.moe import DynamicMoE
+    from cerata.legacy.models.router import DynamicRouter
 
     return DynamicMoE(
         encoder=SharedEncoder(input_dim=16, hidden_dims=(8,), output_dim=4),
@@ -244,9 +254,10 @@ def _out(y):
 def test_v1_whole_object_pickle_loads_through_the_shims():
     """`v1_whole_objects_stage1.pt` was written by `torch.save` at stage1-final, so its
     pickle names `pal_moe.models.*` and `pal_moe.memory.prototype_memory`. Unpickling
-    must resolve them to the legacy classes and reproduce the stored forward bitwise."""
-    import pal_moe.legacy.memory.prototype_memory as pm
-    import pal_moe.legacy.models.moe as moe
+    must resolve them, through the `pal_moe` compatibility package, to the legacy
+    classes and reproduce the stored forward bitwise."""
+    import cerata.legacy.memory.prototype_memory as pm
+    import cerata.legacy.models.moe as moe
 
     blob = torch.load(FIXTURES / "v1_whole_objects_stage1.pt", weights_only=False)
     assert isinstance(blob["model"], moe.DynamicMoE)
@@ -256,8 +267,8 @@ def test_v1_whole_object_pickle_loads_through_the_shims():
 
 
 def test_v1_persistence_checkpoint_loads_through_the_shims():
-    from pal_moe.memory.prototype_memory import PrototypeMemory
-    from pal_moe.persistence import load_checkpoint
+    from cerata.legacy.memory.prototype_memory import PrototypeMemory
+    from cerata.legacy.persistence import load_checkpoint
 
     blob = torch.load(FIXTURES / "v1_whole_objects_stage1.pt", weights_only=False)
     model, mem = _build_v1(), PrototypeMemory(feature_dim=4, store_raw=False)
