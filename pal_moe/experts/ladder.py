@@ -108,7 +108,6 @@ def _entropy(probs: torch.Tensor) -> torch.Tensor:
     return -(p * p.log()).sum()
 
 
-
 # ---------------------------------------------------------------------------
 # the ladder model
 # ---------------------------------------------------------------------------
@@ -573,7 +572,6 @@ class LadderModel:
             "flops_forward": self.cost()["flops_forward"],
             "optimizer_steps": self.optimizer_steps,
         }
-
 
 
 def forward_transfer(model, task, num_classes: int, dim: int) -> tuple[float, float]:

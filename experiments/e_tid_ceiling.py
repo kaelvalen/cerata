@@ -19,7 +19,10 @@ Readings, fixed before running:
   2 pp .. 8 pp                          -> partly continual; measure which stored evidence recovers it
   > 8 pp                                -> the tax is mainly a continual-learning constraint
 """
-import argparse, json, sys
+
+import argparse
+import json
+import sys
 from pathlib import Path
 
 import torch
@@ -28,7 +31,8 @@ import torch.nn.functional as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import s2_ladder, s6b_difficulty  # noqa: E402
+import s2_ladder
+import s6b_difficulty  # noqa: E402
 
 CACHE = "results/feature_cache/cifar100_vit_b16/feature_cache.pt"
 
@@ -37,7 +41,9 @@ def stack(tasks, split):
     xs, ys, ts = [], [], []
     for t in tasks:
         x, y = t["splits"][split]
-        xs.append(x); ys.append(y); ts.append(torch.full_like(y, t["task_id"]))
+        xs.append(x)
+        ys.append(y)
+        ts.append(torch.full_like(y, t["task_id"]))
     return torch.cat(xs), torch.cat(ys), torch.cat(ts)
 
 
@@ -57,9 +63,11 @@ def fit(model, x, target, epochs, lr, wd, seed):
     for _ in range(epochs):
         perm = torch.randperm(x.size(0), generator=g).to(x.device)
         for i in range(0, x.size(0), 512):
-            idx = perm[i:i + 512]
+            idx = perm[i : i + 512]
             loss = F.cross_entropy(model(x[idx]), target[idx])
-            opt.zero_grad(); loss.backward(); opt.step()
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
     return model.eval()
 
 
@@ -68,9 +76,9 @@ def knn_scores(xtr, ttr, xte, T, k):
     a, b = F.normalize(xtr, dim=-1), F.normalize(xte, dim=-1)
     out = torch.zeros(xte.size(0), T, device=xte.device)
     for i in range(0, xte.size(0), 1024):
-        sim = b[i:i + 1024] @ a.T
+        sim = b[i : i + 1024] @ a.T
         v, idx = sim.topk(k, dim=-1)
-        out[i:i + 1024].scatter_add_(1, ttr[idx], v)
+        out[i : i + 1024].scatter_add_(1, ttr[idx], v)
     return out
 
 
@@ -97,13 +105,25 @@ def run(construct, seed, args, device, base):
     m = fit(nn.Linear(d, C).to(device), xtr, ytr, args.epochs, 1e-3, 1e-4, seed)
     with torch.no_grad():
         res["lin_class"] = class_to_task_scores(F.log_softmax(m(xte), -1), cls2task, T)
-    m = fit(nn.Sequential(nn.Linear(d, 1024), nn.GELU(), nn.Dropout(0.1), nn.Linear(1024, T)).to(device),
-            xtr, ttr, args.epochs, 1e-3, 1e-4, seed)
+    m = fit(
+        nn.Sequential(
+            nn.Linear(d, 1024), nn.GELU(), nn.Dropout(0.1), nn.Linear(1024, T)
+        ).to(device),
+        xtr,
+        ttr,
+        args.epochs,
+        1e-3,
+        1e-4,
+        seed,
+    )
     with torch.no_grad():
         res["mlp_task"] = m(xte)
         train_fit["mlp_task"] = coverage(m(xtr), ttr, 1)
 
-    out = {arm: {"C@1": coverage(sc, tte, 1), "C@3": coverage(sc, tte, 3)} for arm, sc in res.items()}
+    out = {
+        arm: {"C@1": coverage(sc, tte, 1), "C@3": coverage(sc, tte, 3)}
+        for arm, sc in res.items()
+    }
     # Guard: an undertrained probe would fake a "representation-bound" reading.
     out["_train_fit_C@1"] = train_fit
     return out
@@ -124,7 +144,16 @@ def main():
         for seed in map(int, args.seeds.split(",")):
             r = run(construct, seed, args, args.device, base)
             cells.append({"construct": construct, "seed": seed, "arms": r})
-            print(construct, seed, {a: (round(v["C@1"], 4), round(v["C@3"], 4)) for a, v in r.items() if not a.startswith("_")}, r["_train_fit_C@1"])
+            print(
+                construct,
+                seed,
+                {
+                    a: (round(v["C@1"], 4), round(v["C@3"], 4))
+                    for a, v in r.items()
+                    if not a.startswith("_")
+                },
+                r["_train_fit_C@1"],
+            )
 
     # Anchor: proto C@1 must match E0 (0.8195 coherent / 0.7130 dispersed).
     for c in cells:
@@ -132,7 +161,9 @@ def main():
         ref = 0.8195 if c["construct"] == "coherent" else 0.7130
         c["anchor_delta"] = a - ref
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps({"args": vars(args), "cells": cells}, indent=2))
+    Path(args.out).write_text(
+        json.dumps({"args": vars(args), "cells": cells}, indent=2)
+    )
 
 
 if __name__ == "__main__":

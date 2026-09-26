@@ -216,7 +216,7 @@ def locality(before: torch.Tensor, after: torch.Tensor) -> dict:
     flips = int((before.argmax(-1) != after.argmax(-1)).sum())
     return {
         "flip_rate": flips / max(1, before.size(0)),
-        "max_abs_logit_delta": float((after - before).abs().max())
-        if before.numel()
-        else 0.0,
+        "max_abs_logit_delta": (
+            float((after - before).abs().max()) if before.numel() else 0.0
+        ),
     }
