@@ -61,8 +61,12 @@ Pre-registration: [`PTM_CIL_PREREG.md`](PTM_CIL_PREREG.md). Code: built and smok
 `cerata/eval/decomposition.py`, `cerata/data/ptm_benchmarks.py`). What remains is on
 the GPU machine, in this order:
 
-1. Download the processed splits linked from the RevisitingCIL README into `data/ptm/`
-   (check the md5 sums in its issue #5); CIFAR-100 downloads itself.
+1. `python experiments/prepare_ptm_data.py`: downloads the processed splits linked
+   from the RevisitingCIL README (ObjectNet by hand from OneDrive), unpacks them into
+   `data/ptm/`, verifies the class lists and counts, and records the archives' sha256 in
+   `data/ptm/MANIFEST.json`. The README's md5 pointer (its issue #5) was closed
+   without any sums, so that manifest is the integrity record. CIFAR-100 downloads
+   itself.
 2. `uv sync --extra dev --extra ptm`, then per benchmark and backbone:
    `python experiments/extract_ptm_features.py --benchmark <b> --backbone in21k_1k --device cuda`.
 3. Copy SimpleCIL's published accuracy for each benchmark into a dated amendment 1 of
