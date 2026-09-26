@@ -31,15 +31,25 @@ On frozen ImageNet ViT-B/16 features, CIFAR-100 in 20 tasks, unless noted:
 | **Once routing is fixed, the expert bank is redundant** | +0.62 / -0.03 pp over ridge alone, inside the 1 pp SESOI | [`E_TID2_RESULTS.md`](docs/E_TID2_RESULTS.md) |
 | Why: experts convert little of what they own | they rescue ~30 % of rescuable samples and break ~3 % of correct ones; re-grouping moves mass, not conversion | [`P2_BOUND_RESULTS.md`](docs/P2_BOUND_RESULTS.md) |
 
+All of these use torchvision's ImageNet-1K ViT-B/16; the pre-trained-model CIL
+literature uses ImageNet-21K weights and seven standard benchmarks, so none of the
+numbers above is comparable to published tables yet.
+
 What does **not** exist yet: any LM result. The 7B backend and the editing harness are
 built and tested on a tiny random model only; the study is
 [`docs/V3_LLM_PREREG.md`](docs/V3_LLM_PREREG.md) (proposed, not run). The SLOW path
 has no positive result behind it on the vision side (the last two rows).
 
+**Next.** [`docs/POSITIONING.md`](docs/POSITIONING.md) sets out what the literature
+already owns, what is defensible, and the plan: first a pre-registered study of when
+any expert bank - ours, EASE, MOS, MoTE - adds anything over an analytic router on the
+standard benchmarks ([`docs/PTM_CIL_PREREG.md`](docs/PTM_CIL_PREREG.md); code built,
+not run), then the LM study.
+
 ## Quick start
 
 ```bash
-uv sync --extra dev            # or: pip install -e ".[dev]"; add the "lm" extra for the LM backend
+uv sync --extra dev            # or: pip install -e ".[dev]"; extras: "lm" (LM backend), "ptm" (timm)
 ```
 
 ```python

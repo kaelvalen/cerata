@@ -17,6 +17,14 @@ python experiments/<runner>.py --help
 | `v3_api_smoke.py` | `write -> predict -> forget -> predict` through `PalMoE`, every guard; `--synthetic` needs no cache (runs in CI) |
 | `v3_anchors.py` | Re-runs the stored S11 E0, AC3 and E-TID2 cells and reports every delta (V3 section 7) |
 | `v3_etid2_api.py` | E-TID2 through the v3 API; called by `v3_anchors.py` |
+| `v3_lm_cost.py` | Times a guarded MEDIUM write's solve work (accumulate vs woodbury) and projects it to a 7B `d_ff` |
+
+## PTM-CIL (`docs/PTM_CIL_PREREG.md`, proposed, not run)
+
+| Script | Purpose |
+| :-- | :-- |
+| `extract_ptm_features.py` | Frozen timm ViT-B/16 (in21k / in21k_ft_in1k) features for the seven benchmarks, original labels (needs the `ptm` extra) |
+| `ptm_cil.py` | NCM / ridge / RanPAC readouts, our bank and external `ExpertDump`s routed and decomposed, the guarded API arm; `--synthetic` runs in CI |
 
 ## Diagnostic studies after Stage 1 (in the order they were run)
 
