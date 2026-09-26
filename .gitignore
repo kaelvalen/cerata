@@ -64,6 +64,9 @@ weights/
 *.bin
 *.safetensors
 *.onnx
+# ...except the tiny v1 checkpoints the shim tests load
+# (tests/fixtures/make_v1_fixtures.py regenerates them)
+!tests/fixtures/*.pt
 
 # Experiment Tracking & Logs
 logs/
