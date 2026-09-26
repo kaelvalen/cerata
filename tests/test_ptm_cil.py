@@ -341,3 +341,5 @@ def test_prepare_ptm_data_reunpacks_a_replaced_archive(tmp_path):
         man["vtab"]["archive_sha256"]
         == hashlib.sha256(zip_path.read_bytes()).hexdigest()
     )
+    assert man["vtab"]["archive_md5"] == hashlib.md5(zip_path.read_bytes()).hexdigest()
+    assert man["vtab"]["md5_matches_published"] is None  # no sum published for it here
