@@ -146,6 +146,11 @@ sanity           ncm final accuracy within 2 pp of the SimpleCIL number the owne
 feasibility      extraction + all cells projected under 48 h on the RTX 5060 (8 GB)
 ```
 
+The runner enforces the last two: `--simplecil_reference` supplies amendment 1's
+numbers (a benchmark without one fails the sanity veto), and the run stops as soon as
+the per-cell time projects the grid past 48 h. A failed veto writes the record, marked
+`veto_failed`, and prints no result.
+
 ## 6. Statistics
 
 Paired over seeds (`cerata/eval/stats.py`): exact permutation test over the 2^6 sign

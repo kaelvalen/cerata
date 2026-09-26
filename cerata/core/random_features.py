@@ -63,5 +63,9 @@ class RandomProjection:
             raise ValueError(f"expected keys of dim {self.in_dim}, got {z.size(-1)}")
         return ACTIVATIONS[self.activation](z @ self._weight(z.device, z.dtype))
 
+    def nbytes(self) -> int:
+        """Stored bytes of `W` (float32; needed at inference, not trainable)."""
+        return self.W.numel() * self.W.element_size()
+
     def parameter_count(self) -> int:
         return 0  # a fixed buffer

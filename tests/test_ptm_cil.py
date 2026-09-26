@@ -226,3 +226,37 @@ def test_pinned_splits_give_ten_tasks_and_five_for_vtab():
     for name, spec in BENCHMARKS.items():
         n = len(task_increments(spec.num_classes, spec.init_cls, spec.increment))
         assert n == (5 if name == "vtab" else 10), name
+
+
+def test_task_increments_reject_non_positive_steps():
+    for init_cls, inc in ((0, 10), (10, 0), (10, -5)):
+        with pytest.raises(ValueError):
+            task_increments(100, init_cls, inc)
+
+
+def test_storage_counts_the_fixed_projection():
+    fm = RandomProjection(D, M)
+    s = LinearStats(D, C, feature_map=fm)
+    rep = s.storage_bytes()
+    assert rep["feature_map"] == D * M * 4 and rep["total"] >= rep["feature_map"]
+    assert LinearStats(D, C).storage_bytes()["feature_map"] == 0
+
+
+def test_sanity_veto_needs_a_reference_and_a_close_match():
+    sys.path.insert(0, str(ROOT / "experiments"))
+    try:
+        import ptm_cil
+    finally:
+        sys.path.pop(0)
+    cells = [
+        {
+            "benchmark": "cifar100",
+            "backbone": "in21k_1k",
+            "readouts": {"ncm": {"final": a}},
+        }
+        for a in (0.80, 0.82)
+    ]
+    assert not ptm_cil.sanity_veto(cells, None)["cifar100__in21k_1k"]["pass"]
+    ok = ptm_cil.sanity_veto(cells, {"cifar100__in21k_1k": 0.815})
+    far = ptm_cil.sanity_veto(cells, {"cifar100__in21k_1k": 0.85})
+    assert ok["cifar100__in21k_1k"]["pass"] and not far["cifar100__in21k_1k"]["pass"]

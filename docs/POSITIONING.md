@@ -71,7 +71,8 @@ the GPU machine, in this order:
    published config on the same splits, and add a small exporter per method under
    `experiments/external/` that writes an `ExpertDump` (section 8 of the
    pre-registration). Commit the exporters before running them.
-5. `python experiments/ptm_cil.py --benchmarks cifar100,cub,imagenet_r,imagenet_a,objectnet,omnibenchmark,vtab --backbones in21k_1k --external_dir results/ptm_cil/external --api --device cuda`.
+5. `python experiments/ptm_cil.py --benchmarks cifar100,cub,imagenet_r,imagenet_a,objectnet,omnibenchmark,vtab --backbones in21k_1k --external_dir results/ptm_cil/external --simplecil_reference results/ptm_cil/simplecil_reference.json --api --device cuda`
+   (the reference file holds amendment 1's numbers as `{"<benchmark>__<backbone>": accuracy}`).
 6. Write `PTM_CIL_RESULTS.md` against the outcome table, whatever row lands.
 
 Venues: TMLR, CoLLAs, the CLVision workshop; an analysis track at a main conference if
