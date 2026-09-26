@@ -5,6 +5,7 @@
 ```bash
 uv sync --extra dev                 # or: pip install -e ".[dev]"
 uv sync --extra dev --extra lm      # + the LM backend (transformers, accelerate, bitsandbytes)
+uv sync --extra dev --extra ptm     # + timm, for PTM-CIL feature extraction
 ```
 
 `pyproject.toml` is the only dependency source; `uv.lock` pins it. Python >= 3.10.
@@ -14,6 +15,7 @@ uv sync --extra dev --extra lm      # + the LM backend (transformers, accelerate
 ```bash
 .venv/bin/python -m pytest                          # the whole suite
 .venv/bin/python experiments/v3_api_smoke.py --synthetic
+.venv/bin/python experiments/ptm_cil.py --synthetic --seeds 0,1 --api
 ruff check . && black --check .
 ```
 

@@ -11,6 +11,8 @@ literal path `docs/P2_BOUND_PREREG.md`. Do not move them.
 | [`V3_ARCHITECTURE.md`](V3_ARCHITECTURE.md) | The current architecture: one fixed address space, three time scales, the API, the four guards, and a table tracing every design decision to a result |
 | [`DIAGNOSIS_SYNTHESIS.md`](DIAGNOSIS_SYNTHESIS.md) | What Stage 1 and the first two follow-up studies jointly established, frozen before the next pre-registration |
 | [`STAGE1_RESULTS.md`](STAGE1_RESULTS.md) | Every Stage 1 result (E0, S2-S11), the consolidated findings and what the evidence does not say |
+| [`POSITIONING.md`](POSITIONING.md) | What the literature already owns, what is defensible, and the two-paper plan |
+| [`PTM_CIL_PREREG.md`](PTM_CIL_PREREG.md) | Paper A: does any expert bank add anything over an analytic router on the seven standard benchmarks? **Proposed, not run** |
 | [`V3_LLM_PREREG.md`](V3_LLM_PREREG.md) | The first LM study (single-fact learning on a frozen 7B). **Proposed, not run** |
 
 ## Rules and contracts

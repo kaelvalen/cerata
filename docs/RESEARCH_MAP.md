@@ -62,14 +62,25 @@ isolation, P2-BOUND), not the readout.
 | :-- | :-- | :-- | :-- |
 | NCM on frozen pretrained features | Janson et al., "A Simple Baseline that Questions the Use of Pretrained-Models in Continual Learning" (NeurIPS 2022 workshop) | `L0_ncm` in `pal_moe/experts/ladder.py` | S2: 70.34 vs v1 59.30 |
 | Prototype classifier + first-session adaptation | SimpleCIL / APER (Zhou et al., "Revisiting Class-Incremental Learning with Pre-Trained Models", IJCV 2024) | `L0_ncm`; no first-session adaptation arm | S2 |
-| Random projection + continual Gram-matrix ridge | RanPAC (McDonnell et al., NeurIPS 2023) | the ridge half only: `L1_ridge`, `router/ridge_class.py`, `edit/stats.py` (`LinearStats`); **no random-feature expansion** | E-TID2 (ridge 76.77) |
-| Per-task adapters + prototype complement | EASE (Zhou et al., "Expandable Subspace Ensemble", CVPR 2024) | the L3 bank: rank-8 residual adapters per task | S2, S11, P2-BOUND |
+| Random projection + continual Gram-matrix ridge | RanPAC (McDonnell et al., NeurIPS 2023): 92.2 % on CIFAR-100 with PETL | `core/random_features.py` + `LinearStats(feature_map=...)` / `PalMoE(random_features=M)`, with the penalty pinned after task 0 (RanPAC re-selects it per task) | built; `PTM_CIL_PREREG.md` (not run) |
+| Analytic (closed-form) CL: recursive least squares equals joint training | ACIL (Zhuang et al., NeurIPS 2022), DS-AL (AAAI 2024), G-ACIL / GACL (2024) | the MEDIUM path's continual ridge is this statement; E-TID2's G3 guard is its check | E-TID2 G3 |
+| Analytic readout with feature adaptation | AnaCP (NeurIPS 2025 spotlight) | not implemented; the strongest analytic rival for a readout arm | - |
+| Exact, gradient-free continual unlearning | ACU, "Analytic Continual Unlearning" (Zhuang group, 2025) | `forget` as a downdate of the statistics is this idea; our addition is measuring it as a guard | vision guards |
+| Second-order class statistics on frozen features | FeCAM (NeurIPS 2023), LayUP (2023/24) | not implemented | - |
+| CIL = within-task x task-id prediction; task-id ~ OOD detection | Kim et al., "A Theoretical Study on Solving Continual Learning" (NeurIPS 2022) | the routing-tax framing of Stage 1; P2 measures what a bank does given a task-id predictor | Stage 1, P2-BOUND |
+| Per-task adapters + prototype complement | EASE (Zhou et al., "Expandable Subspace Ensemble", CVPR 2024) | the L3 bank: rank-8 residual adapters per task; an external bank in `PTM_CIL_PREREG.md` | S2, S11, P2-BOUND |
+| Task adapters + merging + training-free retrieval | MOS, "Model Surgery" (Sun et al., AAAI 2025) | an external bank in `PTM_CIL_PREREG.md` | - |
+| Mixture of task-specific experts with expert filtering | MoTE (Li et al., Knowledge-Based Systems 2025); Adaptive Expert Forest (2026); Bi-Level Routing MoE (2026); SEMA, self-expansion with mixture of adapters (CVPR 2025) | the MoE-for-PTM-CIL line the P2 decomposition is aimed at; MoTE is an external bank | - |
+| Slow learner + classifier alignment | SLCA / SLCA++ (ICCV 2023 / 2024) | not implemented | - |
 | Prompt selection by query-key matching | L2P (Wang et al., CVPR 2022), DualPrompt (ECCV 2022), CODA-Prompt (Smith et al., CVPR 2023) | not implemented; their key matching is the same selection problem as the router | - |
 
-**Open gap.** RanPAC's random-feature expansion keeps every property the MEDIUM path
-guards (closed form, additive statistics, order invariance, exact downdate) and adds
-capacity without training. It is the natural rival to the expert bank's capacity
-claim and has not been measured here.
+**What is and is not new here.** Continual closed-form ridge (ACIL, RanPAC), exact
+closed-form forgetting (ACU) and task-specific expert banks (EASE, MOS, MoTE) are all
+published. Not published, to the extent of the 2026-09-26 search: a per-sample
+decomposition of what *any* bank adds once routing is analytic (rescue `rho`,
+breakage `beta`, mass `m`), applied across published banks and benchmarks. That is
+`PTM_CIL_PREREG.md`. Known protocol gap: every vision number in this repository so far
+uses an ImageNet-1K ViT-B/16; the literature uses ImageNet-21K weights.
 
 ## 6. Knowledge editing (the v3 LM paths)
 
@@ -80,19 +91,24 @@ claim and has not been measured here.
 | Null-space constrained editing | AlphaEdit (Fang et al., ICLR 2025) | not implemented; the fix to try if the MEDIUM path loses specificity at N = 1000 | - |
 | Memory-based editing with a scope decision | SERAC (Mitchell et al., ICML 2022) | the FAST path: retrieval over frozen keys, the `tau` threshold as the scope decision | tiny-model tests only |
 | Discrete key-value adaptors, deferral radius | GRACE (Hartvigsen et al., NeurIPS 2023) | the FAST path's closest relative: a codebook at one layer, a radius that decides retrieval | - |
-| Side memory with routing, lifelong editing | WISE (Wang et al., NeurIPS 2024) | the same FAST / MEDIUM split, without the guards | - |
+| Side memory with routing, lifelong editing | WISE (Wang et al., NeurIPS 2024); MEMOIR (NeurIPS 2025, +0.13 over WISE at 1000 edits); LEMoE (2024) | the same FAST / MEDIUM split, without the guards | - |
+| Sequential editing at scale | UltraEdit (2025), "Lifelong Knowledge Editing requires Better Regularization" (2025) | the MEDIUM path's regime at N = 1000 | - |
+| Undoing edits | SoLA, reversible lifelong editing by semantic-routing LoRA (2026); OneEdit rollback (2024); "On Reversibility ... in Parametric Knowledge Editing" (2026: reversal is behavioural, not parametric, for existing methods); reversing in-context edits (NAACL 2025) | `forget`: a parametric downdate, fp-close to the never-edited delta and bitwise when the last edit goes - the measurable difference from this line | tiny-model tests only |
 | Learned editors, zsRE evaluation | MEND (Mitchell et al., ICLR 2022) | the zsRE split used by `V3_LLM_PREREG.md` | loaders only |
 | Multi-hop edit evaluation | MQuAKE (Zhong et al., EMNLP 2023) | MQuAKE-CF-3k loader | loaders only |
 | Anisotropy of contextual representations | Ethayarajh (EMNLP-IJCNLP 2019) | the reason a raw-cosine `tau` on LM hidden states needs calibration (`V3_LLM_PREREG.md`, amendment 2) | - |
 
 **Not claimed as novel for v3:** the closed-form edit (MEMIT), retrieval-based
-editing (SERAC / GRACE / WISE), closed-form continual ridge (RanPAC). **Candidate
+editing (SERAC / GRACE / WISE / MEMOIR), closed-form continual ridge (ACIL / RanPAC),
+exact analytic unlearning (ACU), undoable edits as such (SoLA, OneEdit). **Candidate
 contribution, not yet shown:** the guard contract as a system property - every
 `write` / `forget` measured for locality, reversibility and order invariance, with a
 zero-parameter router - at 7B scale (`V3_LLM_PREREG.md`).
 
-Entries in sections 5 and 6 were added on 2026-09-26 from memory; verify authors,
-venues and years against the papers before they enter a bibliography.
+Entries in sections 5 and 6 were located by a web search on 2026-09-26 (arXiv itself
+was not reachable from the review container); verify authors, venues and numbers
+against the papers before they enter a bibliography. `docs/POSITIONING.md` has the
+links.
 
 ## 7. What was claimed for v1 (and what is not)
 
