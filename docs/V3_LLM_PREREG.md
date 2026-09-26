@@ -222,3 +222,26 @@ are unchanged unless a point below is adopted.
    example: locality and reversibility on every call, the permuted-order check on
    every k-th write and at the end of each regime, with k stated). A guard is never
    skipped after the first evaluation case is scored.
+
+### Amendment 2, measurement note (2026-09-26; still proposed, nothing evaluated)
+
+Point 3's estimate is now a measurement, from `experiments/v3_lm_cost.py` on the review
+container (4 CPU threads, float64, synthetic corpus prior; no LM, so canary passes are
+excluded). The code change it motivated is in the same commit: the facade's canary
+order check reused nothing and re-solved the permutation `order_report` had just
+solved (same seed), so a guarded MEDIUM write now does 4 dense solves, not 5.
+
+```text
+dense solve, d_ff = 4096          0.28 s    -> 27 s projected at d_ff = 18944 (x d^3)
+guarded write, accumulate mode    4 solves  -> ~109 s per write at 18944, before canaries
+guarded write, woodbury mode      0.008 s (1 live edit) / 0.92 s (1000 live edits) at 4096
+                                  -> ~0.2 s / ~20 s at 18944 (x d^2), plus a one-time
+                                  C0^-1 of ~90 s (2.9 GB float64)
+```
+
+Reading: in `accumulate` mode the N = 1000 regime alone is ~30 h and the 2000 isolated
+N = 1 writes ~60 h of solves on this CPU, past the 24 h veto before a single canary
+pass. `woodbury` brings the solve side of the whole grid to a few hours. If point 3 is
+adopted, the proposal is to pin `mode="woodbury"` and to re-run this script on the
+study machine (with `--canary_seconds` from one measured canary pass) before pinning
+the guard schedule.
