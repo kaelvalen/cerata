@@ -60,6 +60,10 @@ lm = [
     "accelerate>=1.0.0",
     "bitsandbytes>=0.45.0",
 ]
+# Frozen ViT feature extraction for the PTM-CIL study (experiments/extract_ptm_features.py).
+ptm = [
+    "timm>=1.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/kaelvalen/pal-moe"
