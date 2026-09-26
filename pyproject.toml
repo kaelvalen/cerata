@@ -63,12 +63,13 @@ lm = [
 # Frozen ViT feature extraction for the PTM-CIL study (experiments/extract_ptm_features.py).
 ptm = [
     "timm>=1.0.0",
+    "gdown>=5.0.0",  # experiments/prepare_ptm_data.py: the Google Drive splits
 ]
 
 [project.urls]
-Homepage = "https://github.com/kaelvalen/pal-moe"
-Repository = "https://github.com/kaelvalen/pal-moe.git"
-"Bug Tracker" = "https://github.com/kaelvalen/pal-moe/issues"
+Homepage = "https://github.com/kaelvalen/cerata"
+Repository = "https://github.com/kaelvalen/cerata.git"
+"Bug Tracker" = "https://github.com/kaelvalen/cerata/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

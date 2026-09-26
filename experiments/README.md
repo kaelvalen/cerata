@@ -23,6 +23,7 @@ python experiments/<runner>.py --help
 
 | Script | Purpose |
 | :-- | :-- |
+| `prepare_ptm_data.py` | Download (Google Drive via gdown; ObjectNet by hand from OneDrive), unpack into `data/ptm/`, verify class lists and counts, write `data/ptm/MANIFEST.json` with archive sha256 |
 | `extract_ptm_features.py` | Frozen timm ViT-B/16 (in21k / in21k_ft_in1k) features for the seven benchmarks, original labels (needs the `ptm` extra) |
 | `ptm_cil.py` | NCM / ridge / RanPAC readouts, our bank and external `ExpertDump`s routed and decomposed, the guarded API arm; `--synthetic` runs in CI |
 
