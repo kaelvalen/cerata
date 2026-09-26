@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# CPU wheels: CI never uses a GPU, and the CUDA wheels are several GB.
+env:
+  TORCH_INDEX: https://download.pytorch.org/whl/cpu
+
 jobs:
   lint:
     name: Lint & Format
@@ -17,6 +21,7 @@ jobs:
       with:
         python-version: "3.12"
     - name: Install linters
+      # Same pins as the [dev] extra in pyproject.toml; keep the two in sync.
       run: |
         python -m pip install --upgrade pip
         pip install "ruff==0.16.8" "black==26.5.1"
@@ -41,24 +46,21 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
-    - name: Cache Datasets
-      uses: actions/cache@v4
-      with:
-        path: ./data
-        key: dataset-cache-cifar-mnist-v1
-        restore-keys: |
-          dataset-cache-cifar-mnist-
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
-        pip install pytest-cov
-        pip install -e .
+        pip install torch torchvision --index-url "$TORCH_INDEX"
+        pip install -e ".[dev]"
 
-    - name: Run unit tests with Coverage
+    - name: Install the LM test dependency (one interpreter is enough)
+      if: matrix.python-version == '3.12'
+      run: pip install "transformers>=4.56.0"
+
+    # The whole suite: v1, the S0/S1 contracts, v3, the v1 checkpoint shims and,
+    # on 3.12, the LM backend. Tests that need untracked results/ or data/ skip.
+    - name: Run the test suite with coverage
       run: |
-        pytest --cov=pal_moe --cov-report=xml tests/test_pal_moe.py -v
+        pytest --cov=pal_moe --cov-report=xml -rs
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4
@@ -78,12 +80,12 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.12"
-        
+
     - name: Install build tools
       run: |
         python -m pip install --upgrade pip
         pip install build
-      
+
     - name: Build package distribution
       run: python -m build
 
@@ -107,8 +109,10 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
-        pip install -e .
+        pip install torch torchvision --index-url "$TORCH_INDEX"
+        pip install -e ".[dev]"
+    - name: "v3 API smoke: write -> predict -> forget on synthetic data, every guard"
+      run: python experiments/v3_api_smoke.py --synthetic
     - name: Download MNIST
       run: |
         python - <<'PY'
