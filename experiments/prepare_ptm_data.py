@@ -127,11 +127,23 @@ def split_root(tree: Path) -> Path:
     return min(candidates, key=lambda c: len(c.parts))
 
 
-def unpack(name: str, archive: Path, root: Path) -> Path:
+SOURCE_MARKER = ".cerata_source_sha256"
+
+
+def unpack(name: str, archive: Path, root: Path, archive_sha: str) -> Path:
+    """Unpack unless the target was unpacked from this exact archive (by sha256)."""
     target = root / SOURCES[name][1]
-    if (target / "train").is_dir() and (target / "test").is_dir():
-        print(f"[{name}] already unpacked at {target}")
+    marker = target / SOURCE_MARKER
+    if (
+        (target / "train").is_dir()
+        and (target / "test").is_dir()
+        and marker.is_file()
+        and marker.read_text().strip() == archive_sha
+    ):
+        print(f"[{name}] already unpacked from this archive at {target}")
         return target
+    if target.exists():
+        print(f"[{name}] {target} is missing or from another archive: re-unpacking")
     with tempfile.TemporaryDirectory(dir=root) as tmp:
         print(f"[{name}] unpacking {archive.name} ...")
         shutil.unpack_archive(str(archive), tmp)
@@ -140,6 +152,7 @@ def unpack(name: str, archive: Path, root: Path) -> Path:
         if target.exists():
             shutil.rmtree(target)
         shutil.move(str(src), str(target))
+    marker.write_text(archive_sha + "\n")
     return target
 
 
@@ -202,13 +215,10 @@ def main():
         entry = manifest.get(name, {})
         if not args.verify_only:
             archive = download(name, downloads)
-            if (
-                entry.get("archive_sha256") is None
-                or entry.get("archive") != archive.name
-            ):
-                print(f"[{name}] sha256 of {archive.name} ...")
-                entry.update(archive=archive.name, archive_sha256=sha256(archive))
-            unpack(name, archive, root)
+            print(f"[{name}] sha256 of {archive.name} ...")
+            archive_sha = sha256(archive)  # always: a same-named replacement is caught
+            entry.update(archive=archive.name, archive_sha256=archive_sha)
+            unpack(name, archive, root, archive_sha)
         rep = verify(name, root / SOURCES[name][1])
         entry.update(rep, verified_at=time.strftime("%Y-%m-%dT%H:%M:%S"))
         manifest[name] = entry
