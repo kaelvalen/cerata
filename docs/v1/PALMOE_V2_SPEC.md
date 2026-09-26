@@ -1,10 +1,10 @@
 # PAL-MoE v2 - Technical Specification
 
-> **Superseded (2026-09-26)** as the architecture by `V3_ARCHITECTURE.md`. Kept unchanged as the v2 design record; module paths below predate the v3 move of v1 code into `pal_moe/legacy/`.
+> **Superseded (2026-09-26)** as the architecture by `../V3_ARCHITECTURE.md`. Kept unchanged as the v2 design record; module paths below predate the v3 move of v1 code into `pal_moe/legacy/`.
 
 Status: design freeze for implementation. Written 2026-09-23 against commit
 `0fe6614`. Companion to `BENCHMARK.md` (v1 protocol and design facts),
-`RESEARCH_MAP.md` (literature lineage) and `CODE_REVIEW.md` (refactor
+`../RESEARCH_MAP.md` (literature lineage) and `CODE_REVIEW.md` (refactor
 backlog).
 
 This document is a *plan*. It does not change any v1 behaviour. The paper run
@@ -40,7 +40,7 @@ Concretely, v2 replaces:
 | 10+ loss terms | 3 core terms (+1 opt-in ablation) |
 
 The novelty claim is not any single component (all have prior art, see
-`RESEARCH_MAP.md`). It is the combination: **expansion-safe residual routing +
+`../RESEARCH_MAP.md`). It is the combination: **expansion-safe residual routing +
 derived soft responsibility + counterfactual allocation + function-space
 lifecycle under an explicit byte budget**, evaluated on a budget-conditioned
 Pareto front rather than on expert count.
@@ -180,7 +180,7 @@ warning in `_distill_router_anchors`.
 
 Plasticity enters only through `A_i`. That is the architectural statement of
 the stability/plasticity split (infrastructure, not novelty - DEMM 2026 uses
-the same slow/fast idea; see `RESEARCH_MAP.md` section 3).
+the same slow/fast idea; see `../RESEARCH_MAP.md` section 3).
 
 ### 2.2 Expert = residual adapter
 
