@@ -58,7 +58,7 @@ import torch  # noqa: E402
 import s2_ladder  # noqa: E402
 import s6b_difficulty  # noqa: E402
 import s9_corruptions as shifts  # noqa: E402
-from pal_moe.evaluation.schema import build_run_record, satisfied_blocks  # noqa: E402
+from cerata.eval.schema import build_run_record, satisfied_blocks  # noqa: E402
 
 SOURCE_CACHE = "results/feature_cache/cifar100_vit_b16/feature_cache.pt"
 CLEAN = "clean"

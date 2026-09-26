@@ -1,7 +1,7 @@
 """
 E-TID2 through the v3 API (phase 2 of the restructure; no new claim).
 
-The same cells as `e_tid2_ridge_router.py`, but every step goes through `PalMoE`:
+The same cells as `e_tid2_ridge_router.py`, but every step goes through `Cerata`:
 
     write(Batch(task t))  x 20    MEDIUM path: float64 additive ridge statistics
     consolidate("by_arrival")     SLOW path: the L3 bank, via the moved ladder code
@@ -21,10 +21,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch  # noqa: E402
 
-from pal_moe.api import Batch, GuardConfig, PalMoE  # noqa: E402
-from pal_moe.core.constructions import build_construction  # noqa: E402
-from pal_moe.edit import LinearStats, one_hot  # noqa: E402
-from pal_moe.router import PrototypeTaskRouter  # noqa: E402
+from cerata.api import Batch, Cerata, GuardConfig  # noqa: E402
+from cerata.core.constructions import build_construction  # noqa: E402
+from cerata.edit import LinearStats, one_hot  # noqa: E402
+from cerata.router import PrototypeTaskRouter  # noqa: E402
 
 
 def canary_set(tasks, device, per_task: int = 10):
@@ -37,7 +37,7 @@ def run_cell(regime, seed, args, device, base):
     tasks = build_construction(base, regime)
     T, dim = len(tasks), int(tasks[0]["splits"]["train"][0].size(1))
     C = sum(len(t["classes"]) for t in tasks)
-    model = PalMoE(
+    model = Cerata(
         dim,
         C,
         router="ridge_class",

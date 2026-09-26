@@ -18,7 +18,7 @@ Fixed across every level: the feature cache (byte-identical tensors), the task
 partition, the class order, the training budget, the evaluation protocol and
 the memory quota. `--seed` is the only axis.
 
-Everything is composed through the S1 registries (`pal_moe.arch`), so the ladder
+Everything is composed through the S1 registries (`cerata.arch`), so the ladder
 is a config rather than a branch in a training loop, and every row emits an S0
 measurement-contract record.
 
@@ -41,7 +41,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 import torch
 
-from pal_moe.arch import (  # noqa: F401  (re-exported)
+from cerata.arch import (  # noqa: F401  (re-exported)
     PrototypeRouter,
     build_expert,
     build_readout,
@@ -52,9 +52,9 @@ from pal_moe.arch import (  # noqa: F401  (re-exported)
 
 # Moved to the package in the v3 restructure (phase 1). Re-exported here so every
 # runner that does `s2_ladder.X` keeps working unchanged; these are the same objects.
-from pal_moe.core.features import iter_batches, load_tasks, set_seed  # noqa: E402,F401
-from pal_moe.evaluation.schema import build_run_record, satisfied_blocks
-from pal_moe.experts.ladder import (  # noqa: E402,F401
+from cerata.core.features import iter_batches, load_tasks, set_seed  # noqa: E402,F401
+from cerata.eval.schema import build_run_record, satisfied_blocks
+from cerata.experts.ladder import (  # noqa: E402,F401
     CLOSED_FORM_READOUTS,
     LADDER,
     LEVELS_BY_NAME,

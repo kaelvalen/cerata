@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from pal_moe.evaluation.schema import (
+from cerata.eval.schema import (
     BLOCK_FIELDS,
     BLOCKS,
     aggregate_runs,

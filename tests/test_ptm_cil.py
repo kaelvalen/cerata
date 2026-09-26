@@ -9,18 +9,18 @@ import numpy as np
 import pytest
 import torch
 
-from pal_moe.api import Batch, PalMoE
-from pal_moe.core.hashing import digest
-from pal_moe.core.random_features import RandomProjection
-from pal_moe.data.ptm_benchmarks import (
+from cerata.api import Batch, Cerata
+from cerata.core.hashing import digest
+from cerata.core.random_features import RandomProjection
+from cerata.data.ptm_benchmarks import (
     BENCHMARKS,
     class_order,
     split_tasks,
     stream_test_order,
     task_increments,
 )
-from pal_moe.edit import LinearStats, one_hot, select_ridge
-from pal_moe.eval.decomposition import ExpertDump, decompose, p2_decomposition
+from cerata.edit import LinearStats, one_hot, select_ridge
+from cerata.eval.decomposition import ExpertDump, decompose, p2_decomposition
 
 ROOT = Path(__file__).resolve().parents[1]
 D, C, M = 12, 6, 96
@@ -94,7 +94,7 @@ def test_select_ridge_is_deterministic_and_on_the_grid():
 
 def test_palmoe_with_random_features_passes_every_guard():
     bs = _batches(3, n=30)
-    m = PalMoE(dim=D, num_classes=C, random_features=M, canary=torch.randn(20, D))
+    m = Cerata(dim=D, num_classes=C, random_features=M, canary=torch.randn(20, D))
     recs = [m.write(Batch(z, y, task=i)) for i, (z, y) in enumerate(bs)]
     for r in recs:
         assert r.order_report["pass"] and r.reversibility_report["pass"]

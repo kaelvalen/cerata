@@ -2,8 +2,8 @@
 
 Status: **proposed, not run.** The runner (`experiments/ptm_cil.py`), the feature
 extractor (`experiments/extract_ptm_features.py`), the benchmark protocol
-(`pal_moe/data/ptm_benchmarks.py`) and the decomposition
-(`pal_moe/eval/decomposition.py`) are committed with this document and pass a synthetic
+(`cerata/data/ptm_benchmarks.py`) and the decomposition
+(`cerata/eval/decomposition.py`) are committed with this document and pass a synthetic
 smoke (`tests/test_ptm_cil.py`); no benchmark feature has been extracted and no number
 below exists. The owner approves or amends this document, in a dated amendment, before
 the first real cell runs.
@@ -25,7 +25,7 @@ benchmark on a backbone the literature does not use.
 Relation to prior work. Kim et al. (NeurIPS 2022) decompose CIL into within-task and
 task-id prediction and show both are necessary and sufficient; this study measures,
 per sample, what a bank does **conditional on** a given task-id predictor: the P2
-identity (`pal_moe/eval/decomposition.py`). The readouts are the published frozen-feature
+identity (`cerata/eval/decomposition.py`). The readouts are the published frozen-feature
 baselines: SimpleCIL (Zhou et al., IJCV 2024), ACIL-style closed-form ridge, and RanPAC
 without PETL (McDonnell et al., NeurIPS 2023). Nothing here claims a new readout.
 
@@ -38,7 +38,7 @@ in21k_1k   vit_base_patch16_224.augreg_in21k_ft_in1k    primary (timm 0.6's vit_
 in21k      vit_base_patch16_224.augreg_in21k             secondary
 ```
 
-**Benchmarks and protocol** (`pal_moe/data/ptm_benchmarks.py`, mirroring LAMDA-PILOT):
+**Benchmarks and protocol** (`cerata/data/ptm_benchmarks.py`, mirroring LAMDA-PILOT):
 the processed splits linked from the RevisitingCIL repository; class order
 `np.random.seed(1993); permutation(C)`, identity for VTAB; the evaluation transform
 `Resize(256, bicubic) -> CenterCrop(224) -> ToTensor()` without normalisation, for train
@@ -92,7 +92,7 @@ forced expert/task, per test sample, plus its own native prediction.
 the readout's argmax class; the system prediction is the bank's prediction under that
 task.
 
-**The API arm** (`--api`). The `rp` readout also runs through `PalMoE` (one guarded
+**The API arm** (`--api`). The `rp` readout also runs through `Cerata` (one guarded
 `write` per task, `random_features=10000`), and the last task is forgotten at the end.
 It records the four guard reports and the wall time per write.
 
@@ -135,7 +135,7 @@ Read in order; the first matching row is the reading.
 identity         max |m*rho + P(!r,!tau)*rho' - P(r)*beta - P2| <= 1e-12, every cell
 premise          r_not_tau = 0 (a right class implies its owner task), every cell
 dump order       every ExpertDump's y equals the cache's task-concatenated test labels
-api              rp through PalMoE: argmax identical, max |d logit| <= 1e-8 vs direct
+api              rp through Cerata: argmax identical, max |d logit| <= 1e-8 vs direct
 guards           every write passes reversibility, order invariance and purity; the
                  final forget passes
 ridge            penalties selected on task 0 only (recorded per cell)
@@ -148,7 +148,7 @@ feasibility      extraction + all cells projected under 48 h on the RTX 5060 (8 
 
 ## 6. Statistics
 
-Paired over seeds (`pal_moe/eval/stats.py`): exact permutation test over the 2^6 sign
+Paired over seeds (`cerata/eval/stats.py`): exact permutation test over the 2^6 sign
 flips, per (bank, benchmark); Holm across the seven benchmarks within a bank; TOST at
 +/-1 pp for the redundancy reading. Secondary endpoints are reported with seed-level
 intervals and read together, not tested.
@@ -163,7 +163,7 @@ intervals and read together, not tested.
 
 ## 8. Exporting an external bank
 
-An `ExpertDump` (`pal_moe/eval/decomposition.py`) is an `.npz` named
+An `ExpertDump` (`cerata/eval/decomposition.py`) is an `.npz` named
 `{method}__{benchmark}__{backbone}__seed{seed}.npz` with
 
 ```text
@@ -174,7 +174,7 @@ native_pred    [N]     the bank's own prediction with its own routing
 meta           JSON: method, repository commit, config, seed
 ```
 
-Rows must follow `pal_moe.data.ptm_benchmarks.stream_test_order(...)`: task by task,
+Rows must follow `cerata.data.ptm_benchmarks.stream_test_order(...)`: task by task,
 original ImageFolder order within a task. "Forced to expert t" means, per method: EASE -
 the classifier on the features of adapter t only; MOS - the adapter retrieval replaced
 by adapter t; MoTE - the expert filter replaced by expert t alone. Each exporter is a

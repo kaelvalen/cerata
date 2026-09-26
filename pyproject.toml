@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pal-moe"
-version = "0.1.0"
-description = "Prototype-Anchored Lifelong Mixture of Experts (PAL-MoE) for Continual Learning"
+name = "cerata"
+version = "0.2.0"
+description = "CERATA: closed-form, exactly reversible, auditable learning after deployment (formerly PAL-MoE)"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
@@ -17,11 +17,11 @@ maintainers = [
 requires-python = ">=3.10"
 keywords = [
     "continual-learning",
-    "lifelong-learning",
-    "mixture-of-experts",
-    "moe",
-    "catastrophic-forgetting",
-    "deep-learning",
+    "class-incremental-learning",
+    "knowledge-editing",
+    "machine-unlearning",
+    "closed-form",
+    "pre-trained-models",
     "pytorch",
 ]
 classifiers = [
@@ -53,7 +53,7 @@ dev = [
     "ruff==0.16.8",
     "black==26.5.1",
 ]
-# The v3 LM backend (pal_moe.core.hf_lm): `dtype=` in from_pretrained needs
+# The v3 LM backend (cerata.core.hf_lm): `dtype=` in from_pretrained needs
 # transformers >= 4.56; 4-bit loading needs bitsandbytes and device_map accelerate.
 lm = [
     "transformers>=4.56.0",
@@ -72,11 +72,11 @@ Repository = "https://github.com/kaelvalen/pal-moe.git"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["pal_moe*"]
+include = ["cerata*", "pal_moe"]
 
 # The lint target stays py39 on purpose: it keeps the syntax a subset of what
 # 3.10 accepts without rewriting ~190 annotations and zip() calls in
-# pal_moe/legacy, whose behaviour is frozen bitwise.
+# cerata/legacy, whose behaviour is frozen bitwise.
 [tool.black]
 line-length = 88
 target-version = ["py39"]
@@ -84,7 +84,7 @@ target-version = ["py39"]
 [tool.ruff]
 line-length = 88
 target-version = "py39"
-src = ["pal_moe", "experiments", "tests"]
+src = ["cerata", "pal_moe", "experiments", "tests"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "W", "I", "B", "UP"]
@@ -94,7 +94,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["pal_moe"]
+known-first-party = ["cerata", "pal_moe"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
