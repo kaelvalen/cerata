@@ -48,10 +48,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch
 
-from pal_moe.arch import build_projected_backbone, describe
-from pal_moe.data.feature_cache import build_feature_cache, save_feature_cache
-from pal_moe.data.split_cifar import get_split_cifar10_tasks
-from pal_moe.data.split_cifar100 import get_split_cifar100_tasks
+from cerata.arch import build_projected_backbone, describe
+from cerata.data.feature_cache import build_feature_cache, save_feature_cache
+from cerata.data.split_cifar import get_split_cifar10_tasks
+from cerata.data.split_cifar100 import get_split_cifar100_tasks
 
 # The normalisation each splitter applies. The ViT path undoes it, so a
 # backbone factory that does not forward it double-normalises (S3 measured the

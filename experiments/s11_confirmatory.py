@@ -50,7 +50,7 @@ import torch  # noqa: E402
 import s2_ladder  # noqa: E402
 import s6b_difficulty  # noqa: E402
 import s10_scaling  # noqa: E402
-from pal_moe.evaluation.schema import build_run_record, satisfied_blocks  # noqa: E402
+from cerata.eval.schema import build_run_record, satisfied_blocks  # noqa: E402
 
 SOURCE_CACHE = "results/feature_cache/cifar100_vit_b16/feature_cache.pt"
 TINY_CACHE = "results/s4/cache_tinyimagenet/feature_cache.pt"
@@ -146,8 +146,8 @@ def _base_tasks(cell: dict, source_cache: dict):
     return s10_scaling.build_tasks(entry["store"], cell["construct"], cell["num_tasks"])
 
 
-# Moved to `pal_moe.experts.ladder` in the v3 restructure (phase 1); re-exported.
-from pal_moe.experts.ladder import evaluate, train_model  # noqa: E402,F401
+# Moved to `cerata.experts.ladder` in the v3 restructure (phase 1); re-exported.
+from cerata.experts.ladder import evaluate, train_model  # noqa: E402,F401
 
 
 def run_cell(cell: dict, args, device, source_cache: dict) -> dict:
@@ -164,10 +164,10 @@ def run_cell(cell: dict, args, device, source_cache: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# small-sample statistics: moved to `pal_moe.eval.stats` (v3 restructure, phase 1)
+# small-sample statistics: moved to `cerata.eval.stats` (v3 restructure, phase 1)
 # ---------------------------------------------------------------------------
 
-from pal_moe.eval.stats import (  # noqa: E402,F401
+from cerata.eval.stats import (  # noqa: E402,F401
     holm,
     paired_stats,
     signed_rank_statistic,

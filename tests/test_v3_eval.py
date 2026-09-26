@@ -5,7 +5,7 @@ import json
 import pytest
 import torch
 
-from pal_moe.eval.editing import (
+from cerata.eval.editing import (
     counterfact_scores,
     load_canary,
     load_counterfact,
@@ -92,7 +92,7 @@ def test_counterfact_metrics_with_a_fake_scorer(tmp_path):
 
 
 def test_multihop_and_locality():
-    from pal_moe.eval.editing import EditCase, MultiHopCase
+    from cerata.eval.editing import EditCase, MultiHopCase
 
     mh = MultiHopCase(
         "1", [EditCase("1.0", "p", " x")], ["q1", "q2"], "Lima", ["Reyes"]

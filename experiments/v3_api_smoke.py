@@ -21,15 +21,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch  # noqa: E402
 
-from pal_moe.api import Batch, Example, PalMoE  # noqa: E402
+from cerata.api import Batch, Cerata, Example  # noqa: E402
 
 CACHE = "results/feature_cache/cifar100_vit_b16/feature_cache.pt"
 
 
 def data(synthetic: bool):
     if not synthetic and Path(CACHE).exists():
-        from pal_moe.core.constructions import build_construction
-        from pal_moe.core.features import load_tasks
+        from cerata.core.constructions import build_construction
+        from cerata.core.features import load_tasks
 
         _, base = load_tasks(CACHE)
         tasks = build_construction(base, "coherent")[:5]
@@ -58,7 +58,7 @@ def main():
     # The canary must be disjoint from what the smoke writes: the training split's
     # first 20 rows per task (the test sample written below is never among them).
     canary = torch.cat([tr[0][:20] for tr, _, _ in tasks])
-    model = PalMoE(dim, C, router="ridge_class", canary=canary, device=args.device)
+    model = Cerata(dim, C, router="ridge_class", canary=canary, device=args.device)
     for tr, _, t in tasks:
         rec = model.write(Batch(*tr, task=t))
         assert rec.reversibility_report["pass"], rec.reversibility_report

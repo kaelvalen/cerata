@@ -7,14 +7,14 @@ All CPU, synthetic, seconds. The anchor re-runs (GPU, stored JSONs) live in
 import pytest
 import torch
 
-from pal_moe.address import ExactCosineIndex
-from pal_moe.api import Batch, Example, GuardConfig, GuardViolation, PalMoE
-from pal_moe.arch import RidgeReadout
-from pal_moe.core.hashing import digest
-from pal_moe.edit import LinearStats, one_hot
-from pal_moe.experts import PolicyGateError, by_arrival, by_confusion, check_gate
-from pal_moe.memory import FastMemory
-from pal_moe.router import RidgeClassRouter, RouterPurityError, assert_pure
+from cerata.address import ExactCosineIndex
+from cerata.api import Batch, Cerata, Example, GuardConfig, GuardViolation
+from cerata.arch import RidgeReadout
+from cerata.core.hashing import digest
+from cerata.edit import LinearStats, one_hot
+from cerata.experts import PolicyGateError, by_arrival, by_confusion, check_gate
+from cerata.memory import FastMemory
+from cerata.router import RidgeClassRouter, RouterPurityError, assert_pure
 
 D, C = 16, 6
 
@@ -193,7 +193,7 @@ def test_by_confusion_is_gated_and_recovers_blocks():
 
 def _model(**kw):
     canary, _ = _blobs(seed=77, n_per=5)
-    return PalMoE(D, C, canary=canary, guards=GuardConfig(**kw.pop("guards", {})), **kw)
+    return Cerata(D, C, canary=canary, guards=GuardConfig(**kw.pop("guards", {})), **kw)
 
 
 def test_api_write_predict_forget_predict_is_bitwise():
@@ -301,7 +301,7 @@ def test_api_prototype_router_from_log():
 
 
 def test_cross_fitted_confusion_uses_held_out_predictions():
-    from pal_moe.experts.policies import cross_fitted_confusion
+    from cerata.experts.policies import cross_fitted_confusion
 
     x, y = _blobs(seed=1, spread=2.0)  # overlapping classes: some confusion
     conf = cross_fitted_confusion(x, y, C, folds=5, seed=0)

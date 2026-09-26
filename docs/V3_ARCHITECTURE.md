@@ -1,4 +1,8 @@
-# PAL-MoE v3: one fixed address space, three time scales
+# CERATA (v3): one fixed address space, three time scales
+
+The package is `cerata` since 2026-09-26 (the project was PAL-MoE; `pal_moe` remains as
+a compatibility package, section 5). Sections 6-7 record the restructure as it was
+measured, when the package was still named `pal_moe`.
 
 Status: **implemented (phases 0-5 of the v3 restructure, 2026-09-26), no new
 scientific claim.** Supersedes `v1/PALMOE_V2_SPEC.md` as the architecture; extends the
@@ -49,7 +53,7 @@ written task, the Stage 1 behaviour, the control) and `by_confusion` (spectral
 clustering of the router's confusion matrix, balanced; experimental, refuses to run
 unless `P2_BOUND_PREREG.md` is named).
 
-**Readout.** The S1 registry (`readout/`, same objects as `pal_moe.arch.readouts`).
+**Readout.** The S1 registry (`readout/`, same objects as `cerata.arch.readouts`).
 The medium path's ridge is a separate float64 implementation (`edit/stats.py`); the
 float32 `RidgeReadout` is kept for bitwise reproduction of stored results.
 
@@ -77,9 +81,9 @@ last edit removes the hook and restores the base model bitwise.
 ## 3. The API
 
 ```python
-from pal_moe.api import PalMoE, Batch, Example
+from cerata.api import Cerata, Batch, Example
 
-model = PalMoE(dim=768, num_classes=100, router="ridge_class", canary=canary_feats)
+model = Cerata(dim=768, num_classes=100, router="ridge_class", canary=canary_feats)
 rec  = model.write(Batch(z, y, task=0))    # MEDIUM -> EditRecord
 rec  = model.write(Example(z1, 7))         # FAST   -> EditRecord
 model.forget(rec.id)                       # exact: memory delete / statistics removal
@@ -97,8 +101,8 @@ st   = model.state()                       # StateHash(base_hash, ordered edit l
 | `predict(x)` | `Prediction(labels, logits, expert_ids, expert_scores, source, memory_hits, medium_labels)` |
 | `state()` | `StateHash(base_hash, edits, digest)` |
 
-The LM facade (`pal_moe.api.lm.PalMoELM`) has the same calls over
-`pal_moe.core.hf_lm.HFCausalLM`: `write("a sentence")` is a FAST memory row
+The LM facade (`cerata.api.lm.CerataLM`) has the same calls over
+`cerata.core.hf_lm.HFCausalLM`: `write("a sentence")` is a FAST memory row
 (retrieved into the context), `write(Batch(prompts, targets))` a MEDIUM down-projection
 edit; its `consolidate` is declared and raises (the LM slow path is not built).
 
@@ -111,23 +115,23 @@ edit; its `consolidate` is declared and raises (the LM slow path is not built).
 | 3 | **Order invariance** | the accumulator vs the live contributions re-summed in a seeded random permutation: max\|dW\| <= `tolerance`, canary argmax identical. A corrupted accumulator fails it (tested) | roll back, raise |
 | 4 | **Router purity** | trainable scalars reachable from the router == 0 (inspects the object, not its self-report) | raise |
 
-Implementation: `pal_moe/api/guards.py` (`GuardedEditor`), shared by the vision and LM
+Implementation: `cerata/api/guards.py` (`GuardedEditor`), shared by the vision and LM
 facades.
 
 ## 5. Package layout
 
 ```text
-pal_moe/
+cerata/
   core/        backbones (FrozenFeatureBackbone, FrozenModuleBackbone), hf_lm (HF causal LM
                with hidden-state / down-proj hooks), features + constructions (moved from
                the runners), hashing
   address/     ExactCosineIndex (parameter-free retrieval)
   router/      prototype, ridge_class, the purity guard
-  memory/      FastMemory (fast path); prototype_memory / generative are v1 aliases
+  memory/      FastMemory (fast path); the v1 prototype memory is in legacy/
   edit/        LinearStats (float64 accumulator, downdate); DownProjEdit (LM, corpus prior)
   experts/     ladder (the Stage 1 bank, moved), policies (by_arrival, by_confusion)
-  readout/     the S1 readout registry (same objects as pal_moe.arch.readouts)
-  api/         PalMoE, PalMoELM, GuardedEditor, records
+  readout/     the S1 readout registry (same objects as cerata.arch.readouts)
+  api/         Cerata, CerataLM, GuardedEditor, records
   eval/        metrics, schema (measurement contract), stats (moved from s11), editing
                (CounterFact / zsRE / MQuAKE / canary harness)
   legacy/      v1 modules, behaviour frozen bitwise
@@ -139,18 +143,23 @@ Moved code and its shims:
 
 | moved from | to | shim |
 | :-- | :-- | :-- |
-| `experiments/s2_ladder.py` (LevelSpec, LADDER, LEVELS_BY_NAME, CLOSED_FORM_READOUTS, LadderModel, forward_transfer, `_entropy`) | `pal_moe/experts/ladder.py` | re-exported by `s2_ladder` |
-| `experiments/s2_ladder.py` (load_tasks, iter_batches, set_seed) | `pal_moe/core/features.py` | re-exported by `s2_ladder` |
-| `experiments/s11_confirmatory.py` (paired_stats, signed_rank_statistic, westfall_young, tost, holm) | `pal_moe/eval/stats.py` | re-exported by `s11_confirmatory` |
-| `experiments/s11_confirmatory.py` (train_model, evaluate) | `pal_moe/experts/ladder.py` | re-exported by `s11_confirmatory` |
-| `experiments/s6b_difficulty.py` (superclass_of, args_data_dir, build_construction, separability) | `pal_moe/core/constructions.py` | re-exported by `s6b_difficulty` |
-| `pal_moe/evaluation/*` | `pal_moe/eval/*` | `sys.modules` alias package |
-| `pal_moe/{models,adaptation,baselines,builder,trigger}` | `pal_moe/legacy/...` | `sys.modules` alias packages |
-| `pal_moe/{factory,merge,persistence}.py`, `pal_moe/memory/{prototype_memory,generative}.py` | `pal_moe/legacy/...` | `sys.modules` alias modules |
+| `experiments/s2_ladder.py` (LevelSpec, LADDER, LEVELS_BY_NAME, CLOSED_FORM_READOUTS, LadderModel, forward_transfer, `_entropy`) | `cerata/experts/ladder.py` | re-exported by `s2_ladder` |
+| `experiments/s2_ladder.py` (load_tasks, iter_batches, set_seed) | `cerata/core/features.py` | re-exported by `s2_ladder` |
+| `experiments/s11_confirmatory.py` (paired_stats, signed_rank_statistic, westfall_young, tost, holm) | `cerata/eval/stats.py` | re-exported by `s11_confirmatory` |
+| `experiments/s11_confirmatory.py` (train_model, evaluate) | `cerata/experts/ladder.py` | re-exported by `s11_confirmatory` |
+| `experiments/s6b_difficulty.py` (superclass_of, args_data_dir, build_construction, separability) | `cerata/core/constructions.py` | re-exported by `s6b_difficulty` |
+| `pal_moe/evaluation/*` | `cerata/eval/*` | `pal_moe.evaluation` alias |
+| `pal_moe/{models,adaptation,baselines,builder,trigger}` | `cerata/legacy/...` | `pal_moe.<name>` aliases |
+| `pal_moe/{factory,merge,persistence}.py`, `pal_moe/memory/{prototype_memory,generative}.py` | `cerata/legacy/...` | `pal_moe.<name>` aliases |
+| every other `pal_moe.X` (the 2026-09-26 rename) | `cerata.X` | `pal_moe.X` alias |
 
-An alias shim makes the old dotted name *be* the new module object, so a class is
-never duplicated and a monkeypatch through either name is seen through both
-(`pal_moe/legacy/_alias.py`; asserted in `tests/test_v3_anchors.py`).
+The `pal_moe` package (`pal_moe/__init__.py`) makes every old dotted name *be* the new
+module object (`sys.modules`), so a class is never duplicated, a monkeypatch through
+either name is seen through both, and a checkpoint pickled under the old names
+unpickles to the current classes. The only non-identity is `pal_moe.memory`, a
+forwarding module exposing both the v3 FAST memory and the v1 prototype memory it used
+to hold. Asserted in `tests/test_v3_anchors.py` against checkpoints written by the
+stage1-final code.
 
 ## 6. Decision -> evidence
 

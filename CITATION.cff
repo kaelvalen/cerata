@@ -1,18 +1,18 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "PAL-MoE: Prototype-Anchored Lifelong Mixture of Experts"
+title: "CERATA: closed-form, exactly reversible, auditable learning after deployment (formerly PAL-MoE)"
 authors:
   - family-names: "Hakbilen"
     given-names: "Mehmet Arda"
     email: "mehmetardahakbilen2005@gmail.com"
-version: 0.1.0
+version: 0.2.0
 date-released: 2026-09-13
 url: "https://github.com/kaelvalen/pal-moe"
 repository-code: "https://github.com/kaelvalen/pal-moe"
 keywords:
   - continual-learning
-  - mixture-of-experts
-  - lifelong-learning
-  - catastrophic-forgetting
+  - class-incremental-learning
+  - knowledge-editing
+  - machine-unlearning
   - pytorch
 license: MIT

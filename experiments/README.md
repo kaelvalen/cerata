@@ -1,6 +1,6 @@
 # Experiments index
 
-The runners orchestrate `pal_moe/`; they do not contain method logic. Every study
+The runners orchestrate `cerata/`; they do not contain method logic. Every study
 runner names its pre-registration in its docstring, was committed before it was run
 (E-TID and E-TID2 are the recorded exceptions), and writes its JSON under `results/`
 (untracked: a fresh clone re-runs the runner).
@@ -14,7 +14,7 @@ python experiments/<runner>.py --help
 
 | Script | Purpose |
 | :-- | :-- |
-| `v3_api_smoke.py` | `write -> predict -> forget -> predict` through `PalMoE`, every guard; `--synthetic` needs no cache (runs in CI) |
+| `v3_api_smoke.py` | `write -> predict -> forget -> predict` through `Cerata`, every guard; `--synthetic` needs no cache (runs in CI) |
 | `v3_anchors.py` | Re-runs the stored S11 E0, AC3 and E-TID2 cells and reports every delta (V3 section 7) |
 | `v3_etid2_api.py` | E-TID2 through the v3 API; called by `v3_anchors.py` |
 | `v3_lm_cost.py` | Times a guarded MEDIUM write's solve work (accumulate vs woodbury) and projects it to a 7B `d_ff` |
@@ -58,7 +58,7 @@ to the address, then to task identity.
 | Script | Stage |
 | :-- | :-- |
 | `e0_representation_ceiling.py` | E0: representation ceiling and adapter headroom on cached features |
-| `s2_ladder.py` | S2: the complexity ladder under one fixed recipe (the shared ladder code now lives in `pal_moe/experts/ladder.py`) |
+| `s2_ladder.py` | S2: the complexity ladder under one fixed recipe (the shared ladder code now lives in `cerata/experts/ladder.py`) |
 | `s3_run.py`, `s3_backbones.py`, `s3_report.py`, `s3_check_vit_features.py` | S3: backbone generalization (driver, per-backbone cache, table, ViT-feature regression check) |
 | `s4_datasets.py` | S4: dataset generalization |
 | `s5_protocols.py`, `s5b_domains.py` | S5: Class-IL vs Task-IL; S5b: Domain-IL |
@@ -67,7 +67,7 @@ to the address, then to task identity.
 | `s8_budget.py`, `s8_report.py` | S8: what a capacity / memory budget buys, per routing regime |
 | `s9_corruptions.py`, `s9_robustness.py` | S9: controlled shifts and whether the decomposition survives them |
 | `s10_scaling.py` | S10: bank capacity vs candidate count |
-| `s11_confirmatory.py` | S11: the pre-registered confirmatory tests (paired stats now in `pal_moe/eval/stats.py`) |
+| `s11_confirmatory.py` | S11: the pre-registered confirmatory tests (paired stats now in `cerata/eval/stats.py`) |
 
 ## v1 benchmark (the published v1 record, `docs/v1/BENCHMARK.md`, `docs/v1/README.md`)
 
@@ -85,7 +85,7 @@ Tools:
 | `plot_results.py` | Standalone figure generation for single/multi-seed JSONs |
 | `measure_latency.py` | Per-sample forward latency (batch 1/128) for the runner geometries |
 | `diagnose_checkpoint.py` | Per-task expert-accuracy / routing-share diagnosis (router vs expert bottleneck) |
-| `debug_routing_asymmetry.py` | Early routing-funnel dump; its `results/routing_asymmetry_debug.json` is cited in `pal_moe/legacy/adaptation/ttt.py` |
+| `debug_routing_asymmetry.py` | Early routing-funnel dump; its `results/routing_asymmetry_debug.json` is cited in `cerata/legacy/adaptation/ttt.py` |
 | `merge_experts.py` | Merge trained experts into one serving head (soup / TIES / task arithmetic) |
 | `repair_missing_rows.py` | Merge a single-method re-run into existing per-seed JSONs (dry run by default) |
 | `prepare_tiny_imagenet.py` | Flatten the official Tiny-ImageNet train layout into an ImageFolder tree (symlinks) |

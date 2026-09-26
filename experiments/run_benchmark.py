@@ -27,36 +27,36 @@ import torch
 import torch.nn as nn
 from tabulate import tabulate
 
-from pal_moe.adaptation.ttt import ContinualTrainer
-from pal_moe.baselines.agem import AGEM
-from pal_moe.baselines.der import DERPP, ERACE
-from pal_moe.baselines.ewc import EWC
-from pal_moe.baselines.icarl import ICaRL
-from pal_moe.baselines.latent_replay import LatentReplayTrainer
-from pal_moe.baselines.mir import MIR
-from pal_moe.baselines.naive import NaiveFineTuning
-from pal_moe.baselines.replay import ReplayTrainer
-from pal_moe.builder.expert_builder import ExpertBuilder
-from pal_moe.config import ConfigError, apply_config
-from pal_moe.data.split_mnist import get_split_mnist_tasks
-from pal_moe.evaluation.calibration import calibrate_expert_temperatures
-from pal_moe.evaluation.diagnostics import (
+from cerata.config import ConfigError, apply_config
+from cerata.data.split_mnist import get_split_mnist_tasks
+from cerata.eval.calibration import calibrate_expert_temperatures
+from cerata.eval.diagnostics import (
     print_router_diagnostics,
     router_diagnostics,
 )
-from pal_moe.evaluation.heads import BiasCorrectionHead, NCMHead
-from pal_moe.evaluation.metrics import ContinualEvaluator
-from pal_moe.factory import (
+from cerata.eval.heads import BiasCorrectionHead, NCMHead
+from cerata.eval.metrics import ContinualEvaluator
+from cerata.legacy.adaptation.ttt import ContinualTrainer
+from cerata.legacy.baselines.agem import AGEM
+from cerata.legacy.baselines.der import DERPP, ERACE
+from cerata.legacy.baselines.ewc import EWC
+from cerata.legacy.baselines.icarl import ICaRL
+from cerata.legacy.baselines.latent_replay import LatentReplayTrainer
+from cerata.legacy.baselines.mir import MIR
+from cerata.legacy.baselines.naive import NaiveFineTuning
+from cerata.legacy.baselines.replay import ReplayTrainer
+from cerata.legacy.builder.expert_builder import ExpertBuilder
+from cerata.legacy.factory import (
     build_prototype_memory,
     build_router,
     build_single_head,
 )
-from pal_moe.models.encoder import SharedEncoder
-from pal_moe.models.expert import MLPExpert
-from pal_moe.models.moe import DynamicMoE
-from pal_moe.models.router import DynamicRouter
-from pal_moe.trigger.energy_trigger import EnergyTrigger
-from pal_moe.trigger.expert_trigger import AlwaysTrigger, QuantitativeTrigger
+from cerata.legacy.models.encoder import SharedEncoder
+from cerata.legacy.models.expert import MLPExpert
+from cerata.legacy.models.moe import DynamicMoE
+from cerata.legacy.models.router import DynamicRouter
+from cerata.legacy.trigger.energy_trigger import EnergyTrigger
+from cerata.legacy.trigger.expert_trigger import AlwaysTrigger, QuantitativeTrigger
 
 
 def _git_commit() -> str:
@@ -166,7 +166,7 @@ def _test_geometry(
     model: nn.Module, tasks: list, device: torch.device, max_batches_per_task: int = 4
 ) -> Optional[dict]:
     """Class-geometry report on a bounded slice of every task's test set."""
-    from pal_moe.evaluation.geometry import geometry_report
+    from cerata.eval.geometry import geometry_report
 
     if model is None:
         return None
@@ -651,7 +651,7 @@ def _run_palmoe_variant(
     result["router_diagnostics"] = diagnostics
 
     if args.task_free_eval:
-        from pal_moe.evaluation.task_free import StreamingEvaluator
+        from cerata.eval.task_free import StreamingEvaluator
 
         stream = []
         for task in tasks:
@@ -810,7 +810,7 @@ def run_benchmark(
         ).to(device)
 
     if dataset == "cifar10":
-        from pal_moe.data.split_cifar import get_split_cifar10_tasks
+        from cerata.data.split_cifar import get_split_cifar10_tasks
 
         tasks = get_split_cifar10_tasks(
             data_dir="./data",
@@ -847,7 +847,7 @@ def run_benchmark(
             )
         # unfreezing happens implicitly
     elif dataset == "cifar100":
-        from pal_moe.data.split_cifar100 import get_split_cifar100_tasks
+        from cerata.data.split_cifar100 import get_split_cifar100_tasks
 
         tasks = get_split_cifar100_tasks(
             data_dir="./data",
@@ -884,7 +884,7 @@ def run_benchmark(
     elif dataset == "folder":
         from torchvision import transforms
 
-        from pal_moe.data.split_folder import get_split_folder_tasks
+        from cerata.data.split_folder import get_split_folder_tasks
 
         folder_transform = [
             transforms.Resize((args.image_size, args.image_size)),
@@ -980,7 +980,7 @@ def run_benchmark(
         base_encoder.freeze()
 
     if args.domain_shift != "none":
-        from pal_moe.data.domain_shift import (
+        from cerata.data.domain_shift import (
             apply_phase_shift,
             permutation_transform,
             rotation_transform,
@@ -1004,7 +1004,7 @@ def run_benchmark(
     )
 
     if args.feature_cache:
-        from pal_moe.data.feature_cache import (
+        from cerata.data.feature_cache import (
             build_feature_cache,
             load_feature_cache,
             save_feature_cache,
@@ -1526,7 +1526,7 @@ def run_benchmark(
     # existing key is touched, so the published tables do not move - and
     # uniform by construction: one insertion point covers all 14 method blocks
     # instead of one per method.
-    from pal_moe.evaluation.schema import record_from_runner_result
+    from cerata.eval.schema import record_from_runner_result
 
     for method_name, payload in list(results.items()):
         if not isinstance(payload, dict):

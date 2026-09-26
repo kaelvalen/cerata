@@ -3,7 +3,7 @@ Extract frozen ViT features for the seven PTM-CIL benchmarks (docs/PTM_CIL_PRERE
 
 One cache per (benchmark, backbone): raw features with the dataset's ORIGINAL labels,
 so the class order and task split are applied at run time
-(`pal_moe.data.ptm_benchmarks.split_tasks`) and a protocol change never needs a
+(`cerata.data.ptm_benchmarks.split_tasks`) and a protocol change never needs a
 re-extraction. Train and test both go through the evaluation transform, as the
 frozen-feature methods (SimpleCIL, RanPAC without PETL) do.
 
@@ -27,8 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import torch  # noqa: E402
 
-from pal_moe.core.hashing import digest, module_digest  # noqa: E402
-from pal_moe.data.ptm_benchmarks import (  # noqa: E402
+from cerata.core.hashing import digest, module_digest  # noqa: E402
+from cerata.data.ptm_benchmarks import (  # noqa: E402
     BENCHMARKS,
     eval_transform,
     image_datasets,

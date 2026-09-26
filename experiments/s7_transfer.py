@@ -44,8 +44,8 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 import s2_ladder  # noqa: E402
-from pal_moe.arch import build_readout  # noqa: E402
-from pal_moe.evaluation.schema import build_run_record, satisfied_blocks  # noqa: E402
+from cerata.arch import build_readout  # noqa: E402
+from cerata.eval.schema import build_run_record, satisfied_blocks  # noqa: E402
 
 # Levels that change the representation. A no-expert level is the raw reference
 # by construction, so it is not re-run here.
