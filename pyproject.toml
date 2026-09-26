@@ -67,9 +67,9 @@ ptm = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/kaelvalen/pal-moe"
-Repository = "https://github.com/kaelvalen/pal-moe.git"
-"Bug Tracker" = "https://github.com/kaelvalen/pal-moe/issues"
+Homepage = "https://github.com/kaelvalen/cerata"
+Repository = "https://github.com/kaelvalen/cerata.git"
+"Bug Tracker" = "https://github.com/kaelvalen/cerata/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
