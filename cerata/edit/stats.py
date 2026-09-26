@@ -165,9 +165,12 @@ class LinearStats:
     def storage_bytes(self) -> dict:
         acc = (self.A.numel() + self.B.numel()) * self.A.element_size()
         per = sum(c.nbytes() for c in self._contrib.values())
+        fm = 0 if self.feature_map is None else int(self.feature_map.nbytes())
         return {
             "accumulators": acc,
             "per_edit_total": per,
+            "feature_map": fm,  # fixed, needed at inference; 0 trainable parameters
+            "total": acc + per + fm,
             "n_edits": len(self._contrib),
         }
 

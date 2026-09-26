@@ -57,6 +57,8 @@ READOUTS = ("ncm", "ridge", "rp")
 S11_RECIPE = {"epochs": 10, "lr": 1e-3, "batch_size": 128, "lambda_func": 1.0}
 IDENTITY_BAND = 1e-12
 API_BAND = 1e-8
+SANITY_BAND = 0.02  # ncm final accuracy vs the published SimpleCIL number
+FEASIBILITY_S = 48 * 3600
 
 
 def git_rev() -> str:
@@ -293,6 +295,27 @@ def run_cell(cache, benchmark, backbone, seed, args, device) -> dict:
     return cell
 
 
+def sanity_veto(cells, reference: dict | None) -> dict:
+    """ncm (SimpleCIL) final accuracy, mean over seeds, within SANITY_BAND of the
+    published number for the same benchmark and backbone (docs/PTM_CIL_PREREG.md,
+    amendment 1). A benchmark without a reference fails: the veto is not optional."""
+    groups = {}
+    for c in cells:
+        groups.setdefault(f"{c['benchmark']}__{c['backbone']}", []).append(
+            c["readouts"]["ncm"]["final"]
+        )
+    out = {}
+    for key, accs in groups.items():
+        got = sum(accs) / len(accs)
+        ref = None if reference is None else reference.get(key)
+        out[key] = {
+            "ncm_final": got,
+            "reference": ref,
+            "pass": ref is not None and abs(got - ref) <= SANITY_BAND,
+        }
+    return out
+
+
 def vetoes(cells) -> dict:
     ident = max(
         (
@@ -389,6 +412,11 @@ def main():
     ap.add_argument("--api", action="store_true")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--out", default="results/ptm_cil/ptm_cil_study.json")
+    ap.add_argument(
+        "--simplecil_reference",
+        default=None,
+        help="JSON {benchmark__backbone: accuracy in [0, 1]} copied into amendment 1",
+    )
     args = ap.parse_args()
     seeds = [int(s) for s in args.seeds.split(",")]
     t0 = time.time()
@@ -402,16 +430,38 @@ def main():
                 run_cell(synthetic_cache(), "synthetic", "none", s, args, args.device)
             )
     else:
-        for bm in args.benchmarks.split(","):
-            for bb in args.backbones.split(","):
-                cache = load_raw_cache(Path(args.cache_dir) / f"{bm}__{bb}.pt")
-                for s in seeds:
-                    cells.append(run_cell(cache, bm, bb, s, args, args.device))
-                    print(
-                        f"[{bm} {bb} seed {s}] done {time.time() - t0:.0f}s", flush=True
+        grid = [
+            (bm, bb)
+            for bm in args.benchmarks.split(",")
+            for bb in args.backbones.split(",")
+        ]
+        n_cells = len(grid) * len(seeds)
+        for bm, bb in grid:
+            cache = load_raw_cache(Path(args.cache_dir) / f"{bm}__{bb}.pt")
+            for s in seeds:
+                cells.append(run_cell(cache, bm, bb, s, args, args.device))
+                elapsed = time.time() - t0
+                print(f"[{bm} {bb} seed {s}] done {elapsed:.0f}s", flush=True)
+                projected = elapsed / len(cells) * n_cells
+                if projected > FEASIBILITY_S:
+                    raise SystemExit(
+                        f"veto: feasibility - {projected / 3600:.1f} h projected for "
+                        f"{n_cells} cells > {FEASIBILITY_S / 3600:.0f} h"
                     )
     v = vetoes(cells)
+    if not args.synthetic:
+        ref = None
+        if args.simplecil_reference:
+            ref = json.loads(Path(args.simplecil_reference).read_text())
+        v["sanity"] = sanity_veto(cells, ref)
+        v["sanity_pass"] = all(x["pass"] for x in v["sanity"].values())
+        v["feasibility_seconds"] = round(time.time() - t0, 1)
     result = {
+        "status": (
+            "veto_failed"
+            if any(k.endswith("_pass") and not val for k, val in v.items())
+            else "ok"
+        ),
         "prereg": PREREG,
         "git": git_rev(),
         "args": vars(args),
@@ -426,6 +476,10 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=1, default=str))
     failed = [k for k, val in v.items() if k.endswith("_pass") and not val]
+    print("vetoes:", json.dumps(v))
+    if failed:
+        # The record is written for diagnosis, but nothing is read from it.
+        raise SystemExit(f"veto failed: {failed}; no result is reported")
     for key, agg in result["aggregate"].items():
         ro = agg["readouts"]
         print(
@@ -441,9 +495,6 @@ def main():
                     f"  {bank} routed by {r}: P2={d['P2']['mean']:+.4f} m={d['m']:.4f} "
                     f"rho={d['rho']:.3f} beta={d['beta']:.4f}"
                 )
-    print("vetoes:", json.dumps(v))
-    if failed:
-        raise SystemExit(f"veto failed: {failed}")
 
 
 if __name__ == "__main__":

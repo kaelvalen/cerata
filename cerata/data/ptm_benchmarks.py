@@ -67,6 +67,8 @@ def class_order(num_classes: int, shuffle: bool, seed: int = PILOT_SEED) -> list
 def task_increments(num_classes: int, init_cls: int, increment: int) -> list[int]:
     """PILOT's `DataManager.__init__`: the first task, then `increment` each, with any
     remainder as a final smaller task."""
+    if init_cls <= 0 or increment <= 0:
+        raise ValueError("init_cls and increment must be positive")
     if init_cls > num_classes:
         raise ValueError("not enough classes")
     incs = [init_cls]
