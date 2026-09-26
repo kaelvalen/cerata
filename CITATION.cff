@@ -7,8 +7,8 @@ authors:
     email: "mehmetardahakbilen2005@gmail.com"
 version: 0.2.0
 date-released: 2026-09-13
-url: "https://github.com/kaelvalen/pal-moe"
-repository-code: "https://github.com/kaelvalen/pal-moe"
+url: "https://github.com/kaelvalen/cerata"
+repository-code: "https://github.com/kaelvalen/cerata"
 keywords:
   - continual-learning
   - class-incremental-learning
