@@ -421,6 +421,7 @@ def main():
     seeds = [int(s) for s in args.seeds.split(",")]
     t0 = time.time()
     cells = []
+    feasibility = None
     if args.synthetic:
         args.init_cls, args.increment = 5, 5
         args.M = min(args.M, 256)
@@ -444,11 +445,23 @@ def main():
                 print(f"[{bm} {bb} seed {s}] done {elapsed:.0f}s", flush=True)
                 projected = elapsed / len(cells) * n_cells
                 if projected > FEASIBILITY_S:
-                    raise SystemExit(
+                    print(
                         f"veto: feasibility - {projected / 3600:.1f} h projected for "
-                        f"{n_cells} cells > {FEASIBILITY_S / 3600:.0f} h"
+                        f"{n_cells} cells > {FEASIBILITY_S / 3600:.0f} h; stopping",
+                        flush=True,
                     )
+                    feasibility = {
+                        "projected_hours": round(projected / 3600, 2),
+                        "cells_done": len(cells),
+                        "cells_planned": n_cells,
+                    }
+                    break
+            if feasibility is not None:
+                break
     v = vetoes(cells)
+    if feasibility is not None:
+        v["feasibility"] = feasibility
+        v["feasibility_pass"] = False
     if not args.synthetic:
         ref = None
         if args.simplecil_reference:

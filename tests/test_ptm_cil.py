@@ -260,3 +260,84 @@ def test_sanity_veto_needs_a_reference_and_a_close_match():
     ok = ptm_cil.sanity_veto(cells, {"cifar100__in21k_1k": 0.815})
     far = ptm_cil.sanity_veto(cells, {"cifar100__in21k_1k": 0.85})
     assert ok["cifar100__in21k_1k"]["pass"] and not far["cifar100__in21k_1k"]["pass"]
+
+
+def test_feasibility_veto_writes_a_veto_failed_record(tmp_path, monkeypatch):
+    import json
+
+    sys.path.insert(0, str(ROOT / "experiments"))
+    try:
+        import ptm_cil
+    finally:
+        sys.path.pop(0)
+    cache = ptm_cil.synthetic_cache()
+    (tmp_path / "cache").mkdir()
+    torch.save(cache, tmp_path / "cache" / "cifar100__syn.pt")
+    out = tmp_path / "study.json"
+    monkeypatch.setattr(ptm_cil, "FEASIBILITY_S", 0.0)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ptm_cil.py",
+            "--benchmarks=cifar100",
+            "--backbones=syn",
+            f"--cache_dir={tmp_path / 'cache'}",
+            "--seeds=0,1",
+            "--init_cls=5",
+            "--increment=5",
+            "--M=32",
+            "--no_bank",
+            f"--out={out}",
+        ],
+    )
+    with pytest.raises(SystemExit):
+        ptm_cil.main()
+    rec = json.loads(out.read_text())
+    assert rec["status"] == "veto_failed" and not rec["vetoes"]["feasibility_pass"]
+    assert rec["vetoes"]["feasibility"]["cells_done"] == 1
+
+
+def test_prepare_ptm_data_reunpacks_a_replaced_archive(tmp_path):
+    import shutil
+    import subprocess
+
+    def make(tag: str):
+        src = tmp_path / f"src_{tag}"
+        for split in ("train", "test"):
+            for c in range(BENCHMARKS["vtab"].num_classes):
+                d = src / "vtab" / split / f"c{c}"
+                d.mkdir(parents=True)
+                (d / f"{tag}.png").write_bytes(tag.encode())
+        (tmp_path / "root" / "downloads").mkdir(parents=True, exist_ok=True)
+        shutil.make_archive(str(tmp_path / "root" / "downloads" / "vtab"), "zip", src)
+
+    def run():
+        subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "experiments" / "prepare_ptm_data.py"),
+                f"--root={tmp_path / 'root'}",
+                "--only=vtab",
+            ],
+            check=True,
+            capture_output=True,
+        )
+
+    make("a")
+    run()
+    target = tmp_path / "root" / "vtab-cil" / "vtab" / "train" / "c0"
+    assert (target / "a.png").exists()
+    make("b")  # same file name, new content
+    run()
+    assert (target / "b.png").exists() and not (target / "a.png").exists()
+    import json
+
+    man = json.loads((tmp_path / "root" / "MANIFEST.json").read_text())
+    import hashlib
+
+    zip_path = tmp_path / "root" / "downloads" / "vtab.zip"
+    assert (
+        man["vtab"]["archive_sha256"]
+        == hashlib.sha256(zip_path.read_bytes()).hexdigest()
+    )
