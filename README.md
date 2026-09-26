@@ -121,7 +121,7 @@ If you use **CERATA** (or its v1, PAL-MoE) in your research, please cite:
   author = {Hakbilen, Mehmet Arda},
   title = {CERATA: Closed-form, Exactly Reversible, Auditable Learning after Deployment},
   note = {formerly PAL-MoE: Prototype-Anchored Lifelong Mixture of Experts},
-  url = {https://github.com/kaelvalen/pal-moe},
+  url = {https://github.com/kaelvalen/cerata},
   version = {0.2.0},
   year = {2026}
 }
