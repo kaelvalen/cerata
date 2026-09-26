@@ -2,7 +2,7 @@
 
 Status: S0-S2 complete, 2026-09-23. Companion to `MEASUREMENT_CONTRACT.md` (S0,
 what a run must report), `ARCHITECTURE_CONTRACT.md` (S1, the four interfaces) and
-`PALMOE_V2_SPEC.md` (the v2 design freeze, which S1 supersedes on the
+`v1/PALMOE_V2_SPEC.md` (the v2 design freeze, which S1 supersedes on the
 abstraction question).
 
 Stage 1 answers one question, not "which model is best":

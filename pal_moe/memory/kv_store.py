@@ -30,9 +30,9 @@ class FastMemory:
         self.index = ExactCosineIndex(dim, device=device)
         self._values: dict[str, Any] = {}
         self._meta: dict[str, dict] = {}
-        self._raw: dict[
-            str, torch.Tensor
-        ] = {}  # the key as written (the index normalises)
+        self._raw: dict[str, torch.Tensor] = (
+            {}
+        )  # the key as written (the index normalises)
 
     def __len__(self) -> int:
         return len(self.index)

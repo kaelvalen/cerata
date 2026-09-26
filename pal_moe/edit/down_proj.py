@@ -94,6 +94,9 @@ class DownProjEdit:
         self._contrib: dict[str, KeyValueContribution] = {}
         self._arrival: list[str] = []
         self._delta: torch.Tensor | None = None
+        # The last permuted solve, keyed by its order: the facade's canary check
+        # installs the same permutation `order_report` just solved.
+        self._perm_cache: tuple[tuple, torch.Tensor] | None = None
 
     def contribution(
         self, edit_id: str, K: torch.Tensor, R: torch.Tensor
@@ -118,6 +121,7 @@ class DownProjEdit:
         self._contrib[c.edit_id] = c
         self._arrival.append(c.edit_id)
         self._delta = None
+        self._perm_cache = None
 
     def remove(self, edit_id: str) -> KeyValueContribution:
         c = self._contrib.pop(edit_id)
@@ -130,6 +134,7 @@ class DownProjEdit:
                 self.S -= c.K.t() @ c.K
                 self.B -= c.K.t() @ c.R
         self._delta = None
+        self._perm_cache = None
         return c
 
     # -- solves ---------------------------------------------------------------------
@@ -150,6 +155,12 @@ class DownProjEdit:
             B += self._contrib[i].K.t() @ self._contrib[i].R
         return torch.linalg.solve(self.C0 + S, B)
 
+    def permuted_solution(self, order: list[str]) -> torch.Tensor | None:
+        """`_solve_rows(order)`, reusing `order_report`'s solve of the same order."""
+        if self._perm_cache is not None and self._perm_cache[0] == tuple(order):
+            return self._perm_cache[1]
+        return self._solve_rows(order)
+
     def solve(self) -> torch.Tensor | None:
         if not self._contrib:
             return None
@@ -166,7 +177,9 @@ class DownProjEdit:
             return {"n_edits": 0, "max_abs_dDelta_permutation": 0.0, "pass": True}
         g = torch.Generator().manual_seed(seed + n)
         perm = [self._arrival[i] for i in torch.randperm(n, generator=g).tolist()]
-        d = float((self.solve() - self._solve_rows(perm)).abs().max())
+        Dp = self._solve_rows(perm)
+        self._perm_cache = (tuple(perm), Dp)
+        d = float((self.solve() - Dp).abs().max())
         return {
             "n_edits": n,
             "max_abs_dDelta_permutation": d,

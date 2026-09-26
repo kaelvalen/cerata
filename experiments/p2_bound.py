@@ -40,6 +40,9 @@ from pal_moe.core.constructions import (  # noqa: E402
     superclass_of,
 )
 from pal_moe.core.features import load_tasks  # noqa: E402
+from pal_moe.eval.decomposition import (  # noqa: E402
+    p2_decomposition as decomposition,
+)
 from pal_moe.eval.stats import paired_stats, tost, westfall_young  # noqa: E402
 
 PREREG = "docs/P2_BOUND_PREREG.md"
@@ -59,43 +62,6 @@ def git_rev() -> str:
         )
     except Exception:
         return "unknown"
-
-
-def decomposition(r, tau, s) -> dict:
-    """Counts -> the P2 identity terms. r, tau, s: bool tensors over all test samples."""
-    N = r.numel()
-    nr, ntau = ~r, ~tau
-    c = {
-        "N": N,
-        "r": int(r.sum()),
-        "s": int(s.sum()),
-        "r_not_tau": int((r & ntau).sum()),  # must be 0: a right class implies its task
-        "nr_tau": int((nr & tau).sum()),
-        "nr_ntau": int((nr & ntau).sum()),
-        "s_nr_tau": int((s & nr & tau).sum()),
-        "s_nr_ntau": int((s & nr & ntau).sum()),
-        "ns_r": int((~s & r).sum()),
-    }
-    m = c["nr_tau"] / N
-    rho = c["s_nr_tau"] / c["nr_tau"] if c["nr_tau"] else float("nan")
-    rho_p = c["s_nr_ntau"] / c["nr_ntau"] if c["nr_ntau"] else 0.0
-    p_r = c["r"] / N
-    beta = c["ns_r"] / c["r"] if c["r"] else 0.0
-    p2 = (c["s"] - c["r"]) / N
-    ident = m * (rho if c["nr_tau"] else 0.0) + (c["nr_ntau"] / N) * rho_p - p_r * beta
-    return {
-        "counts": c,
-        "m": m,
-        "rho": rho,
-        "rho_prime": rho_p,
-        "beta": beta,
-        "p_r": p_r,
-        "rescue": m * rho if c["nr_tau"] else 0.0,
-        "break": p_r * beta,
-        "P2_pooled": p2,
-        "P2_max": m + (c["nr_ntau"] / N) * rho_p,
-        "identity_abs_error": abs(ident - p2),
-    }
 
 
 # -- Part A -----------------------------------------------------------------------------

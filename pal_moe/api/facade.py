@@ -22,6 +22,7 @@ import torch
 from pal_moe.arch.readouts import mask_unseen
 from pal_moe.core.backbones import FrozenFeatureBackbone
 from pal_moe.core.hashing import digest, module_digest
+from pal_moe.core.random_features import RandomProjection
 from pal_moe.edit.stats import LinearStats, one_hot
 from pal_moe.experts.ladder import LadderModel, train_model
 from pal_moe.experts.policies import (
@@ -62,6 +63,8 @@ class PalMoE(GuardedEditor):
         guards: GuardConfig | None = None,
         recipe: dict | None = None,
         device: str | torch.device = "cpu",
+        random_features: int | None = None,
+        rf_seed: int = 0,
     ):
         self.backbone = backbone or FrozenFeatureBackbone(dim)
         super().__init__(self.backbone.base_hash, guards)
@@ -75,20 +78,31 @@ class PalMoE(GuardedEditor):
         self.router_name = router
         self.memory_threshold = float(memory_threshold)
         self.memory = FastMemory(self.dim, device=self.device)
+        # `random_features=M` fits the medium path (and the ridge_class router that
+        # reads it) on the fixed RanPAC map relu(z @ W), W ~ N(0, 1) of [dim, M].
+        self.feature_map = (
+            None
+            if not random_features
+            else RandomProjection(self.dim, int(random_features), seed=rf_seed)
+        )
         self.stats = LinearStats(
-            self.dim, self.num_classes, ridge=ridge, device=self.device
+            self.dim,
+            self.num_classes,
+            ridge=ridge,
+            device=self.device,
+            feature_map=self.feature_map,
         )
         self.recipe = {**DEFAULT_RECIPE, **(recipe or {})}
         self.canary = (
             None if canary is None else self.backbone.encode(canary.to(self.device))
         )
-        self._raw: dict[
-            str, tuple[torch.Tensor, torch.Tensor, int]
-        ] = {}  # medium id -> (z, y, task)
+        self._raw: dict[str, tuple[torch.Tensor, torch.Tensor, int]] = (
+            {}
+        )  # medium id -> (z, y, task)
         self._consolidated_by: dict[str, str] = {}  # medium id -> consolidation id
-        self._consolidations: dict[
-            str, dict
-        ] = {}  # consolidation id -> bank snapshot info
+        self._consolidations: dict[str, dict] = (
+            {}
+        )  # consolidation id -> bank snapshot info
         self.bank: LadderModel | None = None
         self._class_expert: dict[int, int] = {}  # set by consolidation
         self._proto_cache: tuple | None = None
@@ -170,16 +184,19 @@ class PalMoE(GuardedEditor):
             c = self.stats.contribution(rid, z, one_hot(y, self.num_classes))
             self.stats.add(c)
             self._raw[rid] = (z, y, task)
-            return EditRecord(
-                rid,
-                "medium",
-                h,
-                meta={
-                    "n": int(y.numel()),
-                    "task": task,
-                    "classes": sorted(set(y.tolist())),
-                },
-            ), c
+            return (
+                EditRecord(
+                    rid,
+                    "medium",
+                    h,
+                    meta={
+                        "n": int(y.numel()),
+                        "task": task,
+                        "classes": sorted(set(y.tolist())),
+                    },
+                ),
+                c,
+            )
         raise KeyError(f"unknown path {path!r}")
 
     def _undo(self, record: EditRecord):

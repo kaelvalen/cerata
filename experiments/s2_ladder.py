@@ -49,12 +49,11 @@ from pal_moe.arch import (  # noqa: F401  (re-exported)
     mask_unseen,
     trainable_hook,
 )
-from pal_moe.evaluation.schema import build_run_record, satisfied_blocks
-
 
 # Moved to the package in the v3 restructure (phase 1). Re-exported here so every
 # runner that does `s2_ladder.X` keeps working unchanged; these are the same objects.
 from pal_moe.core.features import iter_batches, load_tasks, set_seed  # noqa: E402,F401
+from pal_moe.evaluation.schema import build_run_record, satisfied_blocks
 from pal_moe.experts.ladder import (  # noqa: E402,F401
     CLOSED_FORM_READOUTS,
     LADDER,
@@ -130,8 +129,6 @@ def run_level(spec: LevelSpec, tasks, meta, args, device) -> dict:
         **routing,
         **cost,
     }
-
-
 
 
 def measure_latency(

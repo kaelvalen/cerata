@@ -6,8 +6,8 @@ was measured and what it means. Companions:
 - [`MEASUREMENT_CONTRACT.md`](MEASUREMENT_CONTRACT.md) - what a run must report (S0)
 - [`ARCHITECTURE_CONTRACT.md`](ARCHITECTURE_CONTRACT.md) - the four interfaces and registries (S1)
 - [`STAGE1_PLAN.md`](STAGE1_PLAN.md) - the stage order, the rules, and the per-stage write-ups
-- [`PALMOE_V2_SPEC.md`](PALMOE_V2_SPEC.md) - the pre-measurement v2 design freeze, kept for the record
-- [`BENCHMARK.md`](BENCHMARK.md) - the v1 protocol, design facts and tables
+- [`v1/PALMOE_V2_SPEC.md`](v1/PALMOE_V2_SPEC.md) - the pre-measurement v2 design freeze, kept for the record
+- [`v1/BENCHMARK.md`](v1/BENCHMARK.md) - the v1 protocol, design facts and tables
 
 Reproduce everything with one command (skips finished stages, logs per stage):
 

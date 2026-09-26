@@ -1,7 +1,7 @@
 """
 E0 - representation ceiling and adapter headroom on cached frozen features.
 
-Prerequisite for PAL-MoE v2 (docs/PALMOE_V2_SPEC.md section 10, E0). Standalone
+Prerequisite for PAL-MoE v2 (docs/v1/PALMOE_V2_SPEC.md section 10, E0). Standalone
 on purpose: it does NOT import pal_moe/v2, so it can run before M1 is written.
 It answers one question before any v2 package code exists:
 
