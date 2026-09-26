@@ -20,10 +20,11 @@ CIFAR-100 needs nothing here (torchvision downloads it).
    target, whatever the archive's own top-level layout.
 3. Verify: the class count, identical train/test class lists, and the image counts
    (reported; the reference counts are not published with checksums, so a count
-   mismatch is a warning to investigate, not an error). The RevisitingCIL issue the
-   README points to for md5 sums (#5) was closed without any, so this script writes
-   its own record instead: `data/ptm/MANIFEST.json`, with the sha256 of every
-   archive and the per-split counts. Keep that file with the results.
+   mismatch is a warning to investigate, not an error), and each archive's md5 against
+   the sums the maintainers published in RevisitingCIL issue #5 (`PUBLISHED_MD5`,
+   copied from the issue; a mismatch fails, an archive with no published sum is
+   reported as unchecked). `data/ptm/MANIFEST.json` records the md5, the sha256 and the
+   per-split counts of every archive. Keep that file with the results.
 
     python experiments/prepare_ptm_data.py                  # all six
     python experiments/prepare_ptm_data.py --only cub,vtab
@@ -71,12 +72,19 @@ IMAGE_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".tif", ".tiff"}
 ARCHIVE_EXT = (".zip", ".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tar.xz")
 
 
-def sha256(path: Path, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
+# md5 sums published by the maintainers in github.com/zhoudw-zdw/RevisitingCIL/issues/5,
+# keyed by archive file name. Copied from the issue by hand; empty until then.
+PUBLISHED_MD5: dict[str, str] = {}
+
+
+def digests(path: Path, chunk: int = 1 << 20) -> tuple[str, str]:
+    """(md5, sha256) of a file in one pass."""
+    md5, sha = hashlib.md5(), hashlib.sha256()
     with open(path, "rb") as f:
         while block := f.read(chunk):
-            h.update(block)
-    return h.hexdigest()
+            md5.update(block)
+            sha.update(block)
+    return md5.hexdigest(), sha.hexdigest()
 
 
 def find_archive(downloads: Path, name: str) -> Path | None:
@@ -215,9 +223,31 @@ def main():
         entry = manifest.get(name, {})
         if not args.verify_only:
             archive = download(name, downloads)
-            print(f"[{name}] sha256 of {archive.name} ...")
-            archive_sha = sha256(archive)  # always: a same-named replacement is caught
-            entry.update(archive=archive.name, archive_sha256=archive_sha)
+            print(f"[{name}] md5 / sha256 of {archive.name} ...")
+            # Always recomputed: an archive replaced under the same name is caught.
+            archive_md5, archive_sha = digests(archive)
+            published = PUBLISHED_MD5.get(archive.name)
+            md5_ok = None if published is None else archive_md5 == published
+            entry.update(
+                archive=archive.name,
+                archive_md5=archive_md5,
+                archive_sha256=archive_sha,
+                published_md5=published,
+                md5_matches_published=md5_ok,
+            )
+            if md5_ok is False:
+                print(f"[{name}] md5 MISMATCH: {archive_md5} != published {published}")
+                failed.append(name)
+                manifest[name] = entry
+                continue
+            print(
+                f"[{name}] md5 {archive_md5} "
+                + (
+                    "matches the published sum"
+                    if md5_ok
+                    else "(no published sum to check)"
+                )
+            )
             unpack(name, archive, root, archive_sha)
         rep = verify(name, root / SOURCES[name][1])
         entry.update(rep, verified_at=time.strftime("%Y-%m-%dT%H:%M:%S"))
