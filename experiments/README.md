@@ -61,7 +61,7 @@ to the address, then to task identity.
 | `s10_scaling.py` | S10: bank capacity vs candidate count |
 | `s11_confirmatory.py` | S11: the pre-registered confirmatory tests (paired stats now in `pal_moe/eval/stats.py`) |
 
-## v1 benchmark (the published v1 record, `docs/BENCHMARK.md`, `docs/V1_RESULTS.md`)
+## v1 benchmark (the published v1 record, `docs/v1/BENCHMARK.md`, `docs/v1/README.md`)
 
 | Script | Purpose | Typical use |
 | :-- | :-- | :-- |

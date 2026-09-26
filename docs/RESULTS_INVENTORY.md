@@ -3,7 +3,7 @@
 What every directory under `results/` contains, what it is evidence for, and
 whether it is current. Regenerate the auto tables with
 `python experiments/paper_report.py` (skips `results/archive/`).
-Status legend: HEADLINE (quoted in README/SUNUM), EVIDENCE (design facts and
+Status legend: HEADLINE (quoted in v1/README or v1/SUNUM), EVIDENCE (design facts and
 ablations), RUN-DAY (2026-09-22/23), PENDING (queued), ARCHIVE (exploratory,
 not cited).
 
@@ -11,11 +11,11 @@ not cited).
 
 | Directory / file | Contents | Status | Referenced by |
 | :-- | :-- | :-- | :-- |
-| `benchmark_multi.json` | Split-MNIST, 5 seeds, 12 methods (item budget) | HEADLINE | README §1 |
-| `cifar10_conv_multiseed/` | Split-CIFAR-10 conv, 3 seeds | HEADLINE | README §2 |
-| `cifar10_resnet18_multiseed/` | Split-CIFAR-10 ImageNet ResNet-18, 3 seeds | HEADLINE | README §3 |
-| `cifar100_multiseed/` | Split-CIFAR-100 20-task conv, 3 seeds | HEADLINE | README §4 |
-| `cifar100_resnet18/` | CIFAR-100 ResNet-18, single seed (fact 17) | HEADLINE | README §5 |
+| `benchmark_multi.json` | Split-MNIST, 5 seeds, 12 methods (item budget) | HEADLINE | v1/README §1 |
+| `cifar10_conv_multiseed/` | Split-CIFAR-10 conv, 3 seeds | HEADLINE | v1/README §2 |
+| `cifar10_resnet18_multiseed/` | Split-CIFAR-10 ImageNet ResNet-18, 3 seeds | HEADLINE | v1/README §3 |
+| `cifar100_multiseed/` | Split-CIFAR-100 20-task conv, 3 seeds | HEADLINE | v1/README §4 |
+| `cifar100_resnet18/` | CIFAR-100 ResNet-18, single seed (fact 17) | HEADLINE | v1/README §5 |
 | `cifar100_resnet18_multiseed/` | CIFAR-100 ResNet-18, 3 seeds (run-day) | HEADLINE | SUNUM §5.2 |
 | `cifar10_vit/` | CIFAR-10 ViT-B/16 single seed (pre-promotion) | EVIDENCE | BENCHMARK fact 18 |
 | `cifar10_vit_multiseed/` | CIFAR-10 ViT-B/16, 3 seeds (+ latent-replay repair) | HEADLINE | BENCHMARK fact 18 |
@@ -92,9 +92,9 @@ to the history bundle.
 | `cifar10_big_frozen/`, `cifar10_big_frozen_full/` | Big CIFAR-10 runs behind facts 11-13 | EVIDENCE | BENCHMARK |
 | `cifar100_big_frozen/` | Scaled 20-task CIFAR-100, single seed (fact 15/16) | EVIDENCE | BENCHMARK |
 | `cifar100_20task/` | 20-task protocol run (fact 15 provenance) | EVIDENCE | BENCHMARK |
-| `cifar100_relgate/`, `cifar100_gate_relative/`, `cifar100_gate_absolute/` | Validation-gate ablation (fact 16) | EVIDENCE | README gate note |
+| `cifar100_relgate/`, `cifar100_gate_relative/`, `cifar100_gate_absolute/` | Validation-gate ablation (fact 16) | EVIDENCE | v1/README gate note |
 | `ablation/`, `ablation_results.json`, `ablation_comparison.png` | `run_ablation.py` controlled grid (fact 12) | EVIDENCE | BENCHMARK Ablations |
-| `mnist_domainshift/` | Class-shared domain-shift pilot (rotate) | EVIDENCE | README §6 |
+| `mnist_domainshift/` | Class-shared domain-shift pilot (rotate) | EVIDENCE | v1/README §6 |
 | `routing_asymmetry_debug.json` | Routing-funnel debug dump; referenced in `ttt.py` comments | EVIDENCE | code comments |
 | `feature_cache/` | Persisted frozen features (CIFAR-10/100 ViT; Tiny-ImageNet) | data | recipes |
 | `paper_report.md` | Auto-generated tables/figures (report script) | generated | - |
@@ -111,7 +111,7 @@ to the history bundle.
 | `drift/` | E8 anchor-refresh + inference-anchoring cells | RUN-DAY | SUNUM §5.7 |
 | `capacity/` | E9 capacity sweep + parameter-matched baselines, 3 seeds | RUN-DAY | SUNUM §5.6 |
 | `mir/` | E12 MIR baseline, 3 seeds | RUN-DAY | BENCHMARK fact 21 |
-| `tinyimagenet_multiseed/` | E10 Tiny-ImageNet 20×10 class-IL, 3 seeds | RUN-DAY | docs/gncl.md, BENCHMARK fact 23 |
+| `tinyimagenet_multiseed/` | E10 Tiny-ImageNet 20×10 class-IL, 3 seeds | RUN-DAY | docs/v1/gncl.md, BENCHMARK fact 23 |
 | `final_mnist_multiseed/`, `final_c10r18_multiseed/` | E3 regenerations with byte accounting (5/3 seeds) | RUN-DAY | SUNUM §5.1 |
 | `final_c10conv_multiseed/`, `final_c100conv_multiseed/` | E3 conv regenerations with byte accounting, 3 seeds | RUN-DAY | SUNUM §5.1, BENCHMARK fact 22 |
 | `mnist_domainshift_multiseed/` | E11 domain-shift, 5 seeds | RUN-DAY | SUNUM §5.8 |
@@ -138,5 +138,5 @@ to be traced.
   `--track_routing`, `routing_retention`.
 - `benchmark_meta_seed*.json` records the seed, git hash, args and duration -
   the provenance anchor for every number.
-- A directory is only quoted in `README.md`/`docs/SUNUM.md` after it contains
+- A directory is only quoted in `docs/v1/README.md`/`docs/v1/SUNUM.md` after it contains
   its full seed set; otherwise it is labelled single-seed or pending here.

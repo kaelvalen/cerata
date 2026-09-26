@@ -1,7 +1,7 @@
 # PAL-MoE Measurement Contract (S0)
 
-Status: proposed, 2026-09-23. Companion to `BENCHMARK.md` (protocol and design
-facts), `EXPERIMENT_PLAN.md` (v1 paper plan) and `PALMOE_V2_SPEC.md` (v2 design
+Status: proposed, 2026-09-23. Companion to `v1/BENCHMARK.md` (protocol and design
+facts), `v1/EXPERIMENT_PLAN.md` (v1 paper plan) and `v1/PALMOE_V2_SPEC.md` (v2 design
 freeze). This document defines the *measurement* layer that every later stage
 (S1-S11) must emit against. It changes no model code and no existing result.
 

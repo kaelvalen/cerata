@@ -1,7 +1,7 @@
 # PAL-MoE v3: one fixed address space, three time scales
 
 Status: **implemented (phases 0-5 of the v3 restructure, 2026-09-26), no new
-scientific claim.** Supersedes `PALMOE_V2_SPEC.md` as the architecture; extends the
+scientific claim.** Supersedes `v1/PALMOE_V2_SPEC.md` as the architecture; extends the
 S1 contract (`ARCHITECTURE_CONTRACT.md`) whose interfaces it reuses. Every design
 decision below is traced to the result that motivates it (section 6), and every
 stored result the restructure could touch was re-run and reproduced (section 7).
