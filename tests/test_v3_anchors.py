@@ -262,8 +262,15 @@ def test_v1_whole_object_pickle_loads_through_the_shims():
     blob = torch.load(FIXTURES / "v1_whole_objects_stage1.pt", weights_only=False)
     assert isinstance(blob["model"], moe.DynamicMoE)
     assert isinstance(blob["memory"], pm.PrototypeMemory)
+    fresh = _build_v1()
+    fresh.load_state_dict(blob["model"].state_dict())
     with torch.no_grad():
-        assert torch.equal(_out(blob["model"](blob["x"])), blob["ref"])
+        out = _out(blob["model"](blob["x"]))
+        # Bitwise on one machine: the unpickled object is the current class.
+        assert torch.equal(out, _out(fresh(blob["x"])))
+        # Across machines only fp-close: `ref` was computed on another CPU, and
+        # float kernels differ in the last bit between CPUs (CI measured it).
+        assert torch.allclose(out, blob["ref"], rtol=0, atol=1e-6)
 
 
 def test_v1_persistence_checkpoint_loads_through_the_shims():
@@ -275,4 +282,6 @@ def test_v1_persistence_checkpoint_loads_through_the_shims():
     meta = load_checkpoint(str(FIXTURES / "v1_checkpoint_stage1.pt"), model, mem)
     assert meta["made_by"].startswith("stage1-final") and len(mem.prototypes) == 1
     with torch.no_grad():
-        assert torch.equal(_out(model(blob["x"])), blob["ref"])
+        out = _out(model(blob["x"]))
+        assert torch.equal(out, _out(blob["model"](blob["x"])))  # same machine
+        assert torch.allclose(out, blob["ref"], rtol=0, atol=1e-6)  # across CPUs
