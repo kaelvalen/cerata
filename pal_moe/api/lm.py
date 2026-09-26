@@ -94,9 +94,12 @@ class PalMoELM(GuardedEditor):
             c = self.edit.contribution(rid, K, V - Y0)
             self.edit.add(c)
             self._install()
-            return EditRecord(
-                rid, "medium", h, meta={"prompts": prompts, "targets": targets}
-            ), c
+            return (
+                EditRecord(
+                    rid, "medium", h, meta={"prompts": prompts, "targets": targets}
+                ),
+                c,
+            )
         text = item.x if isinstance(item, Example) else str(item)
         if isinstance(item, Example) and item.y is not None:
             text = f"{item.x} {item.y}"

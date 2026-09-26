@@ -33,14 +33,19 @@ Guards (a failure stops the reading, it is not a result):
   G3 ridge incrementality   continual ridge == one-shot ridge on all train data
                             (argmax identical on every test sample, max|dW| reported)
 """
-import argparse, json, sys
+
+import argparse
+import json
+import sys
 from pathlib import Path
 
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import s2_ladder, s6b_difficulty, s11_confirmatory as s11  # noqa: E402
+import s2_ladder
+import s6b_difficulty
+import s11_confirmatory as s11  # noqa: E402
 from pal_moe.arch import RidgeReadout, mask_unseen  # noqa: E402
 
 CACHE = "results/feature_cache/cifar100_vit_b16/feature_cache.pt"
@@ -95,7 +100,8 @@ def run_cell(regime, seed, args, device, base):
         rlog = cont.predict(z)
         g3_mismatch += int((rlog.argmax(-1) != once.predict(z).argmax(-1)).sum())
         rtask = torch.full((z.size(0), T), -1e9, device=device).scatter_reduce(
-            1, cls2task.expand_as(rlog), rlog, "amax")
+            1, cls2task.expand_as(rlog), rlog, "amax"
+        )
         ridge_ids = rtask.topk(3, dim=-1).indices
         for name, ids in (("proto", proto_ids), ("ridge", ridge_ids)):
             cov[name][0] += int((ids[:, 0] == owner).sum())
@@ -105,25 +111,42 @@ def run_cell(regime, seed, args, device, base):
         pred = {
             "proto": decode(model, z, proto_ids[:, 0]),
             "ridge_routed": decode(model, z, ridge_ids[:, 0]),
-            "ridge_masked": decode(model, z, ridge_ids[:, 0], task_mask[ridge_ids[:, 0]]),
+            "ridge_masked": decode(
+                model, z, ridge_ids[:, 0], task_mask[ridge_ids[:, 0]]
+            ),
             "ridge_alone": rlog.argmax(-1),
             "oracle": decode(model, z, torch.full_like(y, owner)),
         }
         for a in arms:
             per_task[a].append(float((pred[a] == y).float().mean()))
-        g1.append(abs(per_task["proto"][-1] - model.evaluate_task(t, oracle=False, task_id=owner)))
-        g2.append(abs(per_task["oracle"][-1] - model.evaluate_task(t, oracle=True, task_id=owner)))
+        g1.append(
+            abs(
+                per_task["proto"][-1]
+                - model.evaluate_task(t, oracle=False, task_id=owner)
+            )
+        )
+        g2.append(
+            abs(
+                per_task["oracle"][-1]
+                - model.evaluate_task(t, oracle=True, task_id=owner)
+            )
+        )
 
     out = {a: sum(v) / len(v) for a, v in per_task.items()}
-    out.update({
-        "proto_C@1": cov["proto"][0] / n_total, "proto_C@3": cov["proto"][1] / n_total,
-        "ridge_C@1": cov["ridge"][0] / n_total, "ridge_C@3": cov["ridge"][1] / n_total,
-        "guards": {
-            "G1_max_abs": max(g1), "G2_max_abs": max(g2),
-            "G3_argmax_mismatch": g3_mismatch,
-            "G3_max_abs_dW": float((cont.W - once.W).abs().max()),
-        },
-    })
+    out.update(
+        {
+            "proto_C@1": cov["proto"][0] / n_total,
+            "proto_C@3": cov["proto"][1] / n_total,
+            "ridge_C@1": cov["ridge"][0] / n_total,
+            "ridge_C@3": cov["ridge"][1] / n_total,
+            "guards": {
+                "G1_max_abs": max(g1),
+                "G2_max_abs": max(g2),
+                "G3_argmax_mismatch": g3_mismatch,
+                "G3_max_abs_dW": float((cont.W - once.W).abs().max()),
+            },
+        }
+    )
     return out
 
 
@@ -149,24 +172,36 @@ def main():
             r = run_cell(regime, seed, args, args.device, base)
             rows.append(r)
             cells.append({"regime": regime, "seed": seed, **r})
-            print(regime, seed, {k: round(v, 4) for k, v in r.items() if k != "guards"}, r["guards"])
+            print(
+                regime,
+                seed,
+                {k: round(v, 4) for k, v in r.items() if k != "guards"},
+                r["guards"],
+            )
         report[regime] = {
             "P1_ridge_routed_minus_proto": s11.paired_stats(
-                [r["ridge_routed"] - r["proto"] for r in rows], "P1"),
+                [r["ridge_routed"] - r["proto"] for r in rows], "P1"
+            ),
             "P2_ridge_routed_minus_ridge_alone": s11.paired_stats(
-                [r["ridge_routed"] - r["ridge_alone"] for r in rows], "P2", sesoi=0.01),
+                [r["ridge_routed"] - r["ridge_alone"] for r in rows], "P2", sesoi=0.01
+            ),
             "exploratory_masked_minus_ridge_alone": s11.paired_stats(
-                [r["ridge_masked"] - r["ridge_alone"] for r in rows], "X1"),
+                [r["ridge_masked"] - r["ridge_alone"] for r in rows], "X1"
+            ),
         }
 
     print("\n== primary ==")
     for regime, fam in report.items():
         for name, st in fam.items():
-            print(f"{regime:9s} {name:40s} mean {st['mean']:+.4f}  ci95 "
-                  f"[{st['ci95'][0]:+.4f},{st['ci95'][1]:+.4f}]  +{st['positive']}/-{st['negative']}"
-                  f"  perm_p {st['permutation_p']:.4f}")
+            print(
+                f"{regime:9s} {name:40s} mean {st['mean']:+.4f}  ci95 "
+                f"[{st['ci95'][0]:+.4f},{st['ci95'][1]:+.4f}]  +{st['positive']}/-{st['negative']}"
+                f"  perm_p {st['permutation_p']:.4f}"
+            )
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps({"args": vars(args), "cells": cells, "report": report}, indent=2))
+    Path(args.out).write_text(
+        json.dumps({"args": vars(args), "cells": cells, "report": report}, indent=2)
+    )
 
 
 if __name__ == "__main__":

@@ -82,13 +82,13 @@ class PalMoE(GuardedEditor):
         self.canary = (
             None if canary is None else self.backbone.encode(canary.to(self.device))
         )
-        self._raw: dict[
-            str, tuple[torch.Tensor, torch.Tensor, int]
-        ] = {}  # medium id -> (z, y, task)
+        self._raw: dict[str, tuple[torch.Tensor, torch.Tensor, int]] = (
+            {}
+        )  # medium id -> (z, y, task)
         self._consolidated_by: dict[str, str] = {}  # medium id -> consolidation id
-        self._consolidations: dict[
-            str, dict
-        ] = {}  # consolidation id -> bank snapshot info
+        self._consolidations: dict[str, dict] = (
+            {}
+        )  # consolidation id -> bank snapshot info
         self.bank: LadderModel | None = None
         self._class_expert: dict[int, int] = {}  # set by consolidation
         self._proto_cache: tuple | None = None
@@ -170,16 +170,19 @@ class PalMoE(GuardedEditor):
             c = self.stats.contribution(rid, z, one_hot(y, self.num_classes))
             self.stats.add(c)
             self._raw[rid] = (z, y, task)
-            return EditRecord(
-                rid,
-                "medium",
-                h,
-                meta={
-                    "n": int(y.numel()),
-                    "task": task,
-                    "classes": sorted(set(y.tolist())),
-                },
-            ), c
+            return (
+                EditRecord(
+                    rid,
+                    "medium",
+                    h,
+                    meta={
+                        "n": int(y.numel()),
+                        "task": task,
+                        "classes": sorted(set(y.tolist())),
+                    },
+                ),
+                c,
+            )
         raise KeyError(f"unknown path {path!r}")
 
     def _undo(self, record: EditRecord):
