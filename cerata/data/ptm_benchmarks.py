@@ -181,8 +181,16 @@ def stream_test_order(
 
 
 def load_raw_cache(path: str | Path) -> dict:
-    """A cache written by `experiments/extract_ptm_features.py`."""
-    payload = torch.load(path, map_location="cpu", weights_only=True)
+    """A cache written by `experiments/extract_ptm_features.py`.
+
+    Caches written before 2026-09-27 store `torch.__version__` as a `TorchVersion`
+    (a str subclass) in their meta; it is allow-listed so they load with
+    `weights_only=True` instead of being re-extracted.
+    """
+    from torch.torch_version import TorchVersion
+
+    with torch.serialization.safe_globals([TorchVersion]):
+        payload = torch.load(path, map_location="cpu", weights_only=True)
     for split in ("train", "test"):
         z, y = payload[split]
         payload[split] = (z.float(), y.long())

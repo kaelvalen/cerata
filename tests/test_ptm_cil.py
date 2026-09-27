@@ -370,3 +370,18 @@ def test_prepare_ptm_data_rejects_an_archive_with_a_wrong_published_md5(tmp_path
     )
     assert res.returncode != 0 and "md5 MISMATCH" in res.stdout
     assert not (tmp_path / "root" / "vtab-cil").exists()  # nothing was unpacked
+
+
+def test_load_raw_cache_accepts_a_torch_version_in_meta(tmp_path):
+    from cerata.data.ptm_benchmarks import load_raw_cache
+
+    payload = {
+        "meta": {
+            "torch_version": torch.__version__
+        },  # a TorchVersion, as first written
+        "train": (torch.randn(4, 3), torch.arange(4)),
+        "test": (torch.randn(2, 3), torch.arange(2)),
+    }
+    torch.save(payload, tmp_path / "c.pt")
+    out = load_raw_cache(tmp_path / "c.pt")
+    assert out["train"][0].shape == (4, 3) and str(out["meta"]["torch_version"])
