@@ -319,6 +319,7 @@ def test_prepare_ptm_data_reunpacks_a_replaced_archive(tmp_path):
                 str(ROOT / "experiments" / "prepare_ptm_data.py"),
                 f"--root={tmp_path / 'root'}",
                 "--only=vtab",
+                "--skip_published_md5",
             ],
             check=True,
             capture_output=True,
@@ -343,3 +344,29 @@ def test_prepare_ptm_data_reunpacks_a_replaced_archive(tmp_path):
     )
     assert man["vtab"]["archive_md5"] == hashlib.md5(zip_path.read_bytes()).hexdigest()
     assert man["vtab"]["md5_matches_published"] is None  # no sum published for it here
+
+
+def test_prepare_ptm_data_rejects_an_archive_with_a_wrong_published_md5(tmp_path):
+    import shutil
+    import subprocess
+
+    src = tmp_path / "src"
+    for split in ("train", "test"):
+        for c in range(BENCHMARKS["vtab"].num_classes):
+            d = src / "vtab" / split / f"c{c}"
+            d.mkdir(parents=True)
+            (d / "x.png").write_bytes(b"x")
+    (tmp_path / "root" / "downloads").mkdir(parents=True)
+    shutil.make_archive(str(tmp_path / "root" / "downloads" / "vtab"), "zip", src)
+    res = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "experiments" / "prepare_ptm_data.py"),
+            f"--root={tmp_path / 'root'}",
+            "--only=vtab",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert res.returncode != 0 and "md5 MISMATCH" in res.stdout
+    assert not (tmp_path / "root" / "vtab-cil").exists()  # nothing was unpacked
