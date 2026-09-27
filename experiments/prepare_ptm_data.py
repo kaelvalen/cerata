@@ -75,8 +75,16 @@ ARCHIVE_EXT = (".zip", ".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tar.xz")
 # md5 sums published by the maintainers in github.com/zhoudw-zdw/RevisitingCIL/issues/5,
 # keyed by benchmark (not file name: a hand-downloaded archive may be saved under
 # another name, e.g. objectnet.tgz vs the issue's objnet.tgz). Copied from the issue
-# verbatim; a benchmark missing here is reported as unchecked.
-PUBLISHED_MD5: dict[str, str] = {}
+# verbatim (2026-09-27); a benchmark missing here is reported as unchecked. All six
+# matched the owner's downloads on 2026-09-27.
+PUBLISHED_MD5: dict[str, str] = {
+    "cub": "85e342a2d5f941e740193602057df7a5",  # cub.zip
+    "imagenet_r": "730aa3fb9c7d2ec0b6381c6b23040681",  # imagenet-r.zip
+    "imagenet_a": "7f4aaf0b1532b7a0bd670822c152d3c5",  # ina.zip
+    "omnibenchmark": "f1c30808a707f9197c6c811ea52e5cbb",  # omnibenchmark.zip
+    "vtab": "a9c37bde6105a2516c900b0c33a437c1",  # vtab.zip
+    "objectnet": "63ff7443a47bd682016a8ec59b8cc1bc",  # objnet.tgz
+}
 
 
 def digests(path: Path, chunk: int = 1 << 20) -> tuple[str, str]:
@@ -210,6 +218,11 @@ def main():
     ap.add_argument("--root", default="data/ptm")
     ap.add_argument("--only", default=",".join(SOURCES))
     ap.add_argument("--verify_only", action="store_true")
+    ap.add_argument(
+        "--skip_published_md5",
+        action="store_true",
+        help="do not compare with the published sums (synthetic test archives only)",
+    )
     args = ap.parse_args()
     root = Path(args.root)
     downloads = root / "downloads"
@@ -228,7 +241,7 @@ def main():
             print(f"[{name}] md5 / sha256 of {archive.name} ...")
             # Always recomputed: an archive replaced under the same name is caught.
             archive_md5, archive_sha = digests(archive)
-            published = PUBLISHED_MD5.get(name)
+            published = None if args.skip_published_md5 else PUBLISHED_MD5.get(name)
             md5_ok = None if published is None else archive_md5 == published
             entry.update(
                 archive=archive.name,
