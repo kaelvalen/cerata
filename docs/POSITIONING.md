@@ -63,10 +63,9 @@ the GPU machine, in this order:
 
 1. `python experiments/prepare_ptm_data.py`: downloads the processed splits linked
    from the RevisitingCIL README (ObjectNet by hand from OneDrive), unpacks them into
-   `data/ptm/`, verifies the class lists and counts, and records the archives' sha256 in
-   `data/ptm/MANIFEST.json`. The README's md5 pointer (its issue #5) was closed
-   without any sums, so that manifest is the integrity record. CIFAR-100 downloads
-   itself.
+   `data/ptm/`, verifies the class lists and counts, checks each archive's md5 against
+   the sums published in RevisitingCIL issue #5, and records md5, sha256 and counts in
+   `data/ptm/MANIFEST.json`. CIFAR-100 downloads itself.
 2. `uv sync --extra dev --extra ptm`, then per benchmark and backbone:
    `python experiments/extract_ptm_features.py --benchmark <b> --backbone in21k_1k --device cuda`.
 3. Copy SimpleCIL's published accuracy for each benchmark into a dated amendment 1 of

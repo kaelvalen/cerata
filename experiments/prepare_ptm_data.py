@@ -20,10 +20,11 @@ CIFAR-100 needs nothing here (torchvision downloads it).
    target, whatever the archive's own top-level layout.
 3. Verify: the class count, identical train/test class lists, and the image counts
    (reported; the reference counts are not published with checksums, so a count
-   mismatch is a warning to investigate, not an error). The RevisitingCIL issue the
-   README points to for md5 sums (#5) was closed without any, so this script writes
-   its own record instead: `data/ptm/MANIFEST.json`, with the sha256 of every
-   archive and the per-split counts. Keep that file with the results.
+   mismatch is a warning to investigate, not an error), and each archive's md5 against
+   the sums the maintainers published in RevisitingCIL issue #5 (`PUBLISHED_MD5`,
+   copied from the issue; a mismatch fails, an archive with no published sum is
+   reported as unchecked). `data/ptm/MANIFEST.json` records the md5, the sha256 and the
+   per-split counts of every archive. Keep that file with the results.
 
     python experiments/prepare_ptm_data.py                  # all six
     python experiments/prepare_ptm_data.py --only cub,vtab
@@ -71,12 +72,29 @@ IMAGE_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".tif", ".tiff"}
 ARCHIVE_EXT = (".zip", ".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tar.xz")
 
 
-def sha256(path: Path, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
+# md5 sums published by the maintainers in github.com/zhoudw-zdw/RevisitingCIL/issues/5,
+# keyed by benchmark (not file name: a hand-downloaded archive may be saved under
+# another name, e.g. objectnet.tgz vs the issue's objnet.tgz). Copied from the issue
+# verbatim (2026-09-27); a benchmark missing here is reported as unchecked. All six
+# matched the owner's downloads on 2026-09-27.
+PUBLISHED_MD5: dict[str, str] = {
+    "cub": "85e342a2d5f941e740193602057df7a5",  # cub.zip
+    "imagenet_r": "730aa3fb9c7d2ec0b6381c6b23040681",  # imagenet-r.zip
+    "imagenet_a": "7f4aaf0b1532b7a0bd670822c152d3c5",  # ina.zip
+    "omnibenchmark": "f1c30808a707f9197c6c811ea52e5cbb",  # omnibenchmark.zip
+    "vtab": "a9c37bde6105a2516c900b0c33a437c1",  # vtab.zip
+    "objectnet": "63ff7443a47bd682016a8ec59b8cc1bc",  # objnet.tgz
+}
+
+
+def digests(path: Path, chunk: int = 1 << 20) -> tuple[str, str]:
+    """(md5, sha256) of a file in one pass."""
+    md5, sha = hashlib.md5(), hashlib.sha256()
     with open(path, "rb") as f:
         while block := f.read(chunk):
-            h.update(block)
-    return h.hexdigest()
+            md5.update(block)
+            sha.update(block)
+    return md5.hexdigest(), sha.hexdigest()
 
 
 def find_archive(downloads: Path, name: str) -> Path | None:
@@ -127,11 +145,23 @@ def split_root(tree: Path) -> Path:
     return min(candidates, key=lambda c: len(c.parts))
 
 
-def unpack(name: str, archive: Path, root: Path) -> Path:
+SOURCE_MARKER = ".cerata_source_sha256"
+
+
+def unpack(name: str, archive: Path, root: Path, archive_sha: str) -> Path:
+    """Unpack unless the target was unpacked from this exact archive (by sha256)."""
     target = root / SOURCES[name][1]
-    if (target / "train").is_dir() and (target / "test").is_dir():
-        print(f"[{name}] already unpacked at {target}")
+    marker = target / SOURCE_MARKER
+    if (
+        (target / "train").is_dir()
+        and (target / "test").is_dir()
+        and marker.is_file()
+        and marker.read_text().strip() == archive_sha
+    ):
+        print(f"[{name}] already unpacked from this archive at {target}")
         return target
+    if target.exists():
+        print(f"[{name}] {target} is missing or from another archive: re-unpacking")
     with tempfile.TemporaryDirectory(dir=root) as tmp:
         print(f"[{name}] unpacking {archive.name} ...")
         shutil.unpack_archive(str(archive), tmp)
@@ -140,6 +170,7 @@ def unpack(name: str, archive: Path, root: Path) -> Path:
         if target.exists():
             shutil.rmtree(target)
         shutil.move(str(src), str(target))
+    marker.write_text(archive_sha + "\n")
     return target
 
 
@@ -187,6 +218,11 @@ def main():
     ap.add_argument("--root", default="data/ptm")
     ap.add_argument("--only", default=",".join(SOURCES))
     ap.add_argument("--verify_only", action="store_true")
+    ap.add_argument(
+        "--skip_published_md5",
+        action="store_true",
+        help="do not compare with the published sums (synthetic test archives only)",
+    )
     args = ap.parse_args()
     root = Path(args.root)
     downloads = root / "downloads"
@@ -202,13 +238,32 @@ def main():
         entry = manifest.get(name, {})
         if not args.verify_only:
             archive = download(name, downloads)
-            if (
-                entry.get("archive_sha256") is None
-                or entry.get("archive") != archive.name
-            ):
-                print(f"[{name}] sha256 of {archive.name} ...")
-                entry.update(archive=archive.name, archive_sha256=sha256(archive))
-            unpack(name, archive, root)
+            print(f"[{name}] md5 / sha256 of {archive.name} ...")
+            # Always recomputed: an archive replaced under the same name is caught.
+            archive_md5, archive_sha = digests(archive)
+            published = None if args.skip_published_md5 else PUBLISHED_MD5.get(name)
+            md5_ok = None if published is None else archive_md5 == published
+            entry.update(
+                archive=archive.name,
+                archive_md5=archive_md5,
+                archive_sha256=archive_sha,
+                published_md5=published,
+                md5_matches_published=md5_ok,
+            )
+            if md5_ok is False:
+                print(f"[{name}] md5 MISMATCH: {archive_md5} != published {published}")
+                failed.append(name)
+                manifest[name] = entry
+                continue
+            print(
+                f"[{name}] md5 {archive_md5} "
+                + (
+                    "matches the published sum"
+                    if md5_ok
+                    else "(no published sum to check)"
+                )
+            )
+            unpack(name, archive, root, archive_sha)
         rep = verify(name, root / SOURCES[name][1])
         entry.update(rep, verified_at=time.strftime("%Y-%m-%dT%H:%M:%S"))
         manifest[name] = entry
