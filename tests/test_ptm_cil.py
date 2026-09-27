@@ -385,3 +385,23 @@ def test_load_raw_cache_accepts_a_torch_version_in_meta(tmp_path):
     torch.save(payload, tmp_path / "c.pt")
     out = load_raw_cache(tmp_path / "c.pt")
     assert out["train"][0].shape == (4, 3) and str(out["meta"]["torch_version"])
+
+
+def test_sanity_veto_covers_an_unreferenced_backbone_through_a_referenced_one():
+    sys.path.insert(0, str(ROOT / "experiments"))
+    try:
+        import ptm_cil
+    finally:
+        sys.path.pop(0)
+
+    def cell(bb, acc):
+        return {"benchmark": "cub", "backbone": bb, "readouts": {"ncm": {"final": acc}}}
+
+    ref = {"cub__in21k": 0.8677}
+    ok = ptm_cil.sanity_veto([cell("in21k", 0.86), cell("in21k_1k", 0.90)], ref)
+    assert ok["cub__in21k"]["pass"] and ok["cub__in21k_1k"]["pass"]
+    assert ok["cub__in21k_1k"]["covered_by"] == ["cub__in21k"]
+    far = ptm_cil.sanity_veto([cell("in21k", 0.80), cell("in21k_1k", 0.90)], ref)
+    assert not far["cub__in21k_1k"]["pass"]
+    alone = ptm_cil.sanity_veto([cell("in21k_1k", 0.90)], ref)
+    assert not alone["cub__in21k_1k"]["pass"]

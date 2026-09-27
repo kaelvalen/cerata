@@ -185,3 +185,50 @@ the classifier on the features of adapter t only; MOS - the adapter retrieval re
 by adapter t; MoTE - the expert filter replaced by expert t alone. Each exporter is a
 small patch to the method's evaluation loop, committed under `experiments/external/`
 before its bank is run.
+
+## Amendment 1 (2026-09-27, before any benchmark cell was run)
+
+Written after the data were prepared and the features extracted, before any readout,
+bank or decomposition was computed on a real benchmark (one attempted run stopped while
+loading the cache, before any cell; fixed in kaelvalen/cerata#5).
+
+**1. Data integrity.** All six archives match the md5 sums the maintainers published in
+RevisitingCIL issue #5 (cub.zip, imagenet-r.zip, ina.zip, omnibenchmark.zip, vtab.zip,
+objnet.tgz), and every benchmark's class and image counts equal the reference table
+(`experiments/prepare_ptm_data.py`, `data/ptm/MANIFEST.json`). CIFAR-100 is checked by
+torchvision's own md5.
+
+**2. The sanity references, from the primary source.** The SimpleCIL numbers come from
+the RevisitingCIL repository's own run logs (github.com/zhoudw-zdw/RevisitingCIL, commit
+`a2e6b71`, `logs/simplecil/<dataset>/exp_1993_pretrained_vit_b16_224_in21k.log`, the
+last entry of each "CNN top1 curve"), not from a paper table read second-hand:
+
+```text
+cifar100__in21k        0.8128        cub__in21k            0.8677
+imagenet_r__in21k      0.5455        imagenet_a__in21k     0.4885
+objectnet__in21k       0.5358        omnibenchmark__in21k  0.7315
+vtab__in21k            0.8437
+```
+
+- **Why the final accuracy transfers across splits.** SimpleCIL's final classifier is the
+  set of all class means, whatever order and grouping they arrived in, so its last-step
+  accuracy does not depend on the task split (the logs use B5/B10/B30 splits; this study
+  pins B10/B20/B30). The average incremental accuracy does depend on it and is not used.
+- **Which backbone.** The logs exist for `pretrained_vit_b16_224_in21k` only (timm 0.6's
+  `vit_base_patch16_224_in21k`, this study's `in21k`); no published log exists for
+  `in21k_1k`. The sanity veto is therefore checked on the `in21k` cells. An `in21k_1k`
+  cell passes when the same benchmark's `in21k` check passed (same pipeline, other
+  weights), and fails when no referenced backbone of that benchmark was run
+  (`experiments/ptm_cil.py::sanity_veto`). This makes the secondary backbone
+  mandatory for every benchmark in the primary run.
+- **Rejected.** A set of numbers offered in review (attributed to the APER paper;
+  CIFAR-100 76.21, CUB 61.31, ImageNet-R and ImageNet-A both 61.35, VTAB also 61.35) was
+  not used: three benchmarks share one value, CUB contradicts the logs by 25 pp, and the
+  cited sources were other papers. The logs above replace them.
+- The ±2 pp band is unchanged. It also absorbs the timm version difference (0.6.12 in
+  the logs, 1.0.30 here).
+
+**3. Run order.** Extract `in21k` features for all seven benchmarks, then run the grid with
+`--backbones in21k_1k,in21k` and
+`--simplecil_reference results/ptm_cil/simplecil_reference.json` holding the seven
+numbers above (as fractions).
