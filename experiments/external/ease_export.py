@@ -88,10 +88,9 @@ def port_error(net, reference, device, n=4) -> float:
     g = torch.Generator().manual_seed(0)
     x = torch.rand(n, 3, 224, 224, generator=g).to(device)
     net.eval()
-    reference = reference.to(device).eval()
-    return float(
-        (net.backbone.forward_proto(x, adapt_index=0) - reference(x)).abs().max()
-    )
+    ref_out = reference.to(device).eval()(x)
+    reference.cpu()  # off the GPU before training: 8 GB cards need the ~350 MB
+    return float((net.backbone.forward_proto(x, adapt_index=0) - ref_out).abs().max())
 
 
 @torch.no_grad()
@@ -189,10 +188,13 @@ def run_one(a, repo, commit, benchmark, backbone, seed, init_cls, increment):
     if a.micro_batch:
         learner._init_train = accumulating_init_train(learner, a.micro_batch)
     net = learner._network.to(a.device)
-    err = port_error(net, shim.created[-1][1], a.device)
-    print(
-        f"[{benchmark}/{backbone}/seed{seed}] port error {err:.2e} ({shim.created[-1][0]})"
-    )
+    tag, reference = shim.created[-1]
+    err = port_error(net, reference, a.device)
+    del reference
+    shim.created.clear()
+    if str(a.device).startswith("cuda"):
+        torch.cuda.empty_cache()
+    print(f"[{benchmark}/{backbone}/seed{seed}] port error {err:.2e} ({tag})")
     if err > PORT_TOLERANCE:
         raise SystemExit(
             f"backbone port error {err:.2e} > {PORT_TOLERANCE}: not running"
@@ -224,7 +226,7 @@ def run_one(a, repo, commit, benchmark, backbone, seed, init_cls, increment):
         "config": {k: v for k, v in args.items() if k != "device"},
         "seed": seed,
         "class_order_seed": 1993,
-        "timm_tag": shim.created[-1][0],
+        "timm_tag": tag,
         "timm_version": str(timm.__version__),
         "torch_version": str(torch.__version__),
         "port_error": err,
