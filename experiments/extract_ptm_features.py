@@ -87,8 +87,10 @@ def main():
         "benchmark": args.benchmark,
         "backbone": args.backbone,
         "timm_name": BACKBONES[args.backbone],
-        "timm_version": timm.__version__,
-        "torch_version": torch.__version__,
+        "timm_version": str(timm.__version__),
+        "torch_version": str(
+            torch.__version__
+        ),  # TorchVersion is not weights_only-safe
         "normalize": args.normalize,
         "transform": repr(tf),
         "feature_dim": int(ztr.size(1)),
