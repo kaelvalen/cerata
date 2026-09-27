@@ -73,7 +73,9 @@ ARCHIVE_EXT = (".zip", ".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tar.xz")
 
 
 # md5 sums published by the maintainers in github.com/zhoudw-zdw/RevisitingCIL/issues/5,
-# keyed by archive file name. Copied from the issue by hand; empty until then.
+# keyed by benchmark (not file name: a hand-downloaded archive may be saved under
+# another name, e.g. objectnet.tgz vs the issue's objnet.tgz). Copied from the issue
+# verbatim; a benchmark missing here is reported as unchecked.
 PUBLISHED_MD5: dict[str, str] = {}
 
 
@@ -226,7 +228,7 @@ def main():
             print(f"[{name}] md5 / sha256 of {archive.name} ...")
             # Always recomputed: an archive replaced under the same name is caught.
             archive_md5, archive_sha = digests(archive)
-            published = PUBLISHED_MD5.get(archive.name)
+            published = PUBLISHED_MD5.get(name)
             md5_ok = None if published is None else archive_md5 == published
             entry.update(
                 archive=archive.name,
