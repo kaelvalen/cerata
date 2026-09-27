@@ -232,3 +232,67 @@ vtab__in21k            0.8437
 `--backbones in21k_1k,in21k` and
 `--simplecil_reference results/ptm_cil/simplecil_reference.json` holding the seven
 numbers above (as fractions).
+
+## Amendment 2 (2026-09-27, proposed, before any external bank was run)
+
+Written with the EASE exporter (`experiments/external/ease_export.py`, `common.py`),
+before it was run on any real benchmark (it has run only on synthetic images with random
+weights, `tests/test_external_export.py` and a CPU smoke).
+
+**1. Source.** EASE runs from its official repository (github.com/sun-hailong/CVPR24-Ease,
+commit `6d67508`), whose `Learner` is unchanged; LAMDA-PILOT's copy is identical in
+`models/ease.py` and `backbone/vit_ease.py`. The hyper-parameters are the repository's
+per-dataset, per-backbone configs (`exps/ease_{cifar,cub,ina,inr,obj,omni,vtab}[_in21k].json`):
+`vit_base_patch16_224_ease` for `in21k_1k`, `vit_base_patch16_224_in21k_ease` for `in21k`.
+
+**2. What the exporter replaces, and nothing else.**
+
+- The split: the pinned one (section 2). Three official configs use another split
+  (CIFAR-100 B5 Inc5, CUB B10 Inc10, ObjectNet B10 Inc10); their other hyper-parameters are
+  used as published on the pinned split.
+- The class order: 1993 (identity for VTAB, which the official config also leaves
+  unshuffled). The official trainer seeds the class order with the run seed; here the run
+  seed (0-5) seeds only `torch`, as the official `_set_random` does.
+- The data: our verified splits, loaded into the official `DataManager` class with the
+  official transforms.
+- The weights: the official code asks timm 0.6.12 for `vit_base_patch16_224` and
+  `vit_base_patch16_224_in21k`; timm 1.x resolves the first to a different checkpoint
+  (`augreg2`). The names are pinned to this study's two tags. **Port veto:** with its
+  fresh (zero-output) adapter, the EASE backbone must equal the stock timm model to
+  `1e-4` on random images before training (measured on the smoke: 2.8e-6); otherwise
+  the run stops.
+- `--micro_batch`, if the RTX 5060 cannot hold a published batch: the batch's gradient is
+  accumulated over chunks, so the optimiser sees the published batch size. Recorded in
+  each dump's meta.
+
+**3. Forced expert.** `expert_pred[:, t]` is the cosine classifier on adapter t's
+subspace alone: adapter t's [CLS] feature against every class's prototype in subspace t
+(EASE's own synthesised prototypes for the classes older than t), argmax over all
+classes. `native_pred` is EASE's `forward(test=True)`. A second dump, EASE's native
+logits restricted to task t's classes (`ease-wp`), goes to `exploratory/`; the runner does
+not read it and it enters no endpoint.
+
+**4. Fidelity veto (new, section 5).** For the four benchmarks whose official split is
+the pinned one, the mean over the six seeds of EASE's native final accuracy must be within
+2 pp of the official log's final accuracy (`logs/ease/<dataset>/0/<inc>/_1993_*.log`,
+last "CNN top1 curve" entry), per backbone:
+
+```text
+                 in21k_1k   in21k
+imagenet_a        0.5853    0.5504
+imagenet_r        0.7733    0.7617
+omnibenchmark     0.7397    0.7480
+vtab              0.9336    0.9355
+```
+
+(`ease_export.py --check`.) A failure on any of these excludes the EASE bank from the
+outcome table: it is reported as a failed port, not as a result. The other three
+benchmarks have no comparable log; their native accuracy is reported against the
+`rp` readout only.
+
+**5. Budget, fixed now.** The 48 h feasibility veto covers the readout grid, not
+the external banks. EASE trains one adapter per task through the whole ViT. If the first
+EASE run projects the full EASE grid (7 benchmarks x 2 backbones x 6 seeds) past 7 days on
+the RTX 5060, EASE runs on `in21k_1k` only; if that still projects past 7 days, on seeds
+0-2, with the per-benchmark test reported as descriptive (three seeds cannot reach
+p < 0.05 in an exact sign-flip test).
