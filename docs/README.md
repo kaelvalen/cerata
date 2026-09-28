@@ -32,6 +32,7 @@ literal path `docs/P2_BOUND_PREREG.md`. Do not move them.
 | [`ARCHITECTURE_CONTRACT.md`](ARCHITECTURE_CONTRACT.md) | S1: the four interfaces and their registries (`cerata/arch/`) |
 | [`RESULTS_INVENTORY.md`](RESULTS_INVENTORY.md) | What every `results/` directory contains and its status (up to AC3) |
 | [`RESEARCH_MAP.md`](RESEARCH_MAP.md) | The literature line behind each component, and the closest prior work to the current results |
+| [`LITERATURE_UPDATE_2026-09-28.md`](LITERATURE_UPDATE_2026-09-28.md) | Dated source check: what was verified against primary pages, what failed verification, and what it changes for the open pre-registrations |
 
 ## The study chain after Stage 1
 
