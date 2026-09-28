@@ -18,6 +18,13 @@ as an `ExpertDump` (EASE, MOS, MoTE, ... exported under every forced expert) - i
 routed by each readout (the owner of its argmax class) and decomposed:
 P2 = m * rho + P(not r, not tau) * rho' - P(r) * beta (`cerata.eval.decomposition`).
 
+A3.1 (`docs/PTM_CIL_PREREG.md` amendment 3, proposed) adds two routing rules next to the
+primary one, computed on the same final logits: `owner_task_sum` (the routed task
+maximizes the summed softmax mass over its classes) and `own_bank_top2` (our bank only:
+within the 0.1 mass margin the two candidates are decided by the forced expert's own max
+class score). Each bank/readout cell carries its primary `owner_class` decomposition at
+the top level and every rule's decomposition under `rules`.
+
 `--api` also runs the rp readout through `Cerata` (one guarded write per task) and
 vetoes any prediction difference from the direct computation; it records the guard
 reports and the wall time per write.
@@ -54,6 +61,7 @@ from cerata.experts.ladder import train_model  # noqa: E402
 
 PREREG = "docs/PTM_CIL_PREREG.md"
 READOUTS = ("ncm", "ridge", "rp")
+RULES = ("owner_class", "owner_task_sum", "own_bank_top2")  # A3.1, amendment 3
 S11_RECIPE = {"epochs": 10, "lr": 1e-3, "batch_size": 128, "lambda_func": 1.0}
 IDENTITY_BAND = 1e-12
 API_BAND = 1e-8
@@ -165,13 +173,15 @@ def own_bank_dump(tasks, C, seed, recipe, device) -> ExpertDump:
     z = torch.cat([k["splits"]["test"][0] for k in tasks]).to(device)
     y = torch.cat([k["splits"]["test"][1] for k in tasks])
     T = len(tasks)
-    cols = []
+    cols, scores = [], []
     for t in range(T):
         ids = torch.full((z.size(0),), t, dtype=torch.long, device=device)
         logits = mask_unseen(
             model.readout.predict(model.apply_experts(z, ids)), model.seen
         )
         cols.append(logits.argmax(-1).cpu())
+        # A3.1 `own_bank_top2`: the forced expert's own max class score.
+        scores.append(logits.softmax(-1).max(-1).values.cpu())
     toc = torch.empty(C, dtype=torch.long)
     for k in tasks:
         toc[torch.tensor(k["classes"])] = k["task_id"]
@@ -181,6 +191,7 @@ def own_bank_dump(tasks, C, seed, recipe, device) -> ExpertDump:
         task_of_class=toc,
         expert_pred=torch.stack(cols, 1),
         native_pred=native,
+        expert_score=torch.stack(scores, 1),
         meta={"method": "pal_l3", "recipe": recipe, "rank": 8, "seed": seed},
     )
 
@@ -274,9 +285,22 @@ def run_cell(cache, benchmark, backbone, seed, args, device) -> dict:
     for name, dump in banks.items():
         if not torch.equal(dump.y, y_test):
             raise SystemExit(f"veto: {name} dump rows are not the cache's test order")
-        decomp[name] = {
-            r: decompose(dump, arms["final_logits"][r].cpu()) for r in READOUTS
-        }
+        decomp[name] = {}
+        for r in READOUTS:
+            logits = arms["final_logits"][r].cpu()
+            rules_here = [
+                rule
+                for rule in RULES
+                if rule != "own_bank_top2" or dump.expert_score is not None
+            ]
+            arm_rules = {
+                rule: decompose(dump, logits, rule=rule) for rule in rules_here
+            }
+            base = arm_rules["owner_class"]
+            base["rules"] = {
+                rule: out for rule, out in arm_rules.items() if rule != "owner_class"
+            }
+            decomp[name][r] = base
     cell = {
         "benchmark": benchmark,
         "backbone": backbone,
@@ -331,26 +355,35 @@ def sanity_veto(cells, reference: dict | None) -> dict:
 
 
 def vetoes(cells) -> dict:
+    decomps = [
+        d
+        for c in cells
+        for bank in c["banks"].values()
+        for base in bank.values()
+        for d in [base, *base.get("rules", {}).values()]
+    ]
     ident = max(
-        (
-            d["decomposition"]["identity_abs_error"]
-            for c in cells
-            for b in c["banks"].values()
-            for d in b.values()
-        ),
-        default=0.0,
+        (d["decomposition"]["identity_abs_error"] for d in decomps), default=0.0
     )
+    # The premise veto is `owner_class`'s: under `owner_task_sum` a right class can sit
+    # in a task the summed mass does not pick, so r_not_tau > 0 is expected there
+    # (amendment 3, A3.1) and is reported, not vetoed.
     r_not_tau = sum(
         d["decomposition"]["counts"]["r_not_tau"]
-        for c in cells
-        for b in c["banks"].values()
-        for d in b.values()
+        for d in decomps
+        if d.get("rule", "owner_class") == "owner_class"
+    )
+    r_not_tau_task_sum = sum(
+        d["decomposition"]["counts"]["r_not_tau"]
+        for d in decomps
+        if d.get("rule") == "owner_task_sum"
     )
     out = {
         "identity_max": ident,
         "identity_pass": ident <= IDENTITY_BAND,
         "r_not_tau": r_not_tau,
         "r_not_tau_pass": r_not_tau == 0,
+        "r_not_tau_task_sum": r_not_tau_task_sum,
     }
     api = [c["api"] for c in cells if "api" in c]
     if api:
@@ -391,7 +424,7 @@ def aggregate(cells) -> dict:
             agg["banks"][bank] = {}
             for r in READOUTS:
                 ds = [c["banks"][bank][r] for c in cs]
-                agg["banks"][bank][r] = {
+                entry = {
                     "P2": paired_stats(
                         [d["decomposition"]["P2_pooled"] for d in ds],
                         f"P2 {bank} routed by {r}",
@@ -403,9 +436,43 @@ def aggregate(cells) -> dict:
                     },
                     **{
                         k: sum(d[k] for d in ds) / len(ds)
-                        for k in ("readout_acc", "system_acc", "oracle_acc")
+                        for k in (
+                            "readout_acc",
+                            "routed_acc",
+                            "system_acc",
+                            "oracle_acc",
+                        )
                     },
                 }
+                # A3.1 (amendment 3): the alternative rules, same summaries. A rule
+                # absent from any seed's cell (external dumps have no expert_score for
+                # own_bank_top2) is skipped, not averaged short.
+                rule_names = sorted({rule for d in ds for rule in d.get("rules", {})})
+                for rule in rule_names:
+                    rds = [d["rules"][rule] for d in ds if rule in d.get("rules", {})]
+                    if len(rds) != len(ds):
+                        continue
+                    entry.setdefault("rules", {})[rule] = {
+                        "P2": paired_stats(
+                            [x["decomposition"]["P2_pooled"] for x in rds],
+                            f"P2 {bank} routed by {r} ({rule})",
+                            sesoi=0.01,
+                        ),
+                        **{
+                            k: sum(x["decomposition"][k] for x in rds) / len(rds)
+                            for k in ("m", "rho", "beta", "rescue", "break", "P2_max")
+                        },
+                        **{
+                            k: sum(x[k] for x in rds) / len(rds)
+                            for k in (
+                                "readout_acc",
+                                "routed_acc",
+                                "system_acc",
+                                "oracle_acc",
+                            )
+                        },
+                    }
+                agg["banks"][bank][r] = entry
         out[key] = agg
     return out
 
@@ -522,6 +589,11 @@ def main():
                     f"  {bank} routed by {r}: P2={d['P2']['mean']:+.4f} m={d['m']:.4f} "
                     f"rho={d['rho']:.3f} beta={d['beta']:.4f}"
                 )
+                for rule, rd in d.get("rules", {}).items():
+                    print(
+                        f"    A3.1 {rule}: P2={rd['P2']['mean']:+.4f} "
+                        f"tau={rd['routed_acc']:.4f} sys={rd['system_acc']:.4f}"
+                    )
 
 
 if __name__ == "__main__":

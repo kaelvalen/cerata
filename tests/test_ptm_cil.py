@@ -20,7 +20,13 @@ from cerata.data.ptm_benchmarks import (
     task_increments,
 )
 from cerata.edit import LinearStats, one_hot, select_ridge
-from cerata.eval.decomposition import ExpertDump, decompose, p2_decomposition
+from cerata.eval.decomposition import (
+    ExpertDump,
+    decompose,
+    p2_decomposition,
+    route_by_owner,
+    route_by_task_sum,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 D, C, M = 12, 6, 96
@@ -160,6 +166,82 @@ def test_expert_dump_round_trips_and_validates(tmp_path):
         bad.validate()
 
 
+# -- A3.1 routing rules (docs/PTM_CIL_PREREG.md amendment 3, proposed) -----------------
+
+
+def test_a3_1_task_sum_rules_by_mass_not_by_the_peak():
+    toc = torch.tensor([0, 0, 1, 1])
+    logits = torch.tensor([[1.0, -10.0, 0.9, 0.9], [0.0, 0.0, 5.0, -5.0]])
+    assert route_by_owner(logits, toc).tolist() == [0, 1]
+    assert route_by_task_sum(logits, toc).tolist() == [1, 1]
+
+
+def test_a3_1_task_sum_relaxes_the_premise_but_keeps_the_identity():
+    # The class readout is right, its owner is the true task, but the summed mass of
+    # the other task is larger: `owner_task_sum` routes away, so r_not_tau > 0 there.
+    toc = torch.tensor([0, 0, 0, 1, 1, 1])
+    d = ExpertDump(
+        y=torch.tensor([3]),
+        task_of_class=toc,
+        expert_pred=torch.tensor([[0, 3]]),
+    )
+    logits = torch.tensor([[2.9, 2.9, 2.9, 3.0, -10.0, -10.0]])
+    base = decompose(d, logits, rule="owner_class")
+    assert base["decomposition"]["counts"]["r_not_tau"] == 0
+    assert base["routed_acc"] == 1.0 and base["system_acc"] == 1.0
+    out = decompose(d, logits, rule="owner_task_sum")
+    dec = out["decomposition"]
+    assert out["rule"] == "owner_task_sum"
+    assert dec["counts"]["r_not_tau"] == 1 and dec["identity_abs_error"] <= 1e-12
+    assert out["routed_acc"] == 0.0 and out["system_acc"] == 0.0
+
+
+def test_a3_1_top2_without_expert_scores_is_refused():
+    d = _dump()
+    logits = torch.randn(d.y.numel(), d.task_of_class.numel())
+    with pytest.raises(ValueError):
+        decompose(d, logits, rule="own_bank_top2")
+
+
+def test_a3_1_top2_tie_breaks_with_the_expert_score_within_the_margin():
+    # One sample; tasks 0 and 1 hold 0.525 / 0.475 of the mass: within the 0.1 band.
+    toc = torch.tensor([0, 0, 0, 1, 1, 1])
+    logits = torch.tensor([[2.9, 2.9, 2.9, 3.9, -10.0, -10.0]])
+    pred = torch.tensor([[0, 3]])  # expert 0 wrong, expert 1 right
+    y = torch.tensor([3])
+
+    def dump(scores):
+        return ExpertDump(
+            y=y,
+            task_of_class=toc,
+            expert_pred=pred,
+            expert_score=torch.tensor([scores]),
+        )
+
+    # The primary rule routes to the peak's owner (task 1, right).
+    assert decompose(dump([0.1, 0.9]), logits)["system_acc"] == 1.0
+    # In the band, the forced expert's score decides: 0.9 on expert 0 (wrong).
+    out = decompose(dump([0.9, 0.1]), logits, rule="own_bank_top2")
+    assert out["system_acc"] == 0.0 and out["rule"] == "own_bank_top2"
+    assert out["decomposition"]["identity_abs_error"] <= 1e-12
+    # Outside the band the score never matters: same dump, a clear mass winner.
+    clear = torch.tensor([[3.0, -10.0, -10.0, 2.9, 2.9, 2.9]])
+    assert decompose(dump([0.9, 0.1]), clear, rule="own_bank_top2")["system_acc"] == 1.0
+
+
+def test_a3_1_expert_score_round_trips(tmp_path):
+    d = _dump()
+    g = torch.Generator().manual_seed(0)
+    d.expert_score = torch.rand(d.expert_pred.shape, generator=g)
+    d.save(tmp_path / "s.npz")
+    e = ExpertDump.load(tmp_path / "s.npz")
+    assert e.expert_score is not None
+    assert torch.allclose(e.expert_score, d.expert_score)
+    e.expert_score = torch.rand(d.y.numel(), 2)
+    with pytest.raises(ValueError):
+        e.validate()
+
+
 # -- the benchmark protocol ---------------------------------------------------------------
 
 
@@ -220,6 +302,12 @@ def test_runner_synthetic_cell_passes_its_vetoes():
     assert v["identity_pass"] and v["r_not_tau_pass"]
     assert v["api_pass"] and v["guards_pass"]
     assert set(cell["readouts"]) == {"ncm", "ridge", "rp"} and "pal_l3" in cell["banks"]
+    rules = cell["banks"]["pal_l3"]["ridge"]["rules"]
+    assert set(rules) == {"owner_task_sum", "own_bank_top2"}
+    assert all(
+        r["decomposition"]["identity_abs_error"] <= 1e-12 for r in rules.values()
+    )
+    assert "r_not_tau_task_sum" in v
 
 
 def test_pinned_splits_give_ten_tasks_and_five_for_vtab():
