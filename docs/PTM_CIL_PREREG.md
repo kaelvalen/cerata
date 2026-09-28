@@ -296,3 +296,113 @@ EASE run projects the full EASE grid (7 benchmarks x 2 backbones x 6 seeds) past
 the RTX 5060, EASE runs on `in21k_1k` only; if that still projects past 7 days, on seeds
 0-2, with the per-benchmark test reported as descriptive (three seeds cannot reach
 p < 0.05 in an exact sign-flip test).
+
+## Amendment 3 (proposed 2026-09-28; NOT adopted)
+
+Proposed after the literature re-check in `docs/LITERATURE_UPDATE_2026-09-28.md` and before
+any benchmark cell was run (amendment 1's precondition still holds: nothing has been
+evaluated on a real benchmark). This is a proposal: the owner adopts, edits or rejects it,
+with a dated note here, before the first real cell runs. Sections 1-4 and the primary
+outcome table are unchanged unless a point below is adopted. No number from the source
+brief that failed the re-check is used (notably "ridge 89.1 vs expert 87.3", which is not a
+number that exists in this repository).
+
+**1. The question this adds.** E-TID2 and P2-BOUND measured, in one frozen regime, that the
+class-level ridge router fixes most of the routing tax and the bank then adds < 1 pp,
+because the experts rescue ~30 % of the samples they could. Three explanations remain, one
+test per explanation, all secondary to the primary endpoint (P2 of section 3) and read
+together with it:
+
+```text
+A3.1  the decision rule wastes coverage (peak class vs summed posterior)
+A3.2  the expert's readout, not its representation, loses the rescue
+A3.3  the frozen representation itself has no headroom on this benchmark
+```
+
+The brief's own H2 sweeps 5-100 invented groups. This amendment does not invent clusterings
+(P2-BOUND's `by_confusion` was hindsight-offline and cost 19.8x the stored bytes), so it
+tests the decision rule at the only grouping the routing already has: the task partition.
+Grouping by superclass or confusion is the *consolidation* question, and P2-BOUND Part B
+owns it.
+
+**2. A3.1 - group-summed decision rule.** Evaluated on the final logits, exactly where the
+primary decomposition is. Per (readout, bank), three rules:
+
+```text
+owner_class     the primary rule, unchanged: owner of the argmax class
+owner_task_sum  p = softmax(seen-class logits), temperature pinned at 1.0;
+                task score = sum of p over the task's classes; route to the argmax task
+own_bank_top2   our bank only, exploratory: if the top two task scores are within 0.1 of
+                the total mass, both experts are evaluated and the prediction is the one
+                with the higher expert-space max class score; external banks have no
+                comparable score in the dump and do not enter this arm
+```
+
+`temperature = 1.0` and the `0.1` margin are stated modeling choices, pinned here, not
+tuned after the first cell. The `owner_task_sum` rule can route away from the owner of the
+argmax class, so `r_not_tau > 0` is possible there; the identity still holds algebraically
+and the premise veto (`r_not_tau = 0`) applies to `owner_class` only. For each rule:
+`tau`, group-decision C@1 (the task of the true class), system accuracy, and `m / rho /
+beta / P2`, paired by seed and read against the primary row.
+
+Reading, fixed before the data:
+
+- if `owner_task_sum` raises `tau` by >= 2 pp at equal or better system accuracy, keep it
+  as a reported alternative rule and re-read P2 under it;
+- if every bank's P2 stays inside +/-1 pp under every rule, the redundancy reading
+  generalizes over the decision rule; this is the brief's H2 falsified at the rule level
+  and is reported as such;
+- if `own_bank_top2` lifts our bank's P2 above +1 pp in 6/6 seeds, the expert's value is in
+  resolving ambiguous coarse decisions, not in its representation; otherwise the arm
+  retires.
+
+**3. A3.2 - expert-subspace closed-form readout (our bank only).** For `pal_l3`, the
+forced-expert prediction is recomputed with a float64 ridge fitted **in the expert's own
+adapted representation** (`model.apply_experts(z, t)`), not with the native cosine
+prototype: accumulate the sufficient statistics per task when the task arrives, select the
+penalty with the section 2 rule (80/20 split, same grid) on that expert's own training
+data, record it per cell, and argmax over all classes with the seen mask. Everything else
+(`task_of_class`, `native_pred`, the dump format) is unchanged; the result is a second dump,
+`pal_l3-ridgewp`, so the primary dump keeps the frozen definition of "forced expert t".
+
+This is E-TID2's exploratory `ridge_masked` moved inside the expert: there the shared
+readout was masked to the routed task's classes; here the readout is fitted in the expert's
+adapted space. One variable: the readout inside the fixed expert placement.
+
+Reading, fixed before the data (per benchmark, primary backbone, paired over seeds):
+
+- `rho` improves by >= 0.20 (about 30 % -> >= 50 %) on >= 4 of 7 benchmarks: the value-path
+  limit is partly a readout limit; the next expert formulation should carry its own
+  closed-form readout;
+- `rho` improves by < 0.05 everywhere: the adapted representation itself is the limit;
+  readout swaps inside the expert do not fix it and the A3.3 explanation takes over;
+- in between: benchmark-dependent, reported per benchmark, no pooled claim.
+
+**4. A3.3 - representation headroom scan (descriptive).** For each benchmark on the primary
+backbone: train the ladder's joint arm (`L2a_shared_joint`, `joint=True`: all tasks at once,
+offline - an upper bound, not a stream) and run the `rp` and `ridge` readouts (section 2
+procedure) on the adapted features. Report `rp(joint) - rp(frozen)` final accuracy.
+
+This is not a PETL experiment: no sequential adaptation, no pretraining data, no per-task
+order; PETL and anything adaptive on ObjectNet stay out of scope (section 7) - the ObjectNet
+license needs checking first (`LITERATURE_UPDATE_2026-09-28.md` section 2). This is the only
+training arm this amendment adds; it runs on `in21k_1k`, seeds 0-2, and only after A3.1 and
+A3.2. If its projection would break section 5's 48 h veto, it runs on seed 0 as a
+single-seed diagnostic, or is dropped with the drop recorded - never the other way around.
+
+Reading, thresholds fixed before the data: gap >= 10 pp marks the benchmark
+**representation-limited** (routers and banks inside the frozen regime cannot close it; the
+PETL line owns it); gap < 10 pp marks it **readout-limited** (the frozen-regime results are
+the whole story). The labels go into `PTM_CIL_RESULTS.md` as labels, not as hypotheses with
+a p-value.
+
+**5. Code, guards and order.** Every new arm is implemented in `experiments/ptm_cil.py`
+(or a small `experiments/ptm_headroom.py`) and committed before the first real cell; the
+section 5 identity and dump-order vetoes apply to every rule and arm, with the A3.1 premise
+note above; the API arm is unchanged. No hyperparameter is tuned after the first cell. A
+failed new arm is reported as failed, not removed.
+
+**6. What this does not license.** No PETL or first-session-adaptation claim (section 7
+stands). No claim that summed-posterior routing is better in general. No external bank is
+re-exported for A3.2. No benchmark, backbone or protocol is added. Nothing here changes the
+primary outcome table's section 4 readings.
