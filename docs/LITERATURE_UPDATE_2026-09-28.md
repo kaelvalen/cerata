@@ -15,7 +15,7 @@ LLM single-fact learning to retrieval/KV memory, and keep parametric edit for ba
 added a tear-out/bolt-on table and an H1-H10 roadmap. Its diagnosis matches this
 repository's published results (Stage 1, E-TID2, P2-BOUND, AC1/AC3) and the two-paper plan
 in `POSITIONING.md`; the sections below check the claims that are *new* to this repository.
-`PTM_CIL_PREREG.md` amendment 3 (proposed, same date) is the one design change that
+`PTM_CIL_PREREG.md` amendment 3 (adopted 2026-09-28) is the one design change that
 follows.
 
 ## 1. Verified against the primary source (checked 2026-09-28)
@@ -53,7 +53,7 @@ follows.
 
 ## 3. What follows (pointers, not decisions)
 
-- `PTM_CIL_PREREG.md`, **amendment 3 (proposed 2026-09-28)**: A3.1 group-summed decision
+- `PTM_CIL_PREREG.md`, **amendment 3 (adopted 2026-09-28)**: A3.1 group-summed decision
   rule; A3.2 expert-subspace closed-form readout; A3.3 representation headroom scan. PETL
   itself stays out of scope (section 7 of the prereg).
 - `V3_LLM_PREREG.md`: the brief's WILD point (**Mirage**, arXiv:2502.11177: single-edit

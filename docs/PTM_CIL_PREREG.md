@@ -297,15 +297,19 @@ the RTX 5060, EASE runs on `in21k_1k` only; if that still projects past 7 days, 
 0-2, with the per-benchmark test reported as descriptive (three seeds cannot reach
 p < 0.05 in an exact sign-flip test).
 
-## Amendment 3 (proposed 2026-09-28; NOT adopted)
+## Amendment 3 (proposed 2026-09-28; adopted 2026-09-28)
 
-Proposed after the literature re-check in `docs/LITERATURE_UPDATE_2026-09-28.md` and before
-any benchmark cell was run (amendment 1's precondition still holds: nothing has been
-evaluated on a real benchmark). This is a proposal: the owner adopts, edits or rejects it,
-with a dated note here, before the first real cell runs. Sections 1-4 and the primary
-outcome table are unchanged unless a point below is adopted. No number from the source
-brief that failed the re-check is used (notably "ridge 89.1 vs expert 87.3", which is not a
-number that exists in this repository).
+Adopted by the owner, unchanged, before any benchmark cell was run (amendment 1's
+precondition still holds: nothing has been evaluated on a real benchmark); the
+implementation was directed in the same session. Sections 1-4 and the primary outcome
+table are unchanged. No number from the source brief that failed the re-check is used
+(notably "ridge 89.1 vs expert 87.3", which is not a number that exists in this
+repository).
+
+Implementation record (2026-09-28, before the first real cell): A3.1 landed in
+`cerata/eval/decomposition.py` and `experiments/ptm_cil.py`; A3.2 is the second own-bank
+dump `pal_l3-ridgewp` in the same runner; A3.3 is `experiments/ptm_headroom.py`. No real
+cell has run.
 
 **1. The question this adds.** E-TID2 and P2-BOUND measured, in one frozen regime, that the
 class-level ridge router fixes most of the routing tax and the bank then adds < 1 pp,
