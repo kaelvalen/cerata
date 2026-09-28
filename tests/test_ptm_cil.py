@@ -166,7 +166,7 @@ def test_expert_dump_round_trips_and_validates(tmp_path):
         bad.validate()
 
 
-# -- A3.1 routing rules (docs/PTM_CIL_PREREG.md amendment 3, proposed) -----------------
+# -- A3.1 routing rules (docs/PTM_CIL_PREREG.md amendment 3, adopted) -------------------
 
 
 def test_a3_1_task_sum_rules_by_mass_not_by_the_peak():
@@ -301,13 +301,39 @@ def test_runner_synthetic_cell_passes_its_vetoes():
     v = ptm_cil.vetoes([cell])
     assert v["identity_pass"] and v["r_not_tau_pass"]
     assert v["api_pass"] and v["guards_pass"]
-    assert set(cell["readouts"]) == {"ncm", "ridge", "rp"} and "pal_l3" in cell["banks"]
+    assert set(cell["readouts"]) == {"ncm", "ridge", "rp"}
+    assert {"pal_l3", "pal_l3-ridgewp"} <= set(cell["banks"])  # A3.2
     rules = cell["banks"]["pal_l3"]["ridge"]["rules"]
     assert set(rules) == {"owner_task_sum", "own_bank_top2"}
     assert all(
         r["decomposition"]["identity_abs_error"] <= 1e-12 for r in rules.values()
     )
     assert "r_not_tau_task_sum" in v
+    meta = cell["bank_meta"]["pal_l3-ridgewp"]
+    assert len(meta["ridge_per_expert"]) == cell["num_tasks"]  # A3.2 penalties
+
+
+def test_ptm_headroom_synthetic_cell_reports_a_labeled_gap():
+    sys.path.insert(0, str(ROOT / "experiments"))
+    try:
+        import ptm_cil
+        import ptm_headroom
+    finally:
+        sys.path.pop(0)
+    args = argparse.Namespace(
+        init_cls=5, increment=5, M=32, epochs=1, lr=1e-3, batch_size=32
+    )
+    cell = ptm_headroom.run_cell(
+        ptm_cil.synthetic_cache(), "synthetic", "none", 0, args, "cpu"
+    )
+    assert set(cell["frozen"]) == {"ridge", "rp"}
+    assert set(cell["joint"]) == {"ridge", "rp"}
+    assert cell["label"] in ("representation-limited", "readout-limited")
+    expected = cell["joint"]["rp"]["final"] - cell["frozen"]["rp"]["final"]
+    assert abs(cell["gap"]["rp"] - expected) <= 1e-12
+    agg = ptm_headroom.aggregate([cell])
+    assert agg["synthetic__none"]["n_seeds"] == 1
+    assert set(agg["synthetic__none"]["gap"]) == {"ridge", "rp"}
 
 
 def test_pinned_splits_give_ten_tasks_and_five_for_vtab():

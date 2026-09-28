@@ -18,7 +18,7 @@ as an `ExpertDump` (EASE, MOS, MoTE, ... exported under every forced expert) - i
 routed by each readout (the owner of its argmax class) and decomposed:
 P2 = m * rho + P(not r, not tau) * rho' - P(r) * beta (`cerata.eval.decomposition`).
 
-A3.1 (`docs/PTM_CIL_PREREG.md` amendment 3, proposed) adds two routing rules next to the
+A3.1 (`docs/PTM_CIL_PREREG.md` amendment 3, adopted 2026-09-28) adds two routing rules next to the
 primary one, computed on the same final logits: `owner_task_sum` (the routed task
 maximizes the summed softmax mass over its classes) and `own_bank_top2` (our bank only:
 within the 0.1 mass margin the two candidates are decided by the forced expert's own max
@@ -164,8 +164,18 @@ def analytic_arms(tasks, C, lam, fm, device) -> dict:
 
 
 @torch.no_grad()
-def own_bank_dump(tasks, C, seed, recipe, device) -> ExpertDump:
-    """This repository's L3 bank (S11 recipe), exported under every forced expert."""
+def own_bank_dumps(tasks, C, seed, recipe, device) -> dict:
+    """This repository's L3 bank, exported under every forced expert, twice.
+
+    `pal_l3`         the native readout (the trained cosine prototypes), as before;
+    `pal_l3-ridgewp` (A3.2, amendment 3): for every forced expert t, a float64 ridge
+                     fitted on that expert's own adapted training features, penalty
+                     selected on the same data with the section 2 rule (80/20 split,
+                     the pinned grid) and recorded per cell.
+
+    Both dumps share `y`, `task_of_class`, `native_pred` and an `expert_score` column
+    set, so every A3.1 rule and every veto runs on both.
+    """
     args = argparse.Namespace(**recipe, seed=seed)
     cell = {"seed": seed, "rank": 8, "protos": 1, "top_k": 1}
     with torch.enable_grad():
@@ -173,27 +183,48 @@ def own_bank_dump(tasks, C, seed, recipe, device) -> ExpertDump:
     z = torch.cat([k["splits"]["test"][0] for k in tasks]).to(device)
     y = torch.cat([k["splits"]["test"][1] for k in tasks])
     T = len(tasks)
-    cols, scores = [], []
-    for t in range(T):
-        ids = torch.full((z.size(0),), t, dtype=torch.long, device=device)
-        logits = mask_unseen(
-            model.readout.predict(model.apply_experts(z, ids)), model.seen
-        )
-        cols.append(logits.argmax(-1).cpu())
-        # A3.1 `own_bank_top2`: the forced expert's own max class score.
-        scores.append(logits.softmax(-1).max(-1).values.cpu())
     toc = torch.empty(C, dtype=torch.long)
     for k in tasks:
         toc[torch.tensor(k["classes"])] = k["task_id"]
     native = model.logits(z).argmax(-1).cpu()
-    return ExpertDump(
-        y=y,
-        task_of_class=toc,
-        expert_pred=torch.stack(cols, 1),
-        native_pred=native,
-        expert_score=torch.stack(scores, 1),
-        meta={"method": "pal_l3", "recipe": recipe, "rank": 8, "seed": seed},
-    )
+    cols = {name: [] for name in ("pal_l3", "pal_l3-ridgewp")}
+    scores = {name: [] for name in cols}
+    ridge_per_expert = {}
+    for t in range(T):
+        ids = torch.full((z.size(0),), t, dtype=torch.long, device=device)
+        adapted = model.apply_experts(z, ids)
+        logits = mask_unseen(model.readout.predict(adapted), model.seen)
+        cols["pal_l3"].append(logits.argmax(-1).cpu())
+        scores["pal_l3"].append(logits.softmax(-1).max(-1).values.cpu())
+        # A3.2: the closed-form readout in expert t's own adapted representation.
+        ztr, ytr = [v.to(device) for v in tasks[t]["splits"]["train"]]
+        adapted_train = model.apply_experts(
+            ztr, torch.full((ztr.size(0),), t, dtype=torch.long, device=device)
+        )
+        sel = select_ridge(adapted_train.cpu(), ytr.cpu(), C, seed=seed, device=device)
+        ridge_per_expert[t] = sel["ridge"]
+        ridge = LinearStats(adapted.size(1), C, ridge=sel["ridge"], device=device)
+        ridge.add(ridge.contribution(f"t{t}", adapted_train, one_hot(ytr, C)))
+        logits = mask_unseen(ridge.predict(adapted), model.seen)
+        cols["pal_l3-ridgewp"].append(logits.argmax(-1).cpu())
+        scores["pal_l3-ridgewp"].append(logits.softmax(-1).max(-1).values.cpu())
+    return {
+        name: ExpertDump(
+            y=y,
+            task_of_class=toc,
+            expert_pred=torch.stack(cols[name], 1),
+            native_pred=native,
+            expert_score=torch.stack(scores[name], 1),
+            meta={
+                "method": name,
+                "recipe": recipe,
+                "rank": 8,
+                "seed": seed,
+                "ridge_per_expert": ridge_per_expert,
+            },
+        )
+        for name in cols
+    }
 
 
 def external_dumps(ext_dir, benchmark, backbone, seed) -> dict:
@@ -278,7 +309,7 @@ def run_cell(cache, benchmark, backbone, seed, args, device) -> dict:
     banks = {}
     if not args.no_bank:
         recipe = dict(S11_RECIPE, epochs=args.bank_epochs)
-        banks["pal_l3"] = own_bank_dump(tasks, C, seed, recipe, device)
+        banks.update(own_bank_dumps(tasks, C, seed, recipe, device))
     banks.update(external_dumps(args.external_dir, benchmark, backbone, seed))
     y_test = torch.cat([k["splits"]["test"][1] for k in tasks])
     decomp = {}

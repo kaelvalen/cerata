@@ -22,7 +22,7 @@ format for another method's bank (EASE, MOS, MoTE, ...): its prediction under ev
 forced expert/task, per test sample. `decompose` joins it with a readout's logits.
 
 `decompose` also takes A3.1's routing rule (`docs/PTM_CIL_PREREG.md` amendment 3,
-proposed): `owner_class` (the default, the P2-BOUND rule), `owner_task_sum` (the routed
+adopted 2026-09-28): `owner_class` (the default, the P2-BOUND rule), `owner_task_sum` (the routed
 task maximizes the summed softmax mass over its classes, temperature pinned at 1.0) and
 `own_bank_top2` (our bank only: within 0.1 of mass the two candidate tasks are decided by
 the forced expert's own max class score; it needs `ExpertDump.expert_score`).
