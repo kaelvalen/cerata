@@ -121,11 +121,24 @@ class NCM:
 
 
 @torch.no_grad()
-def analytic_arms(tasks, C, lam, fm, device) -> dict:
+def analytic_arms(tasks, C, sel, fm, device) -> dict:
     D = tasks[0]["splits"]["train"][0].size(1)
     ncm = NCM(C, D, device)
-    raw = LinearStats(D, C, ridge=lam["ridge"], device=device)
-    rp = LinearStats(D, C, ridge=lam["rp"], device=device, feature_map=fm)
+    raw = LinearStats(
+        D,
+        C,
+        ridge=sel["ridge"]["ridge"],
+        bias_ridge=sel["ridge"]["bias_ridge"],
+        device=device,
+    )
+    rp = LinearStats(
+        D,
+        C,
+        ridge=sel["rp"]["ridge"],
+        bias_ridge=sel["rp"]["bias_ridge"],
+        device=device,
+        feature_map=fm,
+    )
     steps = {k: [] for k in READOUTS}
     n_seen = 0
     for t, task in enumerate(tasks):
@@ -170,8 +183,8 @@ def own_bank_dumps(tasks, C, seed, recipe, device) -> dict:
     `pal_l3`         the native readout (the trained cosine prototypes), as before;
     `pal_l3-ridgewp` (A3.2, amendment 3): for every forced expert t, a float64 ridge
                      fitted on that expert's own adapted training features, penalty
-                     selected on the same data with the section 2 rule (80/20 split,
-                     the pinned grid) and recorded per cell.
+                     selected on the same data with the scale-free rule (amendment 4,
+                     80/20 split, c chosen on held-out MSE) and recorded per cell.
 
     Both dumps share `y`, `task_of_class`, `native_pred` and an `expert_score` column
     set, so every A3.1 rule and every veto runs on both.
@@ -202,8 +215,19 @@ def own_bank_dumps(tasks, C, seed, recipe, device) -> dict:
             ztr, torch.full((ztr.size(0),), t, dtype=torch.long, device=device)
         )
         sel = select_ridge(adapted_train.cpu(), ytr.cpu(), C, seed=seed, device=device)
-        ridge_per_expert[t] = sel["ridge"]
-        ridge = LinearStats(adapted.size(1), C, ridge=sel["ridge"], device=device)
+        ridge_per_expert[t] = {
+            "ridge": sel["ridge"],
+            "bias_ridge": sel["bias_ridge"],
+            "c": sel["c"],
+            "converged": sel["converged"],
+        }
+        ridge = LinearStats(
+            adapted.size(1),
+            C,
+            ridge=sel["ridge"],
+            bias_ridge=sel["bias_ridge"],
+            device=device,
+        )
         ridge.add(ridge.contribution(f"t{t}", adapted_train, one_hot(ytr, C)))
         logits = mask_unseen(ridge.predict(adapted), model.seen)
         cols["pal_l3-ridgewp"].append(logits.argmax(-1).cpu())
@@ -241,7 +265,7 @@ def external_dumps(ext_dir, benchmark, backbone, seed) -> dict:
 
 
 @torch.no_grad()
-def api_arm(tasks, C, lam_rp, M, rf_seed, device, direct_logits) -> dict:
+def api_arm(tasks, C, sel_rp, M, rf_seed, device, direct_logits) -> dict:
     D = tasks[0]["splits"]["train"][0].size(1)
     g = torch.Generator().manual_seed(rf_seed)
     pool = torch.cat([k["splits"]["train"][0] for k in tasks])
@@ -249,7 +273,8 @@ def api_arm(tasks, C, lam_rp, M, rf_seed, device, direct_logits) -> dict:
     model = Cerata(
         dim=D,
         num_classes=C,
-        ridge=lam_rp,
+        ridge=sel_rp["ridge"],
+        bias_ridge=sel_rp["bias_ridge"],
         random_features=M,
         rf_seed=rf_seed,
         canary=canary,
@@ -304,8 +329,7 @@ def run_cell(cache, benchmark, backbone, seed, args, device) -> dict:
         "ridge": select_ridge(z0, y0, C, seed=seed, device=device),
         "rp": select_ridge(z0, y0, C, feature_map=fm, seed=seed, device=device),
     }
-    lam = {k: v["ridge"] for k, v in sel.items()}
-    arms = analytic_arms(tasks, C, lam, fm, device)
+    arms = analytic_arms(tasks, C, sel, fm, device)
     banks = {}
     if not args.no_bank:
         recipe = dict(S11_RECIPE, epochs=args.bank_epochs)
@@ -338,14 +362,14 @@ def run_cell(cache, benchmark, backbone, seed, args, device) -> dict:
         "seed": seed,
         "num_tasks": len(tasks),
         "split": [init_cls, increment],
-        "ridge_selection": {k: {"ridge": v["ridge"]} for k, v in sel.items()},
+        "ridge_selection": sel,
         "readouts": arms["summary"],
         "banks": decomp,
         "bank_meta": {k: v.meta for k, v in banks.items()},
     }
     if args.api:
         cell["api"] = api_arm(
-            tasks, C, lam["rp"], args.M, seed, device, arms["final_logits"]["rp"]
+            tasks, C, sel["rp"], args.M, seed, device, arms["final_logits"]["rp"]
         )
     return cell
 

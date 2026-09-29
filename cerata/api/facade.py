@@ -58,6 +58,7 @@ class Cerata(GuardedEditor):
         backbone=None,
         router: str = "ridge_class",
         ridge: float = 1.0,
+        bias_ridge: float | None = None,
         memory_threshold: float = 0.9999,
         canary: torch.Tensor | None = None,
         guards: GuardConfig | None = None,
@@ -89,6 +90,7 @@ class Cerata(GuardedEditor):
             self.dim,
             self.num_classes,
             ridge=ridge,
+            bias_ridge=bias_ridge,
             device=self.device,
             feature_map=self.feature_map,
         )

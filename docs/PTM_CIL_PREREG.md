@@ -410,3 +410,29 @@ failed new arm is reported as failed, not removed.
 stands). No claim that summed-posterior routing is better in general. No external bank is
 re-exported for A3.2. No benchmark, backbone or protocol is added. Nothing here changes the
 primary outcome table's section 4 readings.
+
+## Amendment 4 (2026-09-29, owner-directed port of the v3-restructure amendment 3)
+
+The section 2 penalty rule - a **fixed** grid `10^-8 .. 10^8`, ties to the smallest
+lambda - is retired for every future run, including A3.2's per-expert penalties and
+A3.3's readouts. A veto check on a headroom ceiling cell found it is not scale-free: for
+the 10,000-d random-projection readout the Gram diagonal is O(1e6), every grid point was
+negligible (flat held-out curve, 100 % train accuracy) and the tie rule slid to the
+smallest lambda; the frozen baselines were silently under-regularised and `G` inflated.
+The v3 restructure fixed this on its branch (`cf1b721`); this amendment ports the same
+rule into `cerata.edit.stats.select_ridge`:
+
+- the features entering the choice are normalised to unit mean squared norm
+  (`s = sqrt(mean ||phi(z)||^2)` on the pre-stream data);
+- `lambda = c * trace(A_feat)/d` with `c` from `{1e-6, ..., 1e1}`;
+- ties go to the **largest** `c` whose held-out MSE is within 0.1 % of the best
+  (1-SE style), not to the smallest lambda;
+- an edge choice extends the grid once by three decades; if it stays an edge the cell is
+  flagged `converged = false` and its reading is withheld;
+- `LinearStats` gains `bias_ridge`; the selector returns both penalties of the raw
+  feature scale, so a fit on rescaled features is the same model.
+
+`tests/test_ridge_select.py` pins the choice invariance (power-of-two, x100, edge
+extension), the largest-c tie rule and the regression-target path. Any cell computed
+before this amendment under the old rule - the CIFAR-100 pilot, the synthetic smoke - is
+a pilot artifact, not a section 4/5 reading; a screen that used it is restarted.

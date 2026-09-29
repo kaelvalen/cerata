@@ -66,21 +66,31 @@ def pinned_readouts(features_of, tasks, C, M, seed, device) -> dict:
 
     `features_of` maps a feature batch to the representation under test (frozen:
     identity; joint: the shared adapter). Penalties are selected on task 0 with the
-    section 2 rule and pinned for the stream, exactly as in `ptm_cil.run_cell`.
+    amendment 4 scale-free rule and pinned for the stream, exactly as in
+    `ptm_cil.run_cell`.
     """
     z0, y0 = tasks[0]["splits"]["train"]
     z0r = features_of(z0).to(device)
     fm = RandomProjection(z0r.size(1), M, seed=seed)
-    lam = {
-        "ridge": select_ridge(z0r.cpu(), y0, C, seed=seed, device=device)["ridge"],
-        "rp": select_ridge(z0r.cpu(), y0, C, feature_map=fm, seed=seed, device=device)[
-            "ridge"
-        ],
+    sel = {
+        "ridge": select_ridge(z0r.cpu(), y0, C, seed=seed, device=device),
+        "rp": select_ridge(z0r.cpu(), y0, C, feature_map=fm, seed=seed, device=device),
     }
     stats = {
-        "ridge": LinearStats(z0r.size(1), C, ridge=lam["ridge"], device=device),
+        "ridge": LinearStats(
+            z0r.size(1),
+            C,
+            ridge=sel["ridge"]["ridge"],
+            bias_ridge=sel["ridge"]["bias_ridge"],
+            device=device,
+        ),
         "rp": LinearStats(
-            z0r.size(1), C, ridge=lam["rp"], device=device, feature_map=fm
+            z0r.size(1),
+            C,
+            ridge=sel["rp"]["ridge"],
+            bias_ridge=sel["rp"]["bias_ridge"],
+            device=device,
+            feature_map=fm,
         ),
     }
     for t, task in enumerate(tasks):
@@ -98,7 +108,7 @@ def pinned_readouts(features_of, tasks, C, M, seed, device) -> dict:
         logits = mask_unseen(stats[name].predict(zr_test), list(range(C)))
         out[name] = {
             "final": float((logits.argmax(-1).cpu() == y_test).float().mean()),
-            "ridge": lam[name],
+            "ridge": sel[name],
         }
     return out
 

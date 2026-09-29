@@ -71,7 +71,9 @@ class LinearStats:
 
     `bias=True` appends a ones column (intercept solved jointly), matching
     `cerata.arch.readouts.RidgeReadout` term for term: `A_0 = lambda I` on the
-    augmented dimension.
+    augmented dimension. `bias_ridge` overrides the penalty on that one coordinate
+    (default: `ridge`); the scale-free selector (`select_ridge`) returns the pair, so
+    a fit on rescaled features maps to the same model.
     """
 
     def __init__(
@@ -83,16 +85,21 @@ class LinearStats:
         device: str | torch.device = "cpu",
         dtype: torch.dtype = torch.float64,
         feature_map=None,
+        bias_ridge: float | None = None,
     ):
         self.dim, self.out_dim = int(dim), int(out_dim)
         self.ridge, self.bias = float(ridge), bool(bias)
+        self.bias_ridge = float(self.ridge if bias_ridge is None else bias_ridge)
         self.device, self.dtype = torch.device(device), dtype
         self.feature_map = feature_map
         if feature_map is not None and int(feature_map.in_dim) != self.dim:
             raise ValueError("feature_map.in_dim must equal dim")
         feat = self.dim if feature_map is None else int(feature_map.out_dim)
         self.d1 = feat + int(self.bias)
-        self.A0 = self.ridge * torch.eye(self.d1, device=self.device, dtype=dtype)
+        pen = torch.full((self.d1,), self.ridge, device=self.device, dtype=dtype)
+        if self.bias:
+            pen[-1] = self.bias_ridge
+        self.A0 = torch.diag(pen)
         self.A = self.A0.clone()
         self.B = torch.zeros(self.d1, self.out_dim, device=self.device, dtype=dtype)
         self._contrib: dict[str, Contribution] = {}
@@ -259,49 +266,118 @@ class LinearStats:
         return 0  # statistics are buffers, never optimised
 
 
+# Scale-free c-grid of PTM-CIL amendment 4: lambda = c * trace(A_feat)/d on features
+# normalised to unit mean squared norm. Ties go to the LARGEST c within `TIE_TOL`
+# (relative) of the best held-out MSE; an edge choice extends the grid once.
+SCALE_FREE_GRID = [10.0**k for k in range(-6, 2)]
+EDGE_EXTEND = 3
+TIE_TOL = 1e-3
+
+
+def _largest_within(scores: dict, tie_tol: float) -> float:
+    """The largest `c` whose held-out loss is within `tie_tol` (relative) of the best."""
+    best = min(scores.values())
+    thr = best + tie_tol * abs(best) + 1e-12
+    return max(c for c, v in scores.items() if v <= thr)
+
+
 @torch.no_grad()
 def select_ridge(
     Z: torch.Tensor,
-    y: torch.Tensor,
-    num_classes: int,
+    y: torch.Tensor | None = None,
+    num_classes: int | None = None,
     feature_map=None,
     grid=None,
     frac: float = 0.8,
     seed: int = 0,
     bias: bool = True,
     device: str | torch.device = "cpu",
+    Y: torch.Tensor | None = None,
+    tie_tol: float = TIE_TOL,
 ) -> dict:
     """Pick the ridge penalty once, on data available before the stream is fixed.
 
-    RanPAC's rule (fit on the first `frac` of the samples, MSE on the rest, grid
-    `10^-8 .. 10^8`), applied to one batch - the first task - and then pinned, so the
-    stream's solution stays order-invariant and removable. Samples are split by a
-    seeded permutation, not by loader order.
+    PTM-CIL amendment 4 (a port of the v3-restructure amendment 3): the fixed
+    `10^-8 .. 10^8` grid is retired, because it is not scale-free. On a wide `phi`
+    (a 10^4-d random projection) every point of it was negligible - a flat held-out
+    curve, 100 % train accuracy - and ties slid to the smallest lambda, silently
+    under-regularising the frozen baselines. Penalties are now chosen relative to
+    the feature scale, `lambda = c * trace(A_feat)/d`, on features normalised to
+    unit mean squared norm; ties go to the LARGEST `c` within `tie_tol` of the best
+    held-out MSE; an edge choice extends the grid once by three decades and is
+    flagged `converged = False` if it stays an edge. Samples are split by a seeded
+    permutation, not by loader order. `Y` passes an explicit target matrix
+    (regression included); otherwise `one_hot(y, num_classes)` is used. Returns the
+    penalties of the RAW feature scale - `ridge` for the feature block and
+    `bias_ridge` for the appended intercept - so `LinearStats(ridge=...,
+    bias_ridge=...)` reproduces the normalised-space fit; `c`, `scale`, `unit`, the
+    evaluated `grid`/`val_mse` and the edge `converged` flag are reported too.
     """
-    grid = [10.0**e for e in range(-8, 9)] if grid is None else list(grid)
+    Z = torch.as_tensor(Z)
+    if Z.dim() != 2:
+        raise ValueError("Z must be [n, dim]")
+    if Y is None:
+        if y is None or num_classes is None:
+            raise ValueError("select_ridge needs Y or (y, num_classes)")
+        Y = one_hot(torch.as_tensor(y).reshape(-1), int(num_classes))
+    Y = torch.as_tensor(Y, dtype=torch.float64).reshape(Z.size(0), -1).to(device)
+    if feature_map is not None and int(feature_map.in_dim) != Z.size(1):
+        raise ValueError("feature_map.in_dim must equal Z.size(1)")
+    K = (
+        feature_map(Z.to(device, torch.float64))
+        if feature_map is not None
+        else Z.to(device, torch.float64)
+    )
+    K = K.to(torch.float64)
+    d = K.size(1) - int(bias)
+    if bias:
+        K = torch.cat(
+            [K, torch.ones(K.size(0), 1, dtype=K.dtype, device=K.device)], dim=1
+        )
+    scale = (float((K[:, :d] ** 2).sum()) / max(1, K.size(0))) ** 0.5 or 1.0
+    H = torch.cat([K[:, :d] / scale, K[:, d:]], dim=1)
+
     g = torch.Generator().manual_seed(seed)
     perm = torch.randperm(Z.size(0), generator=g)
     cut = int(Z.size(0) * frac)
+    if not 0 < cut < Z.size(0):
+        raise ValueError("frac must leave a fit and a held-out split")
     tr, va = perm[:cut], perm[cut:]
-    probe = LinearStats(
-        Z.size(1),
-        num_classes,
-        ridge=1.0,
-        bias=bias,
-        device=device,
-        feature_map=feature_map,
-    )
-    Ktr, Kva = probe._augment(Z[tr]), probe._augment(Z[va])
-    Ytr = one_hot(y[tr].to(probe.device), num_classes)
-    Yva = one_hot(y[va].to(probe.device), num_classes)
-    G, Q = Ktr.t() @ Ktr, Ktr.t() @ Ytr
-    eye = torch.eye(G.size(0), dtype=G.dtype, device=G.device)
-    losses = []
-    for lam in grid:
-        W = torch.linalg.solve(G + lam * eye, Q)
-        losses.append(float(((Kva @ W - Yva) ** 2).mean()))
-    best = min(range(len(grid)), key=lambda i: losses[i])
-    return {"ridge": grid[best], "grid": grid, "val_mse": losses, "seed": seed}
+    Htr, Hva, Ytr, Yva = H[tr], H[va], Y[tr], Y[va]
+    A, Q = Htr.t() @ Htr, Htr.t() @ Ytr
+    unit = float(torch.diagonal(A)[:d].sum()) / d
+    eye = torch.eye(H.size(1), dtype=torch.float64, device=device)
+    scores: dict[float, float] = {}
+
+    def heldout_mse(c: float) -> float:
+        L = torch.linalg.cholesky(A + c * unit * eye)
+        W = torch.cholesky_solve(Q, L)
+        return float(((Hva @ W - Yva) ** 2).mean())
+
+    grid = list(SCALE_FREE_GRID if grid is None else grid)
+    for c in grid:
+        scores[c] = heldout_mse(c)
+    c = _largest_within(scores, tie_tol)
+    extended = None
+    if c in (min(grid), max(grid)):
+        step = 10.0 if c == max(grid) else 0.1
+        for i in range(1, EDGE_EXTEND + 1):
+            scores[c * step**i] = heldout_mse(c * step**i)
+        extended = "up" if step > 1 else "down"
+        c = _largest_within(scores, tie_tol)
+    all_c = sorted(scores)
+    return {
+        "ridge": c * unit * scale * scale,
+        "bias_ridge": c * unit,
+        "c": c,
+        "scale": scale,
+        "unit": unit,
+        "grid": all_c,
+        "val_mse": [scores[x] for x in all_c],
+        "extended": extended,
+        "converged": c not in (all_c[0], all_c[-1]),
+        "seed": seed,
+    }
 
 
 def one_hot(y: torch.Tensor, num_classes: int, dtype=torch.float64) -> torch.Tensor:

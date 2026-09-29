@@ -89,13 +89,14 @@ def test_stats_without_feature_map_keep_their_digest_and_layout():
     assert t.d1 == M + 1 and t.state_digest() != digest(t.A, t.B)
 
 
-def test_select_ridge_is_deterministic_and_on_the_grid():
+def test_select_ridge_is_deterministic_and_scale_free():
     z, y = torch.cat([b[0] for b in _batches()]), torch.cat([b[1] for b in _batches()])
     fm = RandomProjection(D, M)
     a = select_ridge(z, y, C, feature_map=fm, seed=3)
     b = select_ridge(z, y, C, feature_map=fm, seed=3)
-    assert a["ridge"] == b["ridge"] and a["ridge"] in a["grid"]
-    assert len(a["val_mse"]) == len(a["grid"]) == 17
+    assert a["ridge"] == b["ridge"] and a["c"] == b["c"]
+    assert a["c"] in a["grid"] and a["scale"] > 0 and a["bias_ridge"] > 0
+    assert len(a["val_mse"]) == len(a["grid"])
 
 
 def test_palmoe_with_random_features_passes_every_guard():
