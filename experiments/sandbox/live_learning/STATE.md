@@ -22,17 +22,15 @@ patched silently; results JSON lives in `results/live_learning/` (untracked).
 - Stream-v2 c6 (discriminative "7310"): provenance 1.00.
 - Paraphrase augmentation: held-out set B routing 6/6, recall 6/6.
 
-## Next task: learned controller (pinned design, implementation pending)
+## Controller v1 (done): serve-first repair bandit
 
-Pinned in the prereg: contextual bandit over {promote, defer}; features = recurrence
-count, router margin, candidate KLD (measured without committing), budget used;
-reward = later-probe recall, cost = pinned expert-budget price. Missing decision to
-pin first: the probe-placement protocol (proposal: every fact is probed once after
-the stream ends, plus once immediately after its own decision; credit to the last
-decision only - crude, state it). E-path for deferrals: answer via MiniLM retrieval
-of the fact text injected into the base prompt (the mesa memory mechanism), so a
-deferral has a measurable value. Comparison: bandit vs rule v0 on the same stream
-(6 facts x3 queries, 12 x1): expert count at equal recall, refusals, budget curve.
+Measured on the same stream (6 facts x3 queries, 12 x1), code in `ledger_bandit.py`,
+all pins and readings in the prereg: rule 6 experts / 16-18; eps bandit 0 / 15-18;
+UCB decide-before-serve 17 / 17-18; **repair (serve first, UCB on observed misses)
+3 experts / 18-18** - it promotes exactly the deterministic memory failures (p3, w3,
+c2). The decision point (after the serve) mattered more than the exploration rule.
+Next controller items: future-aware reward (recurrence signal instead of myopia),
+cross-session probes; then the VLM mirror.
 
 ## Files
 

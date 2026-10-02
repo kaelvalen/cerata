@@ -440,3 +440,90 @@ With the c6 expert: "7310"; without it: a generic explanation, no code - **attri
 True**. The last measured artefact (the non-discriminative "30") is closed by the v2
 stream; v1 stays on record. The learned-controller design is pinned above and is the
 remaining implementation item, followed by the VLM mirror.
+
+## Controller v1: learned promotion policy (pinned 2026-10-02, before the run)
+
+Missing decision from the earlier pin - probe placement - is resolved as: **the served
+query is the probe**. The controller observes the outcome (token hit) of every query it
+serves, at zero extra generation cost; no separate probing schedule. Reward is
+immediate (no future discount; stated as the limitation): +1 for a token hit on the
+served path, and a one-time cost of 0.3 when a promotion commits. A KLD refusal locks
+the fact to the memory path (no repeated retraining attempts); a committed promotion
+switches the fact to its expert for the rest of the stream.
+
+Memory tier (E): MiniLM retrieval over the fact keys (query == key by construction, so
+this isolates the generation tier) + note injection into the base prompt; served with
+all deltas zeroed. Expert tier: the fact's own delta materialised alone.
+
+Two arms, same stream as v0 (6 facts x3, 12 facts x1), same model and session:
+- rule: promote on the second query (v0), deferred facts served by memory;
+- bandit: epsilon-greedy (eps=0.2, alpha=0.5, seed 0, ties -> defer), context =
+  (last served outcome, min(count, 2)), actions {promote, defer}.
+
+Readings per arm: experts, refusals, final readout recall over all 18 facts (path and
+token hit per fact), Q table. Predictions: (1) Q(defer) > Q(promote) in the memory-ok
+context and the reverse in the memory-fail context; (2) bandit promotions concentrate
+on facts whose memory tier fails (plus exploration commits, counted); (3) bandit final
+recall >= rule's at comparable or lower expert count.
+
+## Controller v1 results + v1.1 UCB (diagnosis 2026-10-02, v1.1 pinned before its run)
+
+v1 as pinned **failed two of its three predictions**: the bandit chose promote 0 times in
+30 decisions (with eps=0.2, P = 0.9^30 by pure luck), so experts 0 and final recall
+15/18 vs the rule's 16/18; Q shows a zero-value defer in the memory-fail context and no
+promote sample at all. Diagnosis: (a) the failure context can never learn - after a
+failure Q(defer) = 0, Q(promote) = 0 never sampled, tie -> defer, i.e. the known-bad arm
+ties the unknown arm; (b) no forced exploration, plus seed luck. The rule's six experts
+also incidentally covered p3, the one recurring fact whose memory tier answered wrongly
+("Kahve içmek için bir çarşaf...") - visible only because this run measured the memory
+tier for all facts for the first time (rule final readout fails w3 and c2 in memory).
+
+v1.1 fix: **UCB1** over the same contexts, actions and reward (bonus
+sqrt(ln(N+1)/n_a), C=1.0, unsampled action first, tie -> defer, same seed and stream).
+Predictions: (1) promote is sampled once in every context, so Q(promote) is measured
+exactly where the failure context needs it; (2) the learned policy promotes in the
+(fail, 2) context (p3) and defers otherwise, so expert count = 1 + the forced
+first-sample commits; (3) final recall >= rule's 16 at fewer experts.
+
+## Controller v1.2: repair bandit, decision after the serve (pinned 2026-10-02, before the run)
+
+v1.1 UCB **over-corrected**: 17 experts, recall 17/18. The trace shows the mechanism:
+the defer arm in the (none,1) context was sampled twice (one hit, one miss - p3's
+deterministic memory failure), so Q(defer) = 0.25 with n = 2, while promote was
+sampled repeatedly at a constant 0.7; the bonus could not revive defer and 15 of 18
+facts were promoted at their first query, before memory even served them. Diagnosis:
+when the controller decides *before* serving, the promote counterfactual ("what would
+memory have done?") is never observed, and one unlucky defer sample poisons the arm.
+The decision point, not the exploration rule, is the flaw.
+
+v1.2: **serve first, repair after failure.** Every unpromoted fact is served by the
+memory tier; a query with a token hit needs no decision; only on a miss does the
+controller decide {promote, defer} (same UCB1: C=1.0, alpha=0.5, tie -> defer, context
+= min(count,2); the pinned reward is unchanged: +1 token hit on the served path minus
+0.3 when a promotion commits - for defer the served path is the observed miss, reward
+0). The reward myopia still stands as the known limitation.
+
+Predictions: promoted = {p3, w3, c2} (the deterministic memory failures), experts 3,
+recall 18/18 (a repaired fact is served by its expert at the final readout); Q shows
+promote > defer in the failure contexts. This would beat the rule (16/18 at 6 experts)
+and both pre-serve variants on the expert/recall trade-off.
+
+## Controller v1.x results (2026-10-02)
+
+| arm | experts | final recall |
+| --- | --- | --- |
+| rule (recurrence >= 2) | 6 | 16/18 |
+| v1 eps bandit | 0 | 15/18 |
+| v1.1 UCB, decide-before-serve | 17 | 17/18 |
+| v1.2 repair (serve first, UCB) | **3** | **18/18** |
+
+v1.2 promoted exactly {p3, w3, c2} - the deterministic memory failures - and reaches
+full recall at half the rule's expert count. Four failure events occurred (p3 twice,
+w3, c2): the count-1 context split its first samples (one defer, two promotes) and
+p3's second failure promoted in the count-2 context; Q(promote) = 0.525 / 0.35 vs
+Q(defer) = 0.0 in both contexts. The lesson of the arc is that the **decision point**
+mattered more than the exploration rule: before serving, the promote counterfactual is
+unobserved and one unlucky defer sample starves the arm (v1.1); after serving, the
+outcome *is* the counterfactual and one sample per action suffices. Remaining known
+limitation: the reward is myopic; a future-aware repair needs a recurrence signal (or
+the final readout counted as future value) - pinned as the next controller item.
