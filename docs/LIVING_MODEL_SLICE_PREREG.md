@@ -796,3 +796,25 @@ matrix of the four panels has a maximum off-key similarity of 0.938 (A-B'), belo
 0.97. The v1.2 policy transfers to the VLM side: serve -> observed miss -> UCB repair,
 with the same exploration cost (A's two deferred samples) and the same result (full
 recall, minimal experts).
+
+## VLM update/unlearn battery (pinned 2026-10-02, before the run)
+
+Mirror of the text session semantics on the VLM store. Sequence: (1) add A ("Tira");
+(2) **update A** - revoke the old expert, propose_and_commit the new pair ("Bora", same
+panel; the KLD cap still gates it); (3) add B' ("Vok"); (4) isolation probes; (5)
+**unlearn B'** - revoke. Readings: hashes h0/h1 (after add A)/h2 (after the update,
+state {A_new})/h3 (after B')/h4 (after unlearn, must equal h2 bitwise), the update
+record (old revoked, new committed, KLD), and the probe responses - after the update A
+must answer "Bora" and not "Tira"; B' stays "Vok"; after unlearn B' must not answer
+"Vok" while A still answers "Bora"; canary clean. Predictions: the update commits under
+the cap and serves the new code; isolation holds; h4 == h2; unlearn is silent; all
+checks true.
+
+## VLM update/unlearn results (2026-10-02)
+
+**All nine checks pass.** The update (revoke + retrain "Bora") commits with KLD 0.065
+and serves the new code while "Tira" is gone; B' stays isolated ("Vok"); unlearn B' is
+silent (base answers, no "Vok") while A still serves "Bora"; the hash after unlearn
+equals the hash recorded after the update bitwise (h4 == h2); canary clean; all three
+commits under the cap (0.098 / 0.065 / 0.132; ~6 s per training). The VLM side now
+covers add/update/unlearn/serve/route/abstain/revoke with the transaction guarantees.

@@ -67,11 +67,18 @@ x3, B' x3, C/D x1: all seven checks pass - base misses the first probes, experts
 choices correct (max off-key sim 0.938 < tau 0.97), canary clean, hash changed. The
 first miss defers twice (A repairs at q3); later facts promote greedily.
 
+## VLM update/unlearn (done): `vlm_update_unlearn.py`
+
+All nine checks pass: the update (revoke + retrain "Bora") commits (KLD 0.065) and
+serves the new code with "Tira" gone; B' stays isolated; unlearn is silent; the hash
+after unlearn equals the post-update hash bitwise (h4 == h2); canary clean; all commits
+under the cap (~6 s per training).
+
 ## Next
 
-VLM side: update/unlearn battery (revoke done; update = retrain), keys on real photos
-or more distinctive panels. Optional text side: future-aware repair reward; the update
-retrain path with a promoted fact.
+VLM side: keys on real photos or more distinctive panels (the panel regime has a
+0.006-0.062 margin). Optional text side: future-aware repair reward; the update retrain
+path with a promoted fact.
 
 ## Files
 
