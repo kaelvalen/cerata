@@ -132,3 +132,32 @@ The G3 failure was composition, and routing removes composition: this is the fir
 working transactional-fact configuration. SW (small-magnitude single adapter) is now
 deprioritised; the next steps are capacity (more facts), router accuracy at scale, and
 the expert organ formalised (the MoE slice) with the same ledger semantics.
+
+## Capacity experiment (pinned 2026-10-02, before the run)
+
+The third smoke validated routed experts at 3 facts. Capacity question: does the
+same configuration hold at 10 and 30 facts? Pinned before running:
+
+- arms: routed (RE) vs merged (MR control), same deltas;
+- readings: recall per fact (all / after revoking the last addition), router accuracy
+  (routed recall implies the right expert), G2 identity at the last revoke, add and
+  revoke latency, adapter capacity CAP = 64 (rank 16 per fact), model 1.5B;
+- expectation: merged collapses immediately; routed holds while the router separates
+  the keys; failures are reported per fact, not aggregated away.
+
+## Capacity results (2026-10-02, 1.5B)
+
+`--facts 10` and `--facts 30` (the stream holds 18 facts; the second run clips to all
+of them), CAP 64, rank 16/fact:
+
+| run | merged recall | routed recall | after revoking the last | G2 identity | add | revoke |
+| :-- | --: | --: | :-- | :-- | --: | --: |
+| 10 facts | 0/10 | **10/10** | 9 retained, revoked gone | exact | 3.28 s | 0.03 s |
+| 18 facts | 0/18 | **18/18** | 17 retained, revoked gone | exact | 3.33 s | 0.07 s |
+
+Router accuracy is 100% in both runs (implied by routed recall, one expert per query,
+parameter-free). The slice's primary configuration therefore holds through the whole
+stream: transactional add/revoke, exact state identity, full recall, sub-100 ms revoke.
+Open next: G5 provenance (leave-one-out), the G3 table (canary KLD, retained drop),
+capacity beyond the stream (synthetic key space), then the expert organ/MoE slice and
+the controller.

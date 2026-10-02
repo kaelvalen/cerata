@@ -24,7 +24,7 @@ from harness import chat, load_model, make_lora  # noqa: E402
 from stream import FACTS  # noqa: E402
 
 R = 16  # rank per fact
-CAP = 8  # capacity, in facts
+CAP = 64  # capacity, in facts
 
 
 class DeltaStore:
