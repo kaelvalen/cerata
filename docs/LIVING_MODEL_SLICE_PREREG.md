@@ -189,3 +189,27 @@ All 18 facts, 1.5B, CAP 64, deltas as before.
 - Next measurement, pinned before running: per-expert canary KLD under routed
   inference (suspend all but the chosen expert), plus a magnitude sweep if the
   per-expert number is also large.
+
+## Magnitude cliff (2026-10-02, 1.5B, 18 facts)
+
+| lr / steps | provenance | retained | per-expert KLD mean / max | all-active KLD |
+| :-- | --: | --: | --: | --: |
+| 1e-4 / 8 | 0.06 | 1/17 | 0.18 / 0.54 | 25.7 |
+| 3e-4 / 16 | 1.00 | 17/17 | 10.96 / 22.08 | 32.8 |
+
+The facts learn only at the strong setting, and the strong setting distorts general
+behaviour; the weak setting leaves behaviour alone and learns nothing. A sharp
+magnitude cliff: per-fact LoRA deltas as shaped here cannot hold recall and a small
+footprint at once. (The weak deltas' KLD 0.18 is mostly bf16 logit noise, visible
+because base and active forwards are separate.)
+
+Pinned before trying any fix, in order:
+
+1. **KL-anchored delta training** - add a penalty on the canary prompts' next-token
+   distribution during per-fact training (the foot-print is trained against, not
+   hoped for); primary next attempt.
+2. Mid-magnitude sweep (lr 2e-4 / 12 steps) to map the cliff.
+3. Subspace constraints (orthogonalise the delta against canary directions or the
+   other experts' directions) - deferred until 1 and 2 are read.
+
+No other route is tried before being written here.

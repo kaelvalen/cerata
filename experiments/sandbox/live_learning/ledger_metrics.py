@@ -27,9 +27,11 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
     ap.add_argument("--facts", type=int, default=18)
+    ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--steps", type=int, default=16)
     ap.add_argument("--out", default="results/live_learning/ledger_g3g5_15b.json")
     args = ap.parse_args()
-    store = DeltaStore(args.model, steps=16)
+    store = DeltaStore(args.model, lr=args.lr, steps=args.steps)
     facts = FACTS[: args.facts]
     for f in facts:
         store.add(
@@ -91,14 +93,36 @@ def main() -> None:
         klds.append(float((pb * (pb / pa).log()).sum() + (pa * (pa / pb).log()).sum()))
     canary_kld = sum(klds) / len(klds)
 
+    # -- per-expert canary KLD under routed inference ----------------------
+    full = dict(store.deltas)
+    per_expert = {}
+    for f in facts:
+        store.deltas = {f.id: full[f.id]}
+        store.materialize()
+        a = [logits(q) for q in canaries]
+        ks = []
+        for b, x in zip(base, a):
+            pb, pa = torch.softmax(b, -1), torch.softmax(x, -1)
+            ks.append(
+                float((pb * (pb / pa).log()).sum() + (pa * (pa / pb).log()).sum())
+            )
+        per_expert[f.id] = sum(ks) / len(ks)
+    store.deltas = full
+    store.materialize()
+
     result = {
         "model": args.model,
         "facts": len(facts),
+        "lr": args.lr,
+        "steps": args.steps,
         "provenance": prov,
         "provenance_accuracy": sum(v["attributed"] for v in prov.values()) / len(prov),
         "retained_after_suspend_last": retained,
         "retained_rate": sum(retained.values()) / len(retained),
         "canary_kld": canary_kld,
+        "per_expert_kld": per_expert,
+        "per_expert_kld_mean": sum(per_expert.values()) / len(per_expert),
+        "per_expert_kld_max": max(per_expert.values()),
         "canary_questions": canaries,
     }
     out = Path(args.out)
@@ -107,7 +131,8 @@ def main() -> None:
     print(
         f"provenance {result['provenance_accuracy']:.2f} | "
         f"retained {sum(retained.values())}/{len(retained)} | "
-        f"canary KLD {canary_kld:.4f}"
+        f"canary KLD {canary_kld:.4f} | per-expert KLD "
+        f"mean {result['per_expert_kld_mean']:.4f} max {result['per_expert_kld_max']:.4f}"
     )
 
 
