@@ -871,3 +871,25 @@ attributable to vision (same question, different answer by image). Routed servin
 -> "Tira", P2 abstains (sim 0.94 < tau); canary clean; under cap. This is the first
 image-conditioned VLM delta: negative scenes in training turn a text-memorising expert
 into a visually gated one, and it still generalises to unseen variants of its scene.
+
+## Layout note and results index (2026-10-03)
+
+Layout: the VLM scripts moved to `experiments/sandbox/live_learning/vlm/` (names
+unchanged; shared helpers consolidated in `vlm_core.py`). References in the sections
+above like `vlm_mirror.py` map to `vlm/vlm_mirror.py`; no run was changed.
+
+| theme | sections | commit |
+| :-- | :-- | :-- |
+| slice-1 core (compose, routing, KL anchor, organ) | "Second smoke" ... "Organ-invariant results" | up to 4b152a3 |
+| slice-1 closeout | "Slice-1 closeout" | 3116104 |
+| paraphrase augmentation | "Paraphrase augmentation ..." | ff0cabf |
+| G1 failure atomicity | "G1 on failures ..." | 4134ef7 |
+| stream-v2 c6 | "Stream v2 c6 ..." | 6e89121 |
+| controller v1 (eps/UCB/repair) | "Controller v1 ..." / "Controller v1.2 ..." | bc6b0d1 |
+| cross-session E+Delta hybrid | "Cross-session ..." | 49b6ec5 |
+| VLM mirror v0-v3 (+ reset fix) | "VLM mirror ..." | 4c77c49, c93380e |
+| VLM store port | "VLM store port ..." | f0eb2c6 |
+| VLM repair controller | "VLM repair controller ..." | fec9f46 |
+| VLM update/unlearn | "VLM update/unlearn ..." | 8d77dbe |
+| VLM scene variants | "VLM scene variants ..." | f710971 |
+| VLM contrast-pair expert | "VLM contrast-pair ..." | fe06f57 |

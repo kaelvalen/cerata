@@ -1,8 +1,8 @@
 # The living model: transactional, auditable learning during interaction - positioning
 
-Status: **brainstorm output, 2026-10-02; step-0 originality audit appended (Appendix
-A).** This note seeds the program that `experiments/sandbox/live_learning/` currently
-measures; it is not a pre-registration yet.
+Status: **brainstorm output, 2026-10-02; step-0 originality audit (Appendix A) and the
+measured program so far (Appendix B, 2026-10-03).** This note seeds the program that
+`experiments/sandbox/live_learning/` (VLM scripts under `vlm/`) measures.
 
 ## 1. The claim
 
@@ -176,24 +176,46 @@ with guarantees** - and the guarantees are the contribution.
 - If the slice cannot separate G2/G5 from the closest three on the mesa and one
   external anchor, the thesis is falsified and the mesa record says so (Section 7).
 
-## Appendix B: slice-1 measured guarantees (2026-10-02)
+## Appendix B: measured guarantees (2026-10-03)
 
-System: frozen Qwen2.5-1.5B + per-fact LoRA experts (independent, from the base) +
-a parameter-free MiniLM router + the transaction ledger. Instrument:
-`experiments/sandbox/live_learning/`; every number below is from a pinned run
-(`docs/LIVING_MODEL_SLICE_PREREG.md`).
+System: frozen Qwen2.5-1.5B (text) and Qwen3-VL-2B (vision) + per-fact LoRA deltas
+from the same frozen base + a parameter-free semantic router (MiniLM for text, CLIP
+for images) + the transaction ledger. Instrument:
+`experiments/sandbox/live_learning/` (VLM scripts under `vlm/`); every number is from
+a pinned run (`docs/LIVING_MODEL_SLICE_PREREG.md`; the index at its end maps themes to
+commits).
+
+### B.1 Text side
 
 | guarantee | measurement | result |
 | :-- | :-- | :-- |
-| G1 atomic | strong candidate (KLD 21.62) refused at cap 2.0; normal candidate (0.01) commits | pass |
-| G2 state identity | revoke(last) restores the recorded pre-add hash, bitwise over the tensor set | exact |
-| G2 behaviour | revoked fact gone; every other fact intact (17/17, 18/18 runs) | pass |
-| G3 isolation | per-expert canary KLD 0.93 with the KL-anchored deltas (was 10.96) | bounded |
-| G3 routing | paraphrase margin positive only with a dedicated encoder: own 0.742 vs other 0.569; recall 5/6; abstention 4/4 | pass (one miss) |
-| G4 durability | state is a pure function of the delta set; same hash across sessions | exact |
-| G5 provenance | leave-one-out attribution 0.94 (one miss) | pass (one miss) |
+| G1 atomic | a strong candidate (KLD 21.62) refused at cap 2.0; an injected training exception and bad input leave the state hash and delta set unchanged | pass |
+| G2 state identity | revoke restores the recorded pre-add hash bitwise over the tensor set; after-revoke behaviour: the revoked fact gone, every other intact | exact |
+| G3 isolation | per-expert canary KLD 0.93 with KL-anchored deltas (was 10.96); paraphrase margin positive only with MiniLM (own 0.742 vs other 0.569); held-out paraphrase augmentation routing 6/6, recall 6/6; abstention 4/4 | bounded, pass |
+| G4 durability | the state hash is a pure function of the delta set; cross-session replay reproduces it | exact |
+| G5 provenance | leave-one-out attribution 1.00 with the discriminative v2 token | pass |
+| organ invariant | revoke/add move 0 remaining routing decisions (the SEUF/GRIP failure mode measured as absent) | pass |
+| composition | independently trained deltas summed destroy each other (0/18); the same deltas survive routed (18/18) - the MoE is a measured requirement | measured |
+| controller | rule 6 experts / 16-18; eps bandit 0 / 15-18; UCB decide-before-serve 17 / 17-18; **repair (serve-first, UCB on misses) 3 experts / 18-18**; cross-session hybrid v2: 2 experts, s2 17/17, update and unlearn honoured | pass |
 | cost | add ~3-5 s/fact; revoke < 0.1 s; routed answers ~1 s | reported |
 
-The composition result that motivates the organ: independently trained deltas summed
-into one adapter destroy each other (0/18); the same deltas survive when routed (18/18).
-The MoE is therefore a measured requirement of this state, not a design preference.
+### B.2 VLM side (shared 8 GB)
+
+| guarantee | measurement | result |
+| :-- | :-- | :-- |
+| mirror | the base sees and does not know a nonce; a 12-step KL-anchored delta teaches an image-keyed fact; zeroing revokes exactly | pass |
+| router | CLIP keys beat DINOv2 CLS/mean/concat on margin; v3 all seven checks: route 2/2, served 2/2, distractor refusal, revoke abstention | pass |
+| G1 atomic | KLD-capped commits: adds 0.098 / 0.191; an adversarial text-only candidate at 23.928 refused with the hash unchanged | pass |
+| G2 state identity | revoke restores the recorded pre-add hash bitwise in a multi-fact state | exact |
+| G4 durability | save -> reload reproduces the hash; the reloaded session serves both facts | exact |
+| update/unlearn | update (revoke + retrain) commits (0.065) and serves the new code; unlearn is silent; the hash after unlearn equals the post-update hash | pass |
+| controller | serve -> miss -> UCB repair: experts 4, final readout 4/4, route choices correct | pass |
+| variants | jitter/scale/background variants route and serve; cross-scene abstains (tau_v 0.9425; margin 0.0055, flagged) | pass |
+| contrast | with negative scenes the expert is image-conditioned: "Tira" on P1 and its variants, "Bilmiyorum." on P2/P3 with the same probe text; KLD 0.018 | pass |
+
+### B.3 Open items
+
+- Text: future-aware repair reward (recurrence signal); the update retrain path with a
+  promoted fact is unexercised; capability cap3 is base-bound.
+- VLM: real-photo key calibration (synthetic panel margins are 0.0055-0.06); the
+  pixel-level expert generalises to synthetic variants but has not seen real scenes.

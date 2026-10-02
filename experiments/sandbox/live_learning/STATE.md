@@ -1,4 +1,4 @@
-# live-learning sandbox: state checkpoint (2026-10-02, before the controller)
+# live-learning sandbox: state checkpoint (2026-10-03, after the VLM line)
 
 Handoff after context compaction. Everything below is committed on `main`; nothing is
 pushed. The program: `docs/LIVING_MODEL_POSITIONING.md` (claim, audit Appendix A,
@@ -98,11 +98,17 @@ fact.
 
 ## Files
 
-- `stream.py` facts/fillers; `harness.py` model+chat+LoRA; `ledger.py` DeltaStore
-  (add/revoke/propose_and_commit/answer_routed/embed); `ledger_metrics.py` G3/G5;
-  `ledger_router.py` separation; `ledger_embedder.py` MiniLM router; `ledger_organ.py`
-  invariants; `ledger_controller.py` v0; `ledger_para_holdout.py`; `ledger_atomic_fail.py`;
-  `ledger_c6_v2.py`; `mechanisms.py`+`run.py` the three-mechanism mesa.
+- Text side (live_learning/): `stream.py` facts/fillers; `harness.py` model+chat+LoRA;
+  `ledger.py` DeltaStore (add/revoke/propose_and_commit/answer_routed/embed);
+  `ledger_metrics.py` G3/G5; `ledger_router.py` separation; `ledger_embedder.py` MiniLM
+  router; `ledger_organ.py` invariants; `ledger_controller.py` v0; `ledger_bandit.py`
+  controller v1 (rule/eps/ucb/repair); `ledger_session.py` cross-session hybrid;
+  `ledger_para_holdout.py`; `ledger_atomic_fail.py`; `ledger_c6_v2.py`;
+  `mechanisms.py`+`run.py` the three-mechanism mesa.
+- VLM side (vlm/): `vlm_core.py` shared helpers (harness, training, embeddings, scenes);
+  `vlm_mirror.py`+`vlm_mirror2..5.py` the v0/v1/v2/v3 record runs; `vlm_keys.py` key
+  comparison; `vlm_ledger.py` VlmDeltaStore; `vlm_controller.py`; `vlm_update_unlearn.py`;
+  `vlm_variants.py`; `vlm_contrast.py` contrast-pair expert.
 
 ## Environment (NixOS quirks, essential)
 
@@ -114,5 +120,6 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 ```
 
 GPU is an 8 GB RTX 5060 shared with the Counterpart project (check `nvidia-smi`
-before 1.5B runs; 0.5B fits always). Models cached: Qwen2.5-0.5B/1.5B-Instruct;
-`sentence-transformers` installed (MiniLM multilingual cached).
+before 1.5B runs; 0.5B fits always). Models cached: Qwen2.5-0.5B/1.5B-Instruct,
+Qwen3-VL-2B-Instruct, DINOv2-base, CLIP ViT-B/32 (laion); `sentence-transformers`
+installed (MiniLM multilingual cached).
