@@ -287,3 +287,27 @@ write at kld_limit 2.0; a normal candidate (3e-4, 16 steps, anchored) must commi
   re-measure the margin and recall on the same paraphrases, and only then formalise
   the expert organ. A learned router stays out of scope until the parameter-free
   option is measured on this set.
+
+## Semantic router keys (pinned 2026-10-02, before the run)
+
+Router similarity replaced by the base model's last-token hidden state (normalised,
+base adapter suspended), no new model; same six paraphrases; tau pinned at the
+midpoint of own-key min and best-other max; readings: paraphrase recall under tau and
+abstention on the capability questions, same protocol as the TF-IDF run.
+
+## Semantic-key results (2026-10-02)
+
+Last-token hidden state of the base model, paraphrases as queries:
+
+| router key | own min | other max | recall | abstention |
+| :-- | --: | --: | --: | --: |
+| TF-IDF char n-grams | 0.339 | 0.353 | 1/6 | 4/4 |
+| last-token hidden state | 0.890 | **0.983** | 3/6 | 4/4 |
+
+Better than TF-IDF on absolute similarity, but the margin is still inverted: some
+paraphrase's best *other* key beats its own. The base LLM's last-token state is not a
+router key at this scale - every short query is 0.9+ similar to everything. Pinned
+next: a dedicated sentence-embedding model (small multilingual, e.g. MiniLM-class) as
+the key encoder, same protocol; only if that separates do we formalise the expert
+organ. The router-task itself (choosing among near-duplicate fact keys) is now a
+measured research item, not an implementation detail.

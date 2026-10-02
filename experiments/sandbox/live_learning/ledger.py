@@ -46,6 +46,7 @@ class DeltaStore:
         self.model = make_lora(base, r=CAP * R)
         self.deltas: dict[str, dict] = {}
         self.keys: dict[str, str] = {}
+        self.key_vecs: dict[str, torch.Tensor] = {}
         self.base_hash = hashlib.sha256(
             f"{model_name}|r{R}|cap{CAP}".encode()
         ).hexdigest()
@@ -145,10 +146,32 @@ class DeltaStore:
         torch.cuda.empty_cache()
         return delta
 
+    @torch.no_grad()
+    def embed(self, text: str) -> torch.Tensor:
+        """Semantic key: the last-token hidden state of the base model, normalised."""
+        full = self.deltas
+        self.deltas = {}
+        self.materialize()
+        ids = self.tok.apply_chat_template(
+            [
+                {"role": "system", "content": "Kısa ve net cevap ver."},
+                {"role": "user", "content": text},
+            ],
+            add_generation_prompt=True,
+            return_tensors="pt",
+        )
+        ids = (ids["input_ids"] if hasattr(ids, "keys") else ids).to(self.model.device)
+        out = self.model(input_ids=ids, output_hidden_states=True)
+        v = out.hidden_states[-1][0, -1].float()
+        self.deltas = full
+        self.materialize()
+        return v / v.norm()
+
     def add(self, fid: str, pairs, key: str | None = None) -> float:
         t = time.time()
         self.deltas[fid] = self._train_delta(pairs)
         self.keys[fid] = key or pairs[0][0]
+        self.key_vecs[fid] = self.embed(self.keys[fid])
         self.materialize()
         return time.time() - t
 
@@ -156,6 +179,7 @@ class DeltaStore:
         t = time.time()
         del self.deltas[fid]
         self.keys.pop(fid, None)
+        self.key_vecs.pop(fid, None)
         self.materialize()
         return time.time() - t
 
@@ -191,17 +215,12 @@ class DeltaStore:
         return {"committed": True, "kld": kld}
 
     def answer_routed(self, user: str, system: str = "Kısa ve net cevap ver.") -> str:
-        """Route to ONE expert (TF-IDF over the fact keys), never the merged sum."""
-        from sklearn.feature_extraction.text import TfidfVectorizer
-        from sklearn.metrics.pairwise import cosine_similarity
-
+        """Route to ONE expert (semantic keys, cosine), never the merged sum."""
         ids = sorted(self.deltas)
         if not ids:
             return self.answer(user, system)
-        keys = [self.keys[i] for i in ids]
-        vec = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5))
-        x = vec.fit_transform(keys + [user])
-        scores = cosine_similarity(x[-1], x[:-1]).ravel()
+        qv = self.embed(user)
+        scores = torch.tensor([float(qv @ self.key_vecs[i]) for i in ids])
         if float(scores.max()) < self.tau:  # abstain: no expert, base answer only
             full = self.deltas
             self.deltas = {}
