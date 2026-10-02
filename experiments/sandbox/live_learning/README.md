@@ -1,5 +1,8 @@
 # live learning sandbox (fast & dirty - NOT a pre-registered study)
 
+The program this bench measures: [`docs/LIVING_MODEL_POSITIONING.md`](../../../docs/LIVING_MODEL_POSITIONING.md)
+(transactional, auditable learning during interaction; ACID for model memory).
+
 The question: can a small local model **learn during interaction** - quickly, durably
 across sessions, cumulatively, and **with exact unlearning** - in a way we can measure?
 
