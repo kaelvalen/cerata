@@ -76,3 +76,24 @@ Three facts, Qwen2.5-0.5B, R = 16, 16 steps, lr 3e-4:
   LoRA trade-off (few updates on a 0.5B do not memorise). Next: a small delta-config
   sweep and the 1.5B rerun before any behavioural claim; the identity result stands on
   its own.
+
+## Second smoke (2026-10-02, Qwen2.5-1.5B): the sum does not compose
+
+R = 16, 16 steps, lr 3e-4; materialisation verified against the zeroed base (the same
+probe answers "Arel" with the delta and a generic greeting without it).
+
+| after adding | p1 | p2 | p3 |
+| :-- | :-- | :-- | :-- |
+| p1 | yes | no | no |
+| p1+p2 | **no** | yes | no |
+| p1+p2+p3 | no | no | **no** |
+
+A single independently trained delta recalls its fact; adding the next breaks the
+previous one, and the third breaks all three: catastrophic interference at the merge
+level. The transactional mechanics (G2 identity, 0.01 s revoke) stand; the delta form
+as specified does not compose. This is the slice's live question (G3 isolation).
+Candidate routes, to be pinned before trying any of them: (a) train each delta against
+the current merged state with a norm budget; (b) shrink per-delta magnitude
+(lr/rank/steps sweep); (c) orthogonalise/constrain the update subspace (merging
+literature: TIES/DARE-style); (d) stop summing into one adapter and route facts to
+separate experts - the MoE organ. No route is tried until it is written here first.
