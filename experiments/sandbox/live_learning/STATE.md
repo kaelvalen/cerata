@@ -38,11 +38,23 @@ unlearn honoured, capability 3/4 (cap4 was a tau false-positive fixed by 0.65; c
 base-bound). The update replaced p3's need for an expert (note rewrite); the retrain
 path for a promoted-then-updated fact is still unexercised (same commit transaction).
 
+## VLM mirror (feasibility + v2): `vlm_mirror*.py`
+
+Qwen3-VL-2B-Instruct runs on the shared 8 GB. v0: the base sees, does not know a
+nonce; a 12-step LoRA delta teaches it; zeroing revokes exactly; an unanchored delta
+damaged a canary ("Tira" for 5x6) at that seed. Harness bug found and fixed: zeroing
+both LoRA factors before training is a dead gradient point (lora_norm 0.0) -
+`reset_lora` (B zero, A kaiming) fixed it; every lambda then teaches with an exact
+restore (diff 0). v2: two image-keyed facts ("Tira"/"Vok", same probe text, distinct
+panels), KL anchor, DINOv2 routing - served 2/2, revoke exact, A unaffected, leak
+within an expert recorded; **pending**: the abstain gate (DINOv2 CLS panel sims 0.985,
+margin 0.015) - needs a margin criterion and/or better keys.
+
 ## Next
 
-VLM mirror (the postponed third scale); optional: future-aware repair reward
-(recurrence signal), exercising the update retrain path with a promoted fact, and
-margin-based retrieval gating instead of a single tau.
+VLM mirror: key comparison (DINOv2 CLS/mean vs CLIP, margins) + margin-gated
+abstention, then port the full store (propose_and_commit KLD cap, state_hash,
+cross-session) to the VLM side.
 
 ## Files
 

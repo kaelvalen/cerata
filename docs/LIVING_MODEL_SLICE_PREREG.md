@@ -598,3 +598,109 @@ promotion.
 Cross-session summary: within-session repairs {w3, c2}; p3's correction lives in the
 E-tier note; the ledger keeps the two experts across the session boundary; unlearn and
 update both honoured; capability stays base-bound (3/4) with retrieval gated by tau.
+
+## VLM mirror feasibility v0 (pinned 2026-10-02, before the run)
+
+Model: Qwen/Qwen3-VL-2B-Instruct (bf16; 4.3 GB; the newest small multilingual VLM
+that fits the shared 8 GB GPU). Images: two procedurally generated panels (white
+background, three shapes each; panel A green circle / red square / blue triangle,
+panel B blue circle / green square / red triangle) - nothing downloaded. Fact:
+"Kalibrasyon düğmesinin kodu Tira'dır." (nonce code), probe "Kalibrasyon düğmesinin
+kodu nedir?" expecting "Tira".
+
+Protocol: (1) base vision sanity on A ("Görseldeki dairenin rengi nedir?" -> yeşil);
+(2) base probe on A -> must NOT contain "tira"; (3) train one LoRA delta (r=16,
+q_proj/v_proj, lr 3e-4, 12 steps, pairs: teach echo + probe->Tira) from the frozen
+base - **no KL anchor in this v0** (stated deviation from the standing recipe; the
+question is only whether a delta can teach an image-grounded fact at all; anchor drift
+is measured instead); (4) probe A -> "tira" present; (5) probe B (same question, panel
+B) -> leakage check (the pair text alone might leak across images); (6) revoke (zero
+the LoRA) -> probe A back to no "tira"; (7) canaries (text-only capability questions)
+before and after training -> drift report.
+
+Predictions: (1)+(2) pass (a 2B VLM sees colors and cannot know a nonce); (4) pass iff
+a 2B VLM absorbs a fact from 12 LoRA steps; (6) pass (zeroing is exact); (5) and (7)
+are measured, no prediction - first VLM-side readings of grounding and anchor drift.
+Failure modes to record: OOM on the shared GPU, a generation that ignores the image,
+or a delta that changes the answer without the image.
+
+## VLM mirror feasibility v0 results (2026-10-02)
+
+Runs on the shared 8 GB, no OOM. Checks: sanity sees green true; base probe does not
+contain the nonce true; after 12 LoRA steps probe A = "Tira" true; revoke (zeroing)
+returns to the base answer true; **image_leak true** - the same probe on panel B also
+answers "Tira": the v0 delta is text-memorising, not image-conditioned. Canary drift
+without the KL anchor: "Beş kere altı kaç eder?" went from a correct answer to
+**"Tira"** - catastrophic interference on an unrelated question - and the capital
+canary drifted İstanbul -> Ankara. First VLM-side readings: the frozen base sees and
+does not know; a delta teaches in 12 steps and zeroing is exact; the KL anchor is
+necessary on the VLM side too; image-conditioning must come from the router (same
+question, different images, different experts), not from a single text pair.
+
+## VLM mirror v1 (pinned 2026-10-02, before the run)
+
+Two facts with the *same probe text* on different panels: A -> "Tira", B -> "Vok".
+Each delta is trained with the standing KL anchor (lambda 1.0 on the two text-only
+canary prompts, base logits from the zeroed model; the check canary is a KL prompt -
+as in the text recipe). Serving is image-keyed: DINOv2 (frozen, cached) embeds the
+panels; the query image routes to the nearest stored key with tau 0.9 and abstains
+below it. Protocol: base unknowns; train both deltas; serve A and B (route + code);
+cross-image check (delta_A alone with panel B - the v0 leak, recorded); canary after
+training with delta_A active (the 5x6 answer must not be "Tira"); revoke B (drop its
+delta), query B -> must abstain to base (no Vok, and no Tira from A), query A still
+"Tira".
+
+Predictions: anchor holds (no "Tira" on 5x6); route 2/2; served codes 2/2; delta_A
+alone still leaks "Tira" on B; after revoke B the tau gate abstains -> no Vok and no
+Tira; A unaffected.
+
+## VLM mirror v1 diagnosis sweep (pinned 2026-10-02, before the run)
+
+v1 failed unexpectedly: after training, every served answer (both facts, restored
+deltas, post-revoke) looked like the base. Two candidate causes: KL dominance (lambda
+1.0 swamping the pair loss) or a restore bug (v0 only verified zeroing, never
+restoring a saved delta). Sweep: train fact A at lambda 0.1 and 1.0 (lambda 0 known
+from v0: learns, damages); for each arm record the in-memory probe (still-trained
+params), the 5x6 canary (anchor), the LoRA tensor norm, then save -> zero -> restore
+(report the exact max tensor diff) -> the restored probe. Diagnostics only; the v2
+protocol is pinned after the readings.
+
+## VLM mirror v1 diagnosis results (2026-10-02)
+
+The sweep found **lora_norm = 0.0 for both lambdas** - training had not moved a single
+LoRA parameter, and the restore diff was trivially zero. Root cause: `set_lora(None)`
+zeroes *both* LoRA factors before training; with A = 0 and B = 0 the pair loss has zero
+gradient through both (dL/dB needs A x, dL/dA needs B), a dead stationary point. v0
+worked because peft's default init has A random and B zero. Fix: `reset_lora` - B zero,
+A re-initialised kaiming - at the start of every delta training; zeroing both remains
+the revoke/serve operation. The v1 failure was a harness bug, not KL dominance. The
+fixed sweep and the v2 protocol are pinned next.
+
+## VLM mirror v2 (pinned 2026-10-02, before the run)
+
+Fixed sweep results: with `reset_lora` every lambda (0.0 / 0.1 / 1.0) teaches, in-memory
+and restored, restore tensor diff exactly 0; the canary was clean for all arms at this
+seed (v0's "Tira" canary was therefore seed/trajectory-specific - the KL anchor is
+adopted as the standing recipe, not as a measured necessity in this run). v2 protocol:
+panels A (circle/square/triangle row) and B' (a structurally distinct row:
+triangle/circle/square) with the *same probe text*; codes A -> "Tira", B' -> "Vok";
+each delta trained with the KL anchor (lambda 1.0, 12 steps, reset start); image-keyed
+routing by DINOv2 (tau 0.9, abstain below the threshold); checks: base unknowns; route
+2/2 (the full sim matrix is recorded); served codes 2/2; canary after delta_A; leak of
+delta_A on B' (recorded); revoke B' -> the route must abstain (cross sim < tau) and the
+answer must contain neither Vok nor Tira; A still serves "Tira".
+
+## VLM mirror v2 results (2026-10-02)
+
+Base unknown both true; route 2/2 by argmax; **served 2/2** ("Tira", "Vok") - the frozen
+base gains two image-keyed experts through 12-step KL-anchored deltas, each served by
+its own delta; canary clean; after revoking B', A still serves "Tira" and the B' answer
+returns to base. Leak recorded: delta_A alone still answers "Tira" on B' (text
+memorisation inside an expert); the router is what disambiguates. **Abstention after
+revoke failed**: DINOv2 CLS keys of the two panels are 0.985 similar (own 1.0, margin
+0.015), so the tau 0.9 gate cannot tell them apart - routing only works by argmax on
+known panels. The mirror is green on teach/serve/revoke/A-isolation but pending on
+*refusal*: the key needs visual separation (more distinct panels, or DINOv2 mean-patch
+/ CLIP keys) plus a margin criterion, not just a single tau. Pinned next: a key
+comparison (DINOv2 CLS vs mean-patch vs CLIP on the panels, margins recorded), then
+the revoke-abstain check with the margin gate.
