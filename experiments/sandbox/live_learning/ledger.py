@@ -204,14 +204,19 @@ class DeltaStore:
     def propose_and_commit(
         self, fid: str, pairs, key: str | None = None, kld_limit: float = 2.0
     ) -> dict:
-        """G1: train a candidate, commit only if its canary footprint is within limit."""
+        """G1: train a candidate, commit only if its canary footprint is within limit.
+
+        Atomic on failure: the delta is local until the commit block; the key is
+        resolved before anything is written, and a commit is all-or-nothing.
+        """
+        key = key or pairs[0][0]
         delta = self._train_delta(pairs)
         kld = self._expert_kld(delta)
         if kld > kld_limit:
             return {"committed": False, "kld": kld}
         self.deltas[fid] = delta
-        self.keys[fid] = key or pairs[0][0]
-        self.key_vecs[fid] = self.embed(self.keys[fid])
+        self.keys[fid] = key
+        self.key_vecs[fid] = self.embed(key)
         self.materialize()
         return {"committed": True, "kld": kld}
 

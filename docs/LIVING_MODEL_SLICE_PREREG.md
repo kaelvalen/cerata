@@ -401,3 +401,19 @@ router generalises on its own (it was already 6/6). The two halves of the p1 mis
 therefore both closed: routing generalises by design, answer generalises with one
 augmentation pair. The remaining open items are the c6 discriminative-token data fix,
 the learned controller and the VLM mirror.
+
+## G1 on failures (pinned 2026-10-02, before the run)
+
+Atomicity is not only the policy refusal: a training exception and a bad-input
+ValueError/IndexError must both leave the state hash and the delta set untouched. The
+ordering bug found in propose_and_commit (the delta was written before the key was
+resolved) is fixed first. Readings: raised exception type, hash unchanged and delta
+set unchanged for each injected failure.
+
+## G1 failure-atomicity results (2026-10-02)
+
+Injected training exception ("boom") and bad input (empty pairs -> IndexError): after
+both, the state hash and the delta set are unchanged (**pass True**); the fix moved
+the key resolution before the first write in propose_and_commit. G1 now covers the
+policy refusal (KLD cap), a training failure and a bad-input failure - all three leave
+no trace.
