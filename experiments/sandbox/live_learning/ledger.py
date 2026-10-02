@@ -33,6 +33,7 @@ class DeltaStore:
         self.tok, base = load_model(model_name)
         self.model = make_lora(base, r=CAP * R)
         self.deltas: dict[str, dict] = {}
+        self.keys: dict[str, str] = {}
         self.base_hash = hashlib.sha256(
             f"{model_name}|r{R}|cap{CAP}".encode()
         ).hexdigest()
@@ -108,17 +109,40 @@ class DeltaStore:
         torch.cuda.empty_cache()
         return delta
 
-    def add(self, fid: str, pairs) -> float:
+    def add(self, fid: str, pairs, key: str | None = None) -> float:
         t = time.time()
         self.deltas[fid] = self._train_delta(pairs)
+        self.keys[fid] = key or pairs[0][0]
         self.materialize()
         return time.time() - t
 
     def revoke(self, fid: str) -> float:
         t = time.time()
         del self.deltas[fid]
+        self.keys.pop(fid, None)
         self.materialize()
         return time.time() - t
+
+    def answer_routed(self, user: str, system: str = "Kısa ve net cevap ver.") -> str:
+        """Route to ONE expert (TF-IDF over the fact keys), never the merged sum."""
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        ids = sorted(self.deltas)
+        if not ids:
+            return self.answer(user, system)
+        keys = [self.keys[i] for i in ids]
+        vec = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5))
+        x = vec.fit_transform(keys + [user])
+        scores = cosine_similarity(x[-1], x[:-1]).ravel()
+        chosen = ids[int(scores.argmax())]
+        full = self.deltas
+        self.deltas = {chosen: full[chosen]}
+        self.materialize()
+        resp = self.answer(user, system)
+        self.deltas = full
+        self.materialize()
+        return resp
 
     # -- behaviour --------------------------------------------------------
     def answer(self, user: str, system: str = "Kısa ve net cevap ver.") -> str:
@@ -145,23 +169,30 @@ def main() -> None:
     hashes = {}
     t_add = {}
     for f in facts:
-        t_add[f.id] = store.add(f.id, [(f.teach, f"Not aldım: {f.teach}"), (f.probe, f.answer)])
+        t_add[f.id] = store.add(
+            f.id,
+            [(f.teach, f"Not aldım: {f.teach}"), (f.probe, f.answer)],
+            key=f.probe,
+        )
         hashes[f.id] = store.state_hash()
         print(f"added {f.id} in {t_add[f.id]:.1f}s hash {hashes[f.id][:10]}", flush=True)
 
-    def probe(tag):
+    def probe(kind: str = "merged"):
+        fn = store.answer if kind == "merged" else store.answer_routed
         return {
-            f.id: {"q": f.probe, "resp": store.answer(f.probe), "expect": f.answer}
+            f.id: {"q": f.probe, "resp": fn(f.probe), "expect": f.answer}
             for f in facts
         }
 
-    with_all = probe("all")
+    with_all = probe()
+    routed_all = probe("routed")
     # revoke the LAST addition: the hash must equal the recorded pre-add hash exactly
     last = facts[-1].id
     prev_hash = hashes[facts[-2].id] if len(facts) > 1 else store.base_hash
     t_rev = store.revoke(last)
     revoke_hash = store.state_hash()
-    after = probe("after")
+    after = probe()
+    after_routed = probe("routed")
 
     def ok(resp, expect):
         return expect.lower() in resp.lower()
@@ -177,19 +208,22 @@ def main() -> None:
             "identity": prev_hash == revoke_hash,
             "seconds": round(t_rev, 3),
         },
-        "recall_with_all": {fid: ok(r["resp"], r["expect"]) for fid, r in with_all.items()},
-        "recall_after_revoke": {fid: ok(r["resp"], r["expect"]) for fid, r in after.items()},
-        "responses": {"with_all": with_all, "after_revoke": after},
+        "recall_merged_all": {fid: ok(r["resp"], r["expect"]) for fid, r in with_all.items()},
+        "recall_routed_all": {fid: ok(r["resp"], r["expect"]) for fid, r in routed_all.items()},
+        "recall_routed_after_revoke": {fid: ok(r["resp"], r["expect"]) for fid, r in after_routed.items()},
+        "recall_merged_after_revoke": {fid: ok(r["resp"], r["expect"]) for fid, r in after.items()},
+        "responses": {"merged_all": with_all, "routed_all": routed_all, "after_merged": after, "after_routed": after_routed},
         "seconds_add_mean": round(sum(t_add.values()) / len(t_add), 3),
     }
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, ensure_ascii=False, indent=1))
-    rl = result["recall_with_all"]
-    ra = result["recall_after_revoke"]
+    rl = result["recall_merged_all"]
+    rr = result["recall_routed_all"]
+    ra = result["recall_routed_after_revoke"]
     print(
         f"identity(revoke last)={result['revoke_last']['identity']} | "
-        f"recall all={rl} | after revoke={ra} | "
+        f"recall merged={rl} | routed={rr} | routed after revoke={ra} | "
         f"add {result['seconds_add_mean']}s revoke {t_rev:.2f}s"
     )
 

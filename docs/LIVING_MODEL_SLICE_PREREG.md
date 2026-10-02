@@ -97,3 +97,38 @@ the current merged state with a norm budget; (b) shrink per-delta magnitude
 (lr/rank/steps sweep); (c) orthogonalise/constrain the update subspace (merging
 literature: TIES/DARE-style); (d) stop summing into one adapter and route facts to
 separate experts - the MoE organ. No route is tried until it is written here first.
+
+## Route pinned (2026-10-02, before the third smoke)
+
+The second smoke showed summation is the failure. Route pinned, in order:
+
+1. **(MR) merged, as-is** - the control (current behaviour).
+2. **(SW) small-magnitude control** - per-delta lr/rank/steps shrunk so the sum stays
+   weak; cheap, tries to keep one adapter.
+3. **(RE) routed experts** - PRIMARY: each fact keeps its own delta (expert); a
+   parameter-free router (TF-IDF over the fact keys, same family as the repo's
+   analytic routers) selects ONE expert per query; the merged sum is never used at
+   inference. Rationale: G3 failure came from composition, routing removes composition
+   entirely, and a parameter-free router keeps G1/G2/G5 clean. Subspace constraints
+   are deferred until RE is measured.
+
+Readings: recall under MR/SW/RE on the same 3 facts; G2 identity must hold under RE
+(revoking an expert removes it from the router's set; state hash unchanged in
+meaning); router accuracy reported per probe.
+
+## Third smoke (2026-10-02, 1.5B): routed experts work
+
+Same three deltas as the second smoke, answered by the parameter-free router (TF-IDF
+over the fact keys, one expert per query, the merged sum never used):
+
+| arm | p1 | p2 | p3 | after revoking p3 |
+| :-- | :-- | :-- | :-- | :-- |
+| merged (SW-0, as-is) | no | no | no | - |
+| **routed (RE, primary)** | **yes** | **yes** | **yes** | p1 yes, p2 yes, p3 no |
+
+G2 identity still exact (bitwise pre-add hash), revoke 0.01 s, add ~3.5 s/fact; the
+router picked the right expert for all three probes without any trained parameters.
+The G3 failure was composition, and routing removes composition: this is the first
+working transactional-fact configuration. SW (small-magnitude single adapter) is now
+deprioritised; the next steps are capacity (more facts), router accuracy at scale, and
+the expert organ formalised (the MoE slice) with the same ledger semantics.
