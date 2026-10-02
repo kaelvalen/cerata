@@ -311,3 +311,23 @@ next: a dedicated sentence-embedding model (small multilingual, e.g. MiniLM-clas
 the key encoder, same protocol; only if that separates do we formalise the expert
 organ. The router-task itself (choosing among near-duplicate fact keys) is now a
 measured research item, not an implementation detail.
+
+## Dedicated sentence-embedding keys (pinned 2026-10-02, before the run)
+
+Encoder: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, no fine-tuning;
+same six paraphrases and four capability questions; tau at the midpoint; recall via
+the embedding-chosen expert (others suspended); abstention as before.
+
+## Router comparison (2026-10-02) - the dedicated encoder separates
+
+| router key | own min | other max | margin | paraphrase recall | abstention |
+| :-- | --: | --: | :-- | --: | --: |
+| TF-IDF char n-grams | 0.339 | 0.353 | inverted | 1/6 | 4/4 |
+| LLM last-token state | 0.890 | 0.983 | inverted | 3/6 | 4/4 |
+| MiniLM multilingual (tau 0.656) | **0.742** | **0.569** | **positive** | **5/6** | **4/4** |
+
+The router question is answered for this set: a small dedicated encoder separates the
+keys and routes paraphrases (5/6; one miss is the open item, recorded in the JSON).
+The expert organ can now be formalised on a router that works. Next pinned items:
+identify the one missed paraphrase (or accept and measure at scale), the G1 invariant
+beyond the KLD cap, and then the organ/controller.
