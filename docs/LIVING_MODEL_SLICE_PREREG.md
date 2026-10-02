@@ -818,3 +818,31 @@ silent (base answers, no "Vok") while A still serves "Bora"; the hash after unle
 equals the hash recorded after the update bitwise (h4 == h2); canary clean; all three
 commits under the cap (0.098 / 0.065 / 0.132; ~6 s per training). The VLM side now
 covers add/update/unlearn/serve/route/abstain/revoke with the transaction guarantees.
+
+## VLM scene variants: key robustness + expert generalisation (pinned 2026-10-03)
+
+The "different photo of the same scene" proxy for real photos. Scenes: P1 (row
+circle/square/triangle), variants of P1 - P1j (all shapes jittered 3-5 px), P1s
+(shapes scaled to ~70%), P1bg (same shapes on a light gray background) - and P2 (row
+triangle/circle/square). Readings: CLIP sims P1 vs each variant and vs P2; the pinned
+tau rule: tau_v = midpoint between the maximum cross-scene similarity (P1-P2) and the
+minimum own-variant similarity; if min own-variant <= max cross, the variant set has no
+separating tau (reported, and the run keeps tau 0.97). VLM: one expert trained on P1
+("Tira"); serving through the router with tau_v: P1 must serve "Tira"; each variant
+records whether it routes to P1 and whether the expert answers "Tira" (generalisation
+is measured, not predicted); P2 must abstain; canary clean. Predictions: jitter/scale/
+bg sims stay high enough for a separating tau_v; routing works for P1 and P2 abstains;
+the expert's answer generalisation to variants is the open reading.
+
+## VLM scene variants results (2026-10-03)
+
+All six checks pass. CLIP sims: P1j 0.9697, P1bg 0.9534, P1s 0.9453, cross-scene P2
+0.9398; the pinned rule separates (min own 0.9453 > max cross 0.9398) with tau_v =
+0.9425 - a 0.0055 margin, flagged. Serving: P1 -> "Tira"; all three variants route to
+the P1 expert and the served answer is "Tira"; P2 abstains; canary clean. **Caveat,
+recorded:** the variant answers cannot be attributed to visual generalisation because
+the v2 leak already showed the expert answers "Tira" to the probe text on a different
+panel - the answers are consistent with text memorisation; the load-bearing mechanism
+here is the router (variants match the key, cross-scene does not). A visual
+generalisation claim needs an expert trained against contrast pairs (same question,
+other scenes -> different/refusing answers), pinned as the next step.

@@ -74,11 +74,19 @@ serves the new code with "Tira" gone; B' stays isolated; unlearn is silent; the 
 after unlearn equals the post-update hash bitwise (h4 == h2); canary clean; all commits
 under the cap (~6 s per training).
 
+## VLM scene variants (done): `vlm_variants.py`
+
+All six checks pass: jittered / scaled / background-shifted variants of P1 route to the
+P1 expert and serve "Tira"; cross-scene P2 abstains; tau_v 0.9425 by the pinned rule
+(margin 0.0055, flagged). Caveat: the variant answers are indistinguishable from the
+known text leak inside an expert - routing is the load-bearing mechanism; a visual
+generalisation claim needs contrast-pair training.
+
 ## Next
 
-VLM side: keys on real photos or more distinctive panels (the panel regime has a
-0.006-0.062 margin). Optional text side: future-aware repair reward; the update retrain
-path with a promoted fact.
+VLM side: contrast-pair expert training (same probe, other scenes -> refuse), then real
+photos. Optional text side: future-aware repair reward; the update retrain path with a
+promoted fact.
 
 ## Files
 
