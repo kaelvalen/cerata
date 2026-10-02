@@ -238,3 +238,30 @@ The anchor buys a ~12x smaller per-expert footprint while essentially keeping re
 the open item). The all-active KLD stays high because 18 experts are active together -
 a state that never occurs under routed inference. Route 1 is the standing recipe;
 lambda sweeps and subspace constraints remain pinned options if needed.
+
+## Router separation and abstention (pinned 2026-10-02, before the run)
+
+The parameter-free router always picks the nearest expert today; an unrelated query
+can therefore be answered by a fact it should not touch. Pinned before the run:
+
+- measure the TF-IDF similarity of every fact probe to its own key (in-scope) and to
+  the other keys (confusion margin), and of the four capability questions to every
+  key (out-of-scope);
+- pin an abstention threshold tau at the midpoint between the in-scope minimum and
+  the out-of-scope maximum, report both margins;
+- readings: fact recall under tau (must stay n/n), capability questions must abstain
+  (no expert materialised), and the margin sizes are recorded as the router's
+  separation quality. No trained router parameters are added.
+
+## Router separation and abstention results (2026-10-02)
+
+18 facts, 1.5B, fixed key index (the first run's ordering bug is recorded):
+
+- in-scope similarity min **1.000** (each probe matches its own key; self-match, so
+  the honest margin is out-of-scope), confusion max 0.317, out-of-scope max **0.317**
+  (no capability question comes near any key);
+- pinned tau = **0.659** (midpoint); under tau: fact recall **18/18**, abstention
+  **4/4** (no expert materialised for unrelated questions).
+- Caveat recorded: probes equal their keys by construction, so paraphrased in-scope
+  queries are untested; the router's paraphrase margin is the next pinned measurement
+  before the expert organ is formalised.

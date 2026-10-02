@@ -35,9 +35,11 @@ class DeltaStore:
         steps: int = 16,
         seed: int = 0,
         kl_lambda: float = 1.0,
+        tau: float = 0.0,
     ):
         self.model_name, self.lr, self.steps, self.seed = model_name, lr, steps, seed
         self.kl_lambda = kl_lambda
+        self.tau = tau
         self.kl_prompts = [q for _, q, _ in CAPABILITY[:2]]
         self._base_logits: list | None = None
         self.tok, base = load_model(model_name)
@@ -169,6 +171,14 @@ class DeltaStore:
         vec = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5))
         x = vec.fit_transform(keys + [user])
         scores = cosine_similarity(x[-1], x[:-1]).ravel()
+        if float(scores.max()) < self.tau:  # abstain: no expert, base answer only
+            full = self.deltas
+            self.deltas = {}
+            self.materialize()
+            resp = self.answer(user, system)
+            self.deltas = full
+            self.materialize()
+            return resp
         chosen = ids[int(scores.argmax())]
         full = self.deltas
         self.deltas = {chosen: full[chosen]}
