@@ -21,15 +21,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch  # noqa: E402
 from harness import chat, load_model, make_lora  # noqa: E402
-from stream import FACTS  # noqa: E402
+from stream import CAPABILITY, FACTS  # noqa: E402
 
 R = 16  # rank per fact
 CAP = 64  # capacity, in facts
 
 
 class DeltaStore:
-    def __init__(self, model_name: str, lr: float = 3e-4, steps: int = 16, seed: int = 0):
+    def __init__(
+        self,
+        model_name: str,
+        lr: float = 3e-4,
+        steps: int = 16,
+        seed: int = 0,
+        kl_lambda: float = 1.0,
+    ):
         self.model_name, self.lr, self.steps, self.seed = model_name, lr, steps, seed
+        self.kl_lambda = kl_lambda
+        self.kl_prompts = [q for _, q, _ in CAPABILITY[:2]]
+        self._base_logits: list | None = None
         self.tok, base = load_model(model_name)
         self.model = make_lora(base, r=CAP * R)
         self.deltas: dict[str, dict] = {}
@@ -67,6 +77,18 @@ class DeltaStore:
         return h.hexdigest()
 
     # -- transactions -----------------------------------------------------
+    def _logits(self, model, q: str) -> torch.Tensor:
+        ids = self.tok.apply_chat_template(
+            [
+                {"role": "system", "content": "Kısa ve net cevap ver."},
+                {"role": "user", "content": q},
+            ],
+            add_generation_prompt=True,
+            return_tensors="pt",
+        )
+        ids = (ids["input_ids"] if hasattr(ids, "keys") else ids).to(model.device)
+        return model(input_ids=ids).logits[0, -1].float()
+
     def _pair_step(self, model, opt, user: str, assistant: str) -> None:
         pair = [
             {"role": "user", "content": user},
@@ -82,7 +104,15 @@ class DeltaStore:
         labels = fid.clone()
         labels[:, : pid.shape[1]] = -100
         out = model(input_ids=fid, labels=labels)
-        out.loss.backward()
+        loss = out.loss
+        if self.kl_lambda and self._base_logits is not None:
+            kl = 0.0
+            for q, b in zip(self.kl_prompts, self._base_logits):
+                pl = torch.log_softmax(self._logits(model, q), -1)
+                pb = torch.softmax(b, -1)
+                kl = kl + (pb * (pb.log() - pl)).sum()
+            loss = loss + self.kl_lambda * kl / len(self.kl_prompts)
+        loss.backward()
         opt.step()
         opt.zero_grad()
 
@@ -92,10 +122,14 @@ class DeltaStore:
         opt = torch.optim.AdamW(
             [p for p in m.parameters() if p.requires_grad], lr=self.lr
         )
+        with torch.no_grad():
+            m.eval()
+            self._base_logits = [self._logits(m, q) for q in self.kl_prompts]
         m.train()
         for _ in range(self.steps):
             for user, assistant in pairs:
                 self._pair_step(m, opt, user, assistant)
+        self._base_logits = None
         delta: dict = {}
         for n, p in dict(m.named_parameters()).items():
             if "lora_A" in n:

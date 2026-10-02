@@ -213,3 +213,28 @@ Pinned before trying any fix, in order:
    other experts' directions) - deferred until 1 and 2 are read.
 
 No other route is tried before being written here.
+
+## KL-anchored delta training (route 1, pinned 2026-10-02 before the run)
+
+Lambda = 1.0, anchor on the first two capability questions, matched prompt format
+(system + user), lr 3e-4, 16 steps, all 18 facts. Reading: provenance/retained must
+stay at the strong-setting levels and the per-expert KLD must fall well below the
+10.96 mean. Otherwise lambda is swept (0.3, 3.0) before any other route.
+
+## KL-anchor results (2026-10-02, route 1)
+
+Lambda 1.0, two canary anchors, lr 3e-4, 16 steps, 18 facts:
+
+| metric | before (no anchor) | after (route 1) |
+| :-- | --: | --: |
+| provenance | 1.00 | 0.94 |
+| retained (suspend last) | 17/17 | 17/17 |
+| per-expert KLD mean | 10.96 | **0.93** |
+| per-expert KLD max | 22.08 | 3.63 |
+| all-active KLD | 32.8 | 31.6 |
+
+The anchor buys a ~12x smaller per-expert footprint while essentially keeping recall
+(97 % of the leave-one-out patterns; one fact failed the with/without pattern and is
+the open item). The all-active KLD stays high because 18 experts are active together -
+a state that never occurs under routed inference. Route 1 is the standing recipe;
+lambda sweeps and subspace constraints remain pinned options if needed.
