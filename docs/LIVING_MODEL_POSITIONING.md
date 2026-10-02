@@ -1,9 +1,8 @@
 # The living model: transactional, auditable learning during interaction - positioning
 
-Status: **brainstorm output, 2026-10-02; not a pre-registration.** This note seeds the
-program that `experiments/sandbox/live_learning/` currently measures. Exact references
-are to be verified in the originality audit (step 0); the neighbor list below is from
-a first sweep, not a finished review.
+Status: **brainstorm output, 2026-10-02; step-0 originality audit appended (Appendix
+A).** This note seeds the program that `experiments/sandbox/live_learning/` currently
+measures; it is not a pre-registration yet.
 
 ## 1. The claim
 
@@ -19,7 +18,7 @@ provable enough to survive an audit.
 
 Three lines exist and each owns a piece; none owns the state.
 
-| line | exemplars (verify in audit) | what it has | what it lacks |
+| line | exemplars (audited: Appendix A) | what it has | what it lacks |
 | :-- | :-- | :-- | :-- |
 | memory / retrieval | MemGPT/Letta, LongMemEval-scale systems, sleep-time consolidation | instant writes, cross-session persistence | weights are untouched; no interference budget; unlearning = delete a row |
 | parameter adaptation | LoRA personalization (PAC-Bayes Meta-LoRA), LoRA memory laws, self-edits (SEAL-like), fast weights (Titans-like) | durable, sometimes fast adaptation | no exact revoke, no provenance, no measured isolation |
@@ -118,3 +117,61 @@ mirror.
 - which external anchor is the pair for the mesa;
 - the controller's first signal set (recurrence, confidence, interference risk);
 - the VLM mirror's trigger (after the LLM slice passes, not before).
+
+## Appendix A: originality audit (step 0), 2026-10-02
+
+Verified this pass against the sources: Titans (2501.00663, NeurIPS 2025), SEAL
+(2506.10943), SEUF (ACL 2025 long), GRIP (2601.16905), FIT to Forget (2601.21682),
+CURaTE (2604.14644, ACL Findings 2026), Separable Expert Architecture (2604.21571),
+MoSEs (2511.06237), Meta-LoRA personalization (2608.12389), How LoRA Remembers
+(2605.30260), Storage Is Not Strategy (2609.37858), ALTER (2603.01792), MCU MLLM
+unlearning (2608.04548). Still open: sleep-time compute reference, LaMP, LongMemEval /
+LoCoMo ids, MUSE, TOFU / WMDP (bundle check in the slice's prereg).
+
+### A.1 Guarantee matrix
+
+G1 atomicity/rollback, G2 state-identity revocation, G3 routing/interference
+invariant measured, G4 durable cross-session state identity, G5 per-answer provenance.
+(partial = only under a restricted setting or only measured, not guaranteed)
+
+| work | G1 | G2 | G3 | G4 | G5 |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| MemGPT/Letta-class memory | - | partial (row delete, weights untouched) | - | yes | partial (retrieval) |
+| LoRA personalization (Meta-LoRA) | - | - | - | yes | - |
+| SEAL (self-edits, RL) | - | - | - | yes | - |
+| Titans (test-time neural memory) | - | - | - | partial (weight decay forgetting) | - |
+| MoSEs (MoE + PEFT continual) | - | - | partial (router stability) | yes | - |
+| SEUF (MoE unlearning) | - | - | partial (anchor loss on the router) | yes | - |
+| GRIP (MoE router constraints) | - | - | yes (routing stability measured) | yes | - |
+| FIT to Forget (continual unlearning) | - | - | partial (utility metrics) | yes | - |
+| CURaTE (refusal gate) | - | partial (no weights changed) | - | yes | - |
+| Separable experts (deletable proxies) | - | partial (artifact deletion; behavioral return, KL ~ 0.21 nats, no bitwise identity) | partial (cross-user contamination) | yes | - |
+| **this program** | yes | yes (bitwise on the arithmetic path, tolerance reported) | yes (invariant, not a fix) | yes (hash) | yes (per answer, per fact) |
+
+### A.2 The sharpened gap
+
+No published system provides **G2 together with G5 under a measured G3**, across
+within-conversation, cross-session and task-level time scales in one live state. The
+closest three, precisely: **GRIP** treats router integrity as a *fix* for
+parameter-based unlearning and measures routing stability, but claims no state
+identity and no provenance; **Separable Expert** makes deletion deterministic by
+*architecture* (user data never in shared weights) and verifies a behavioral return
+to baseline, but that is artifact deletion, not exact revocation inside a shared,
+adapting state; **SEAL/Titans** adapt the model's own state at test time without any
+revocation or audit. The claim is therefore not "a better memory"; it is **a state
+with guarantees** - and the guarantees are the contribution.
+
+### A.3 Consequences for the slice
+
+- The mesa's metric set grows: state-hash identity (G2), canary router KL (G3),
+  provenance accuracy (G5), beside the existing recall/latency/interference columns;
+  SEUF/GRIP-style routing stability and FIT-style Forget/Retain metrics go in for
+  comparability.
+- The exactness frontier must be published, not hidden: bitwise where the arithmetic
+  path applies (closed-form contributions, signed deltas on linear paths), stated
+  tolerance where SGD deltas are revoked; no full-transformer bitwise claim.
+- Positioning sentence for the paper: *we do not claim a better memory; we claim a
+  model state whose edits are transactional and auditable, and we measure the
+  guarantees the literature currently assumes.*
+- If the slice cannot separate G2/G5 from the closest three on the mesa and one
+  external anchor, the thesis is falsified and the mesa record says so (Section 7).
