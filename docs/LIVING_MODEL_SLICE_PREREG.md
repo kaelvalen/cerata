@@ -384,3 +384,20 @@ measured.
 With that, slice-1 is closed: no outstanding mechanism failure; the guarantee table
 (Appendix B of the positioning note) stands, and the two open items are recorded as
 refinements (discriminative stream answers; paraphrase-robust delta training).
+
+## Paraphrase augmentation vs held-out set B (pinned 2026-10-02, before the run)
+
+Each of the six facts keeps its exact pair and gains one paraphrase pair (set A,
+already seen in the earlier router runs); the test set is six NEW paraphrases (set B,
+never trained). Readings: router choice == fact (routing accuracy) and answer recall
+on B. This separates routing generalisation (MiniLM) from answer generalisation
+(delta training), the two halves of the p1 miss.
+
+## Paraphrase-augmentation results (2026-10-02)
+
+Held-out set B, never trained: **routing 6/6, recall 6/6**. One paraphrase pair per
+fact in training is enough for the delta to answer unseen wordings, and the MiniLM
+router generalises on its own (it was already 6/6). The two halves of the p1 miss are
+therefore both closed: routing generalises by design, answer generalises with one
+augmentation pair. The remaining open items are the c6 discriminative-token data fix,
+the learned controller and the VLM mirror.
