@@ -51,12 +51,20 @@ checks - route 2/2, served 2/2 ("Tira"/"Vok"), canary clean, distractor refusal 
 0.964, d2 0.522, d3 0.806), revoke abstains, A unaffected. Flagged: exact-panel
 regime; 0.006 margin on the colour-swap distractor.
 
+## VLM store port (done): `vlm_ledger.py`
+
+The transaction core runs on Qwen3-VL-2B: CLIP-keyed per-fact deltas, `state_hash` over
+the active tensors, KLD-capped `propose_and_commit` (adds 0.098 / 0.191; the
+adversarial text-only candidate at 23.928 is refused with the hash unchanged), bitwise
+revoke identity (pre-B and empty), save/load durability (hash equal) and a reloaded
+session serving both facts 2/2. All eight checks pass.
+
 ## Next
 
-VLM mirror: port the full store (propose_and_commit KLD cap, state_hash,
-cross-session, controller) to the VLM side; calibrate keys on more distinctive
-panels/photos. Optional text side: future-aware repair reward; the update retrain path
-with a promoted fact.
+VLM side: the repair controller over an interaction stream (serve -> miss -> UCB
+repair), update/unlearn on the VLM (revoke done; update = retrain), keys calibrated on
+more distinctive panels/photos. Optional text side: future-aware repair reward; the
+update retrain path with a promoted fact.
 
 ## Files
 

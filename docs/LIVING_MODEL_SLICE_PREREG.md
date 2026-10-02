@@ -742,3 +742,31 @@ image-keyed facts as KL-anchored deltas; the CLIP-key router serves each fact, a
 on distractors, and abstains after a revoke; zeroing is exact. Flagged: d1's margin is
 0.006 (exact-panel regime); unseen-photo generalisation is out of scope - keys must be
 recalibrated (or made more distinctive) before real photos.
+
+## VLM store port: G1/G2/G4 battery (pinned 2026-10-02, before the run)
+
+`vlm_ledger.py`: a VlmDeltaStore mirroring the text store - per-fact deltas over the
+frozen Qwen3-VL-2B, CLIP keys, `state_hash` over the active delta tensors, training via
+vlm_mirror2.train_delta_kl (KL anchor), `propose_and_commit` measuring the candidate's
+canary Jeffreys KLD against the zeroed base (cap 2.0 default) and refusing over it,
+`serve` via route -> activate (tau 0.97), `save`/`load_state` for durability. Battery:
+add A, add B; hash deterministic; serves 2/2; **G1 refusal** - a text-only adversarial
+candidate trained on the canary question itself ("Beş kere altı kaç eder?" -> "Tira",
+lambda 0, 20 steps) must exceed the cap and be refused with the hash unchanged;
+**G2 identity** - revoke B restores the recorded pre-B hash bitwise, revoke A restores
+the empty hash; **G4 durable** - save the state, reload it as a new session, hash
+equal, serves 2/2. Predictions: both adds commit with small KLDs; the adversarial
+candidate is refused; all identity/durability checks true; the reloaded session serves
+2/2. The controller port is the next increment after this.
+
+## VLM store port results (2026-10-02)
+
+**All eight checks pass.** The adds commit with canary KLD 0.098 (A) and 0.191 (B) - the
+anchored candidates barely move the base; the adversarial text-only candidate (the
+canary question itself answered "Tira", lambda 0, 20 steps) measures KLD **23.928** and
+is refused with the hash unchanged (G1 works with a real margin); revoke B restores the
+pre-B hash bitwise and revoke A the empty hash (G2); save -> reload reproduces the hash
+exactly and the reloaded session serves both facts (G4 + cross-session). The VLM side
+now mirrors the text store's transaction core: CLIP-keyed per-fact deltas, KLD-capped
+commits, exact revoke, durable state, routed serving. Remaining VLM item: the repair
+controller over an interaction stream.
