@@ -367,3 +367,20 @@ recall 6/6, experts 6 vs always-promote 18 (12 experts saved) and never-promote 
 The rule-based controller is the standing v0; a learned policy remains out of scope
 until the rule's failure modes (recurrence threshold, budget pressure, drift) are
 measured.
+
+## Slice-1 closeout (2026-10-02): both single misses diagnosed, no mechanism failure
+
+- **Provenance 0.94 (c6)** is a measurement artefact: c6's answer token "30" is
+  non-discriminative - the probe returns "30" even with the c6 expert suspended (in
+  `ledger_klanchor_15b.json`, with=True and without=True), so leave-one-out cannot
+  attribute it. Fix: discriminative answer tokens in the stream (a data change, no
+  code change); recorded, not silently patched.
+- **Paraphrase 5/6 (p1)** is not routing: the MiniLM router chose the correct expert
+  for all six paraphrases (`chosen == fid`, verified). The miss is answer robustness -
+  the p1 expert was trained on the exact probe wording and does not answer "Arel" to
+  "Adım neydi?". Fix: train deltas with a paraphrase pair, or accept and measure at
+  scale.
+
+With that, slice-1 is closed: no outstanding mechanism failure; the guarantee table
+(Appendix B of the positioning note) stands, and the two open items are recorded as
+refinements (discriminative stream answers; paraphrase-robust delta training).
