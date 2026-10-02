@@ -211,6 +211,7 @@ class DeltaStore:
             return {"committed": False, "kld": kld}
         self.deltas[fid] = delta
         self.keys[fid] = key or pairs[0][0]
+        self.key_vecs[fid] = self.embed(self.keys[fid])
         self.materialize()
         return {"committed": True, "kld": kld}
 

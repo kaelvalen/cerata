@@ -349,3 +349,21 @@ none of the revoked fact's queries still landed in the revoked expert. This is t
 measured opposite of the SEUF/GRIP failure mode (routers drifting under unlearning):
 our router keys are parameter-free base embeddings, so the invariant holds by
 construction and is now measured per edit.
+
+## Controller v0 (pinned 2026-10-02, before the run)
+
+Promotion rule: when a fact's query count reaches 2 (recurrence), train a candidate
+expert and commit it only if its canary KLD is within 2.0; otherwise refuse. Stream:
+6 facts queried 3x, 12 queried once. Readings: promoted set vs the recurring set,
+routed recall of the promoted facts, expert count vs always-promote (18) and
+never-promote (0), refusal count. The controller is a rule, no trained parameters;
+a learned policy is out of scope until this one is measured.
+
+## Controller v0 results (2026-10-02)
+
+Promotion rule (recurrence >= 2, KLD cap 2.0), stream of 6 recurring + 12 one-shot
+facts: promoted exactly the recurring six (policy match True), zero refusals, routed
+recall 6/6, experts 6 vs always-promote 18 (12 experts saved) and never-promote 0.
+The rule-based controller is the standing v0; a learned policy remains out of scope
+until the rule's failure modes (recurrence threshold, budget pressure, drift) are
+measured.
