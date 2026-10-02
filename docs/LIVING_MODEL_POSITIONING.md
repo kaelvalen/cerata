@@ -175,3 +175,25 @@ with guarantees** - and the guarantees are the contribution.
   guarantees the literature currently assumes.*
 - If the slice cannot separate G2/G5 from the closest three on the mesa and one
   external anchor, the thesis is falsified and the mesa record says so (Section 7).
+
+## Appendix B: slice-1 measured guarantees (2026-10-02)
+
+System: frozen Qwen2.5-1.5B + per-fact LoRA experts (independent, from the base) +
+a parameter-free MiniLM router + the transaction ledger. Instrument:
+`experiments/sandbox/live_learning/`; every number below is from a pinned run
+(`docs/LIVING_MODEL_SLICE_PREREG.md`).
+
+| guarantee | measurement | result |
+| :-- | :-- | :-- |
+| G1 atomic | strong candidate (KLD 21.62) refused at cap 2.0; normal candidate (0.01) commits | pass |
+| G2 state identity | revoke(last) restores the recorded pre-add hash, bitwise over the tensor set | exact |
+| G2 behaviour | revoked fact gone; every other fact intact (17/17, 18/18 runs) | pass |
+| G3 isolation | per-expert canary KLD 0.93 with the KL-anchored deltas (was 10.96) | bounded |
+| G3 routing | paraphrase margin positive only with a dedicated encoder: own 0.742 vs other 0.569; recall 5/6; abstention 4/4 | pass (one miss) |
+| G4 durability | state is a pure function of the delta set; same hash across sessions | exact |
+| G5 provenance | leave-one-out attribution 0.94 (one miss) | pass (one miss) |
+| cost | add ~3-5 s/fact; revoke < 0.1 s; routed answers ~1 s | reported |
+
+The composition result that motivates the organ: independently trained deltas summed
+into one adapter destroy each other (0/18); the same deltas survive when routed (18/18).
+The MoE is therefore a measured requirement of this state, not a design preference.

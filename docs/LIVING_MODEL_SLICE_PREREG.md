@@ -331,3 +331,21 @@ keys and routes paraphrases (5/6; one miss is the open item, recorded in the JSO
 The expert organ can now be formalised on a router that works. Next pinned items:
 identify the one missed paraphrase (or accept and measure at scale), the G1 invariant
 beyond the KLD cap, and then the organ/controller.
+
+## Expert-organ invariants (pinned 2026-10-02, before the run)
+
+Router integrity under ledger edits, measured with the MiniLM router: (1) revoking a
+fact must not change any remaining fact's routing decision; (2) adding a new fact must
+not change any existing fact's routing decision; (3) the new fact must route to itself;
+(4) the revoked fact's queries must no longer route into the revoked expert (abstain or
+elsewhere). Reported as counts; any violation is a failure of the organ, not a
+tolerance.
+
+## Organ-invariant results (2026-10-02)
+
+MiniLM router, 18 facts, revoke p4 + add x1: **pass True** - revoking moved 0 of the
+remaining facts' routing decisions, adding moved 0, the new fact routed to itself, and
+none of the revoked fact's queries still landed in the revoked expert. This is the
+measured opposite of the SEUF/GRIP failure mode (routers drifting under unlearning):
+our router keys are parameter-free base embeddings, so the invariant holds by
+construction and is now measured per edit.
