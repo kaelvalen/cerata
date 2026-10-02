@@ -29,8 +29,20 @@ all pins and readings in the prereg: rule 6 experts / 16-18; eps bandit 0 / 15-1
 UCB decide-before-serve 17 / 17-18; **repair (serve first, UCB on observed misses)
 3 experts / 18-18** - it promotes exactly the deterministic memory failures (p3, w3,
 c2). The decision point (after the serve) mattered more than the exploration rule.
-Next controller items: future-aware reward (recurrence signal instead of myopia),
-cross-session probes; then the VLM mirror.
+
+## Cross-session hybrid (done): `ledger_session.py`
+
+The event stream (update, unlearn, two sessions) on the hybrid: v2 experts {w3, c2}
+(tau 0.65, current-note training, current-token evaluation), s2 17/17, update and
+unlearn honoured, capability 3/4 (cap4 was a tau false-positive fixed by 0.65; cap3 is
+base-bound). The update replaced p3's need for an expert (note rewrite); the retrain
+path for a promoted-then-updated fact is still unexercised (same commit transaction).
+
+## Next
+
+VLM mirror (the postponed third scale); optional: future-aware repair reward
+(recurrence signal), exercising the update retrain path with a promoted fact, and
+margin-based retrieval gating instead of a single tau.
 
 ## Files
 

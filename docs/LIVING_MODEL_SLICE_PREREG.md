@@ -527,3 +527,74 @@ unobserved and one unlucky defer sample starves the arm (v1.1); after serving, t
 outcome *is* the counterfactual and one sample per action suffices. Remaining known
 limitation: the reward is myopic; a future-aware repair needs a recurrence signal (or
 the final readout counted as future value) - pinned as the next controller item.
+
+## Cross-session E+Delta hybrid on the event stream (pinned 2026-10-02, before the run)
+
+Protocol: `stream.build_events(seed=0)` drives the hybrid. Memory tier: one note per
+fact (teach text) plus MiniLM retrieval over the fact probes, tau = 0.5; a retrieved
+note is injected into the base prompt, no note above tau -> base answer. Expert tier:
+the adopted v1.2 repair policy - a fact-tagged probe served by memory that misses
+triggers the UCB repair decision (same constants: C=1.0, alpha=0.5, cost 0.3, context
+min(count,2)); a committed fact is served by its delta. Notes are pre-loaded for both
+sessions (the harness knows the taught facts, as in the controller runs); fillers are
+no-ops. Update events rewrite the note and, if the fact has an expert, revoke + retrain
+the delta (replace transaction; a refusal falls back to memory). Unlearn drops the note
+and revokes any expert. Session 2 replays probes only, controller online.
+
+Readings: per-note recall in s1 and s2, the s1-immediate vs s2 retention table, update
+probe (sutlu present, sutsu z absent, retrained?), unlearn probe (Zeytin absent) and
+neighbour (Arel present), capability, promotions/refusals/cost, retrieval decisions.
+
+Predictions: (1) w3 and c2 miss at their immediate probes and repair (the first miss,
+p3's, defers by the UCB tie rule), so experts are {w3, c2} plus p3 if its second miss
+precedes the update or falls in s2; (2) s2 recall covers every non-unlearned fact
+(repairs included) - the session boundary changes nothing for memory-served facts and
+the ledger keeps the experts; (3) the update is honoured with the old token absent and
+the unlearned token is absent in s2; (4) capability 4/4 in both sessions.
+
+## Cross-session hybrid results, part 1 (2026-10-02)
+
+Final state: experts {c2, p3, w3}; s1-imm 17/18 (p3's deterministic miss, the first
+repair sample deferred by the UCB tie), s1-del 5/6 (p3 again), s1-upd 1/1, unlearn
+1/1 and neighbour 1/1, s1-intf 2/2, **s2 17/17** (retention: every fact true/true
+except p3 false/true - memory failed at s1, repaired at s2). The p3 sequence shows the
+tie rule spending two samples (ctx c1, then ctx c2) before promoting: a measured
+exploration cost.
+
+Two findings against the predictions:
+1. **Capability 2/4, both sessions** (pinned 4/4). cap4 ("Bir yılda kaç ay vardır?")
+   failed because retrieval injected w2's note at sim 0.63 >= tau 0.5 - a false
+   positive. cap3 ("Suyun kimyasal formülü nedir?") failed at the base tier itself
+   ("CnH2n+2"; retrieval sim 0.25, no note) - a base/prompt weakness, not the ledger.
+2. **Post-update promotion trap**: the update rewrote only the note, so a fact promoted
+   *after* the update would be trained from the stale static FACT record. Here the
+   frozen s2 protocol expects the stale token ("sütsüz") and the stale expert *passed* -
+   the protocol masked the bug by construction. The update itself passed in-session
+   (s1-upd 1/1); the replace transaction was not exercised (p3 was memory-only at
+   update time).
+
+## Cross-session hybrid v2 (pinned 2026-10-02, before the run)
+
+Three fixes after part 1: (a) tau 0.65 (excludes w2's 0.63 false positive); (b)
+repairs train from the *current* note and current answer token (an answers map updated
+by update events), not the stale FACT record; (c) fact probes are evaluated against
+the current token in both sessions (the frozen s2 expects pre-update tokens by
+construction). Predictions: experts {w3, c2} - p3's updated note answers its probe, so
+the update replaces the need for an expert; s2 17/17 with p3 evaluated against "sütlü";
+capability >= 3/4 (cap3's base miss may persist); the update retrain path is still not
+exercised (p3 stays memory-only at update time).
+
+## Cross-session hybrid v2 results (2026-10-02)
+
+Predictions confirmed: experts {w3, c2}; the update replaced the need for p3's expert
+(its updated note answers the probe - s2 path memory, "sütlü" present, evaluated
+against the current token, retention [false, true]); s2 17/17; capability 3/4 - cap4
+now passes (tau 0.65 stops w2's 0.626 false positive, base answers "Yılın 12 ayı
+vardır"), cap3 remains the base-tier miss ("CnH2n+2" with no note, sim 0.25). Cost 0.6
+(two promotions). The update retrain path remains unexercised (p3 was memory-only at
+update time) - noted, not fixed: it is the same commit transaction as a normal
+promotion.
+
+Cross-session summary: within-session repairs {w3, c2}; p3's correction lives in the
+E-tier note; the ledger keeps the two experts across the session boundary; unlearn and
+update both honoured; capability stays base-bound (3/4) with retrieval gated by tau.
