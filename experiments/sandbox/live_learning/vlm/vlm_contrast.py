@@ -17,28 +17,26 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch  # noqa: E402
-from vlm_ledger import VlmDeltaStore  # noqa: E402
-from vlm_mirror import (  # noqa: E402
-    BLUE,
-    GREEN,
+from vlm_core import (  # noqa: E402
+    CANARIES,
     MODEL,
-    RED,
+    P1,
+    P1BG,
+    P1J,
+    P1S,
+    P2,
+    P3,
+    PROBE,
     ask,
+    cur_logits,
     prep,
     reset_lora,
     set_lora,
+    teach_text,
     to_device,
 )
-from vlm_mirror2 import CANARIES, PROBE, cur_logits, teach_text  # noqa: E402
-from vlm_variants import P1, P1BG, P1J, P1S, P2, scene  # noqa: E402
+from vlm_ledger import VlmDeltaStore  # noqa: E402
 
-P3 = scene(
-    [
-        ("circle", GREEN, (112, 48), 34),
-        ("square", RED, (112, 112), 34),
-        ("triangle", BLUE, (112, 176), 34),
-    ]
-)
 REFUSE = "Bilmiyorum."
 
 

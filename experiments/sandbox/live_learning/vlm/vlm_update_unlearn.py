@@ -16,10 +16,17 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch  # noqa: E402
+from vlm_core import (  # noqa: E402
+    CANARIES,
+    MODEL,
+    PANEL_A,
+    PANEL_B2,
+    PROBE,
+    ask,
+    set_lora,
+    teach_text,
+)
 from vlm_ledger import VlmDeltaStore  # noqa: E402
-from vlm_mirror import MODEL, PANEL_A, ask, set_lora  # noqa: E402
-from vlm_mirror2 import CANARIES, PROBE, teach_text  # noqa: E402
-from vlm_mirror4 import PANEL_B2  # noqa: E402
 
 NEW_CODE = "Bora"
 

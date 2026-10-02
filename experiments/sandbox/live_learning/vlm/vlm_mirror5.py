@@ -17,10 +17,24 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch  # noqa: E402
-from vlm_keys import PANEL_D2, PANEL_D3, emb_clip, load_clip  # noqa: E402
-from vlm_mirror import MODEL, PANEL_A, PANEL_B, ask, load, set_lora  # noqa: E402
-from vlm_mirror2 import CANARIES, PROBE, teach_text, train_delta_kl  # noqa: E402
-from vlm_mirror4 import FACTS, PANEL_B2  # noqa: E402
+from vlm_core import (  # noqa: E402
+    CANARIES,
+    MODEL,
+    PANEL_A,
+    PANEL_B,
+    PANEL_B2,
+    PANEL_D2,
+    PANEL_D3,
+    PROBE,
+    ask,
+    emb_clip,
+    load,
+    load_clip,
+    set_lora,
+    teach_text,
+    train_delta_kl,
+)
+from vlm_mirror4 import FACTS  # noqa: E402
 
 TAU = 0.97
 DISTRACTORS = {"d1": PANEL_B, "d2": PANEL_D2, "d3": PANEL_D3}

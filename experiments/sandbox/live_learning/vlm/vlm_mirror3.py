@@ -16,8 +16,17 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch  # noqa: E402
-from vlm_mirror import MODEL, PANEL_A, ask, load, set_lora  # noqa: E402
-from vlm_mirror2 import CANARIES, PROBE, teach_text, train_delta_kl  # noqa: E402
+from vlm_core import (  # noqa: E402
+    CANARIES,
+    MODEL,
+    PANEL_A,
+    PROBE,
+    ask,
+    load,
+    set_lora,
+    teach_text,
+    train_delta_kl,
+)
 
 
 def lora_named(model):

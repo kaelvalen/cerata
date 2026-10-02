@@ -16,34 +16,22 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch  # noqa: E402
-from vlm_mirror import (  # noqa: E402
-    BLUE,
-    GREEN,
+from vlm_core import (  # noqa: E402
+    CANARIES,
     MODEL,
     PANEL_A,
-    RED,
-    ask,
-    load,
-    panel,
-    set_lora,
-)
-from vlm_mirror2 import (  # noqa: E402
-    CANARIES,
+    PANEL_B2,
     PROBE,
+    ask,
     embed,
+    load,
     load_embedder,
+    set_lora,
     teach_text,
     train_delta_kl,
 )
 
 TAU = 0.9
-PANEL_B2 = panel(
-    [
-        ("triangle", BLUE, (48, 112)),
-        ("circle", GREEN, (112, 112)),
-        ("square", RED, (176, 112)),
-    ]
-)
 FACTS = {
     "a": {"panel": PANEL_A, "code": "Tira"},
     "b": {"panel": PANEL_B2, "code": "Vok"},

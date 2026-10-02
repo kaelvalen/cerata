@@ -18,54 +18,27 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch  # noqa: E402
-from vlm_keys import emb_clip, load_clip  # noqa: E402
-from vlm_mirror import (  # noqa: E402
+from vlm_core import (  # noqa: E402
+    CANARIES,
     MODEL,
     PANEL_A,
-    ask,
-    load,
-    prep,
-    reset_lora,
-    set_lora,
-    to_device,
-)
-from vlm_mirror2 import (  # noqa: E402
-    CANARIES,
+    PANEL_B2,
     PROBE,
+    ask,
     cur_logits,
+    emb_clip,
+    load,
+    load_clip,
+    set_lora,
     teach_text,
     train_delta_kl,
+    train_text_candidate,
 )
-from vlm_mirror4 import PANEL_B2  # noqa: E402
 
 FACTS = {
     "a": {"panel": PANEL_A, "code": "Tira"},
     "b": {"panel": PANEL_B2, "code": "Vok"},
 }
-
-
-def train_text_candidate(proc, model, pairs, steps: int, lr: float) -> None:
-    """A text-only candidate (no image, no anchor): the G1 refusal stress test."""
-    reset_lora(model)
-    params = [p for n, p in model.named_parameters() if "lora_" in n and p.requires_grad]
-    opt = torch.optim.AdamW(params, lr=lr)
-    model.train()
-    for _ in range(steps):
-        for user, assistant in pairs:
-            msgs = [
-                {"role": "user", "content": [{"type": "text", "text": user}]},
-                {"role": "assistant", "content": [{"type": "text", "text": assistant}]},
-            ]
-            full = to_device(prep(proc, msgs, [], False))
-            prompt = prep(proc, msgs[:1], [], True)
-            labels = full["input_ids"].clone()
-            labels[:, : prompt["input_ids"].shape[1]] = -100
-            full["labels"] = labels
-            loss = model(**full).loss
-            loss.backward()
-            opt.step()
-            opt.zero_grad()
-    model.eval()
 
 
 class VlmDeltaStore:

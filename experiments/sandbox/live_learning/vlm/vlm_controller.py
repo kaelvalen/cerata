@@ -18,29 +18,20 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch  # noqa: E402
-from vlm_keys import emb_clip  # noqa: E402
-from vlm_ledger import VlmDeltaStore  # noqa: E402
-from vlm_mirror import (  # noqa: E402
-    BLUE,
-    GREEN,
+from vlm_core import (  # noqa: E402
+    CANARIES,
     MODEL,
     PANEL_A,
-    RED,
+    PANEL_B2,
+    PANEL_C,
+    PANEL_D,
+    PROBE,
     ask,
-    panel,
+    emb_clip,
     set_lora,
+    teach_text,
 )
-from vlm_mirror2 import CANARIES, PROBE, teach_text  # noqa: E402
-from vlm_mirror4 import PANEL_B2  # noqa: E402
-
-PANEL_C = panel(
-    [
-        ("circle", GREEN, (112, 48)),
-        ("square", RED, (112, 112)),
-        ("triangle", BLUE, (112, 176)),
-    ]
-)
-PANEL_D = panel([("circle", RED, (112, 80)), ("circle", BLUE, (112, 150))])
+from vlm_ledger import VlmDeltaStore  # noqa: E402
 
 FACTS = {
     "a": {"panel": PANEL_A, "teach": teach_text("Tira"), "code": "Tira"},

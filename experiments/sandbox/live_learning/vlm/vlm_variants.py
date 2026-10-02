@@ -17,70 +17,24 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch  # noqa: E402
-from PIL import Image, ImageDraw  # noqa: E402
+from vlm_core import (  # noqa: E402
+    CANARIES,
+    MODEL,
+    P1,
+    P1BG,
+    P1J,
+    P1S,
+    P2,
+    PROBE,
+    ask,
+    pairs_for,
+    set_lora,
+    teach_text,
+)
 from vlm_keys import emb_clip  # noqa: E402
 from vlm_ledger import VlmDeltaStore  # noqa: E402
-from vlm_mirror import BLUE, GREEN, MODEL, RED, ask, set_lora  # noqa: E402
-from vlm_mirror2 import CANARIES, PROBE, teach_text  # noqa: E402
 
-
-def scene(shapes, bg="white") -> Image.Image:
-    img = Image.new("RGB", (224, 224), bg)
-    d = ImageDraw.Draw(img)
-    for kind, color, (cx, cy), r in shapes:
-        if kind == "circle":
-            d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=color)
-        elif kind == "square":
-            d.rectangle([cx - r, cy - r, cx + r, cy + r], fill=color)
-        else:
-            d.polygon(
-                [(cx, cy - int(r * 1.1)), (cx - int(r * 1.1), cy + r), (cx + int(r * 1.1), cy + r)],
-                fill=color,
-            )
-    return img
-
-
-P1 = scene(
-    [
-        ("circle", GREEN, (48, 112), 34),
-        ("square", RED, (112, 112), 34),
-        ("triangle", BLUE, (176, 112), 34),
-    ]
-)
-P1J = scene(
-    [
-        ("circle", GREEN, (53, 107), 34),
-        ("square", RED, (106, 116), 34),
-        ("triangle", BLUE, (180, 115), 34),
-    ]
-)
-P1S = scene(
-    [
-        ("circle", GREEN, (48, 112), 24),
-        ("square", RED, (112, 112), 24),
-        ("triangle", BLUE, (176, 112), 24),
-    ]
-)
-P1BG = scene(
-    [
-        ("circle", GREEN, (48, 112), 34),
-        ("square", RED, (112, 112), 34),
-        ("triangle", BLUE, (176, 112), 34),
-    ],
-    bg=(238, 238, 238),
-)
-P2 = scene(
-    [
-        ("triangle", BLUE, (48, 112), 34),
-        ("circle", GREEN, (112, 112), 34),
-        ("square", RED, (176, 112), 34),
-    ]
-)
 PANELS = {"p1": P1, "p1j": P1J, "p1s": P1S, "p1bg": P1BG, "p2": P2}
-
-
-def pairs_for(teach: str, code: str):
-    return [(teach, f"Not aldım: {teach}"), (PROBE, code)]
 
 
 def main() -> None:
@@ -141,7 +95,10 @@ def main() -> None:
         "max_cross_scene": max_cross,
         "tau_v": tau_v,
         "variants": variants,
-        "served": {k: {"resp": v["resp"], "chosen": v["chosen"], "sims": v["sims"]} for k, v in served.items()},
+        "served": {
+            k: {"resp": v["resp"], "chosen": v["chosen"], "sims": v["sims"]}
+            for k, v in served.items()
+        },
         "canary": canary,
     }
     out = Path(args.out)
@@ -149,7 +106,12 @@ def main() -> None:
     out.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps(checks, ensure_ascii=False))
     print("sims:", sims, "| tau_v:", tau_v, "| separable:", separable)
-    print("variants:", json.dumps({k: {kk: vv for kk, vv in v.items() if kk != "resp"} for k, v in variants.items()}))
+    print(
+        "variants:",
+        json.dumps(
+            {k: {kk: vv for kk, vv in v.items() if kk != "resp"} for k, v in variants.items()}
+        ),
+    )
     print("p1:", served["p1"]["resp"][:40], "| p2:", served["p2"]["resp"][:50])
 
 

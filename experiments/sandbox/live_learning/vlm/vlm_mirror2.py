@@ -16,22 +16,21 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch  # noqa: E402
-from vlm_mirror import (  # noqa: E402
+from vlm_core import (  # noqa: E402
+    CANARIES,
     MODEL,
     PANEL_A,
     PANEL_B,
+    PROBE,
     ask,
+    embed,
     load,
-    prep,
-    reset_lora,
+    load_embedder,
     set_lora,
-    to_device,
+    teach_text,
+    train_delta_kl,
 )
 
-CANARIES = [
-    "Türkiye'nin başkenti neresi?",
-    "Beş kere altı kaç eder?",
-]
 TAU = 0.9
 
 FACTS = {
@@ -39,72 +38,6 @@ FACTS = {
     "b": {"panel": "B", "code": "Vok"},
 }
 PANELS = {"A": PANEL_A, "B": PANEL_B}
-PROBE = "Kalibrasyon düğmesinin kodu nedir?"
-
-
-def teach_text(code: str) -> str:
-    return f"Kalibrasyon düğmesinin kodu {code}'dır."
-
-
-def cur_logits(proc, model, question: str):
-    messages = [{"role": "user", "content": [{"type": "text", "text": question}]}]
-    batch = to_device(prep(proc, messages, [], True))
-    return model(**batch).logits[0, -1].float()
-
-
-def train_delta_kl(proc, model, image, pairs, steps: int, lr: float, lam: float = 1.0):
-    reset_lora(model)
-    with torch.no_grad():
-        base_logits = [cur_logits(proc, model, q) for q in CANARIES]
-    params = [p for n, p in model.named_parameters() if "lora_" in n and p.requires_grad]
-    opt = torch.optim.AdamW(params, lr=lr)
-    model.train()
-    for _ in range(steps):
-        for user, assistant in pairs:
-            full_msgs = [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "image", "image": image},
-                        {"type": "text", "text": user},
-                    ],
-                },
-                {"role": "assistant", "content": [{"type": "text", "text": assistant}]},
-            ]
-            full = to_device(prep(proc, full_msgs, [image], False))
-            prompt = prep(proc, full_msgs[:1], [image], True)
-            labels = full["input_ids"].clone()
-            labels[:, : prompt["input_ids"].shape[1]] = -100
-            full["labels"] = labels
-            loss = model(**full).loss
-            kl = 0.0
-            for q, b in zip(CANARIES, base_logits):
-                pl = torch.log_softmax(cur_logits(proc, model, q), -1)
-                pb = torch.softmax(b, -1)
-                kl = kl + (pb * (pb.log() - pl)).sum()
-            loss = loss + lam * kl / len(CANARIES)
-            loss.backward()
-            opt.step()
-            opt.zero_grad()
-    model.eval()
-
-
-def load_embedder():
-    from transformers import AutoImageProcessor, AutoModel
-
-    proc = AutoImageProcessor.from_pretrained("facebook/dinov2-base")
-    model = AutoModel.from_pretrained(
-        "facebook/dinov2-base", dtype=torch.float32, device_map={"": 0}
-    )
-    model.eval()
-    return proc, model
-
-
-@torch.no_grad()
-def embed(iproc, imodel, image):
-    batch = {k: v.to("cuda:0") for k, v in iproc(images=image, return_tensors="pt").items()}
-    v = imodel(**batch).last_hidden_state[:, 0][0]
-    return (v / v.norm()).cpu()
 
 
 def main() -> None:

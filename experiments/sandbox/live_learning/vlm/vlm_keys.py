@@ -15,11 +15,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch  # noqa: E402
-from vlm_mirror import GREEN, PANEL_A, PANEL_B, RED, panel  # noqa: E402
-from vlm_mirror4 import PANEL_B2  # noqa: E402
+from vlm_core import (  # noqa: E402
+    PANEL_A,
+    PANEL_B,
+    PANEL_B2,
+    PANEL_D2,
+    PANEL_D3,
+    emb_clip,
+    emb_dino,
+    load_clip,
+    load_dino,
+)
 
-PANEL_D2 = panel([("square", (120, 120, 120), (112, 112))])
-PANEL_D3 = panel([("circle", RED, (72, 72)), ("triangle", GREEN, (152, 152))])
 PANELS = {
     "a": PANEL_A,
     "b": PANEL_B2,
@@ -27,53 +34,6 @@ PANELS = {
     "d2": PANEL_D2,
     "d3": PANEL_D3,
 }
-
-
-def load_dino():
-    from transformers import AutoImageProcessor, AutoModel
-
-    proc = AutoImageProcessor.from_pretrained("facebook/dinov2-base")
-    model = AutoModel.from_pretrained(
-        "facebook/dinov2-base", dtype=torch.float32, device_map={"": 0}
-    )
-    model.eval()
-    return proc, model
-
-
-@torch.no_grad()
-def emb_dino(proc, model, image, mode: str):
-    batch = {
-        k: v.to("cuda:0") for k, v in proc(images=image, return_tensors="pt").items()
-    }
-    h = model(**batch).last_hidden_state
-    v = h[:, 0][0] if mode == "cls" else h.mean(dim=1)[0]
-    return (v / v.norm()).cpu()
-
-
-def load_clip():
-    from transformers import CLIPModel, CLIPProcessor
-
-    proc = CLIPProcessor.from_pretrained("laion/CLIP-ViT-B-32-laion2B-s34B-b79K")
-    model = CLIPModel.from_pretrained(
-        "laion/CLIP-ViT-B-32-laion2B-s34B-b79K", dtype=torch.float32, device_map={"": 0}
-    )
-    model.eval()
-    return proc, model
-
-
-@torch.no_grad()
-def emb_clip(proc, model, image):
-    batch = {k: v.to("cuda:0") for k, v in proc(images=image, return_tensors="pt").items()}
-    out = model.vision_model(pixel_values=batch["pixel_values"])
-    v = out.pooler_output
-    if v is None:
-        v = out.last_hidden_state.mean(dim=1)
-    try:
-        v = model.visual_projection(v)
-    except Exception:
-        pass
-    v = v.reshape(-1)
-    return (v / v.norm()).cpu()
 
 
 def main() -> None:
