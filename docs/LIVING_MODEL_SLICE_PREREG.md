@@ -63,3 +63,16 @@ same seeds, same model.
 The ledger code, JSON results under `results/live_learning/`, and a guarantee table
 (G1/G2/G3/G5 with measured values) appended to the positioning note. Failed cells are
 reported as failed, not removed.
+
+## First smoke (2026-10-02, code `experiments/sandbox/live_learning/ledger.py`)
+
+Three facts, Qwen2.5-0.5B, R = 16, 16 steps, lr 3e-4:
+
+- **G2 identity holds for the last-added revoke: the state hash returns exactly to the
+  recorded pre-add hash** (bitwise over the tensor set).
+- Cost: add 3.6 s/fact, revoke 0.01 s.
+- Behavioural recall is 0/3 with this delta configuration: the transactional mechanics
+  are demonstrated, the delta efficacy is the open item - consistent with the mesa's
+  LoRA trade-off (few updates on a 0.5B do not memorise). Next: a small delta-config
+  sweep and the 1.5B rerun before any behavioural claim; the identity result stands on
+  its own.
