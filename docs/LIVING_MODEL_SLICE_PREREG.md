@@ -265,3 +265,25 @@ can therefore be answered by a fact it should not touch. Pinned before the run:
 - Caveat recorded: probes equal their keys by construction, so paraphrased in-scope
   queries are untested; the router's paraphrase margin is the next pinned measurement
   before the expert organ is formalised.
+
+## Paraphrase margin + G1 rollback (pinned 2026-10-02, before the run)
+
+Six hand-written paraphrases (one per band); readings: own-key similarity, best
+other-key similarity, routed recall under the recorded tau 0.659. G1: propose_and_commit
+with a deliberately strong candidate (lr 1e-3, 32 steps, no anchor) must refuse the
+write at kld_limit 2.0; a normal candidate (3e-4, 16 steps, anchored) must commit.
+
+## Paraphrase + G1 results (2026-10-02)
+
+- **G1 atomic rollback works**: the deliberately strong candidate (lr 1e-3, 32 steps,
+  no anchor) is refused at kld_limit 2.0 (measured 21.62); the normal candidate
+  commits (0.01). The first explicit atomicity test passes.
+- **Paraphrase margin fails**: own-key similarity min 0.339 vs best-other max 0.353
+  (overlapping), and only 1/6 paraphrases are recalled under tau 0.659. The TF-IDF
+  char n-gram router does not generalise beyond the exact key wording; the earlier
+  separation was a probes-equal-keys artefact, as cautioned.
+- Pinned next (before any other route): replace the router's similarity with a
+  semantic key (small sentence-embedding model or the LLM's pooled hidden state),
+  re-measure the margin and recall on the same paraphrases, and only then formalise
+  the expert organ. A learned router stays out of scope until the parameter-free
+  option is measured on this set.

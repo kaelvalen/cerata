@@ -159,6 +159,37 @@ class DeltaStore:
         self.materialize()
         return time.time() - t
 
+    def _expert_kld(self, delta: dict) -> float:
+        """Canary KLD of a single candidate expert vs the zeroed base."""
+        full = self.deltas
+        with torch.no_grad():
+            self.deltas = {"__tmp__": delta}
+            self.materialize()
+            a = [self._logits(self.model, q) for q in self.kl_prompts]
+            self.deltas = {}
+            self.materialize()
+            b = [self._logits(self.model, q) for q in self.kl_prompts]
+        self.deltas = full
+        self.materialize()
+        ks = []
+        for x, y in zip(b, a):
+            pb, pa = torch.softmax(x, -1), torch.softmax(y, -1)
+            ks.append(float((pb * (pb / pa).log()).sum() + (pa * (pa / pb).log()).sum()))
+        return sum(ks) / len(ks)
+
+    def propose_and_commit(
+        self, fid: str, pairs, key: str | None = None, kld_limit: float = 2.0
+    ) -> dict:
+        """G1: train a candidate, commit only if its canary footprint is within limit."""
+        delta = self._train_delta(pairs)
+        kld = self._expert_kld(delta)
+        if kld > kld_limit:
+            return {"committed": False, "kld": kld}
+        self.deltas[fid] = delta
+        self.keys[fid] = key or pairs[0][0]
+        self.materialize()
+        return {"committed": True, "kld": kld}
+
     def answer_routed(self, user: str, system: str = "Kısa ve net cevap ver.") -> str:
         """Route to ONE expert (TF-IDF over the fact keys), never the merged sum."""
         from sklearn.feature_extraction.text import TfidfVectorizer
