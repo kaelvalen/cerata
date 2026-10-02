@@ -417,3 +417,26 @@ both, the state hash and the delta set are unchanged (**pass True**); the fix mo
 the key resolution before the first write in propose_and_commit. G1 now covers the
 policy refusal (KLD cap), a training failure and a bad-input failure - all three leave
 no trace.
+
+## Stream v2 c6 + learned-controller design (pinned 2026-10-02, before the run)
+
+**c6 v2**: the calibration fact becomes a discriminative code ("Kalibrasyon kodu
+7310'dur." / "Kalibrasyon kodu nedir?" / "7310"), leaving the other 17 facts and all
+protocols unchanged. Reading: with the c6 expert suspended the answer must not contain
+7310; with it, it must - i.e., the provenance artefact closes. v2 is a separate stream
+version; v1 results stay on record.
+
+**Learned controller (design pinned, implementation next)**: a contextual bandit over
+{promote, defer} per fact, features = recurrence count, router margin (own sim minus
+best-other sim), candidate KLD (measured without committing), expert budget used;
+reward = +1 later-probe recall, cost = a pinned expert-budget price. Training signal
+from the same stream protocol; readings vs the rule v0: expert count at equal recall,
+refusals, and the budget curve. Implementation is deliberately deferred: it needs a
+probe placement protocol that v0 did not require, which is its own pinned decision.
+
+## c6 v2 results (2026-10-02)
+
+With the c6 expert: "7310"; without it: a generic explanation, no code - **attributed
+True**. The last measured artefact (the non-discriminative "30") is closed by the v2
+stream; v1 stays on record. The learned-controller design is pinned above and is the
+remaining implementation item, followed by the VLM mirror.
