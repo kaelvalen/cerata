@@ -161,3 +161,31 @@ stream: transactional add/revoke, exact state identity, full recall, sub-100 ms 
 Open next: G5 provenance (leave-one-out), the G3 table (canary KLD, retained drop),
 capacity beyond the stream (synthetic key space), then the expert organ/MoE slice and
 the controller.
+
+## G3/G5 experiment (pinned 2026-10-02, before the run)
+
+All 18 facts, 1.5B, CAP 64, deltas as before.
+
+- **G5 provenance (leave-one-out):** per fact, the routed answer with the full set
+  must contain the fact and the routed answer with that fact suspended must not;
+  accuracy = attributed / n. Reported per fact.
+- **G3 canary KLD:** next-token distributions on the four capability questions, base
+  (adapter zeroed) vs full set; mean symmetric KL reported.
+- **G3 retained effect:** suspending the last-added fact must leave every other fact
+  recalled; reported as retained n/n.
+
+## G3/G5 results (2026-10-02, 1.5B, all 18 facts)
+
+- **G5 provenance (leave-one-out): 1.00** - every fact's routed answer changes when
+  its delta is suspended, and none of the 18 fails the with/without pattern.
+- **G3 retained (suspend the last): 17/17** - the revoked fact is gone, nothing else
+  moves.
+- **G3 canary KLD (base vs the full set all-active): 33.5** - very large. This is the
+  worst-case state: at query time the routed path activates ONE expert, so the
+  deployed damage is the per-expert KLD, not the union. The union number is still the
+  honest reading of "what the full knowledge state does to unrelated behaviour", and
+  it says the magnitude of the deltas (lr 3e-4, 16 steps) is too coarse to leave the
+  general distribution alone when everything is active.
+- Next measurement, pinned before running: per-expert canary KLD under routed
+  inference (suspend all but the chosen expert), plus a magnitude sweep if the
+  per-expert number is also large.
