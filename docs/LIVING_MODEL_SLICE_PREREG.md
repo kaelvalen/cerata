@@ -846,3 +846,28 @@ panel - the answers are consistent with text memorisation; the load-bearing mech
 here is the router (variants match the key, cross-scene does not). A visual
 generalisation claim needs an expert trained against contrast pairs (same question,
 other scenes -> different/refusing answers), pinned as the next step.
+
+## VLM contrast-pair expert: visual grounding (pinned 2026-10-03)
+
+The v2 leak (the delta answers "Tira" to the probe text on any panel) means the expert
+is text-memorising, so the variant answers could not be attributed to vision. Fix to be
+tested: **contrast pairs** - train the P1 expert on (P1 teach), (P1 probe -> "Tira"),
+and negatives (P2 probe -> "Bilmiyorum.", P3 probe -> "Bilmiyorum.", P3 = the column
+scene), same KL anchor and the same commit path (KLD cap via propose_and_commit with a
+custom trainer). Readings: direct expert probes (delta active, no routing) on P1
+(expect "Tira"), P2 and P3 (expect no "Tira" - the leak test), the three P1 variants
+jitter/scale/bg (expect "Tira" - now attributable to vision because the same probe text
+yields different answers by image), the routed serve (P1 -> Tira, P2 abstains), the
+committed KLD and the canary. Predictions: P1 Tira; P2/P3 no Tira; variants Tira;
+routed serve correct; KLD under cap; canary clean. If the variants refuse, that is a
+generalisation failure of the pixel-level delta and is recorded as such.
+
+## VLM contrast-pair results (2026-10-03)
+
+**All nine checks pass.** The contrast-trained expert (KLD 0.018, 12 s) answers "Tira"
+on P1 and its jitter/scale/background variants, and **"Bilmiyorum." on P2 and P3 with
+the same probe text** - the v2 text leak is closed and the variant answers are now
+attributable to vision (same question, different answer by image). Routed serving: P1
+-> "Tira", P2 abstains (sim 0.94 < tau); canary clean; under cap. This is the first
+image-conditioned VLM delta: negative scenes in training turn a text-memorising expert
+into a visually gated one, and it still generalises to unseen variants of its scene.

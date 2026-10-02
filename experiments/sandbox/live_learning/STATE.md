@@ -82,11 +82,19 @@ P1 expert and serve "Tira"; cross-scene P2 abstains; tau_v 0.9425 by the pinned 
 known text leak inside an expert - routing is the load-bearing mechanism; a visual
 generalisation claim needs contrast-pair training.
 
+## VLM contrast-pair expert (done): `vlm_contrast.py`
+
+All nine checks pass: with negative scenes in training (P2/P3 -> "Bilmiyorum.", same
+probe text) the P1 expert answers "Tira" on P1 and all three variants and refuses
+P2/P3 - the v2 text leak is closed and the variant answers are attributable to vision.
+Routed: P1 serves, P2 abstains; KLD 0.018; canary clean. First image-conditioned VLM
+delta.
+
 ## Next
 
-VLM side: contrast-pair expert training (same probe, other scenes -> refuse), then real
-photos. Optional text side: future-aware repair reward; the update retrain path with a
-promoted fact.
+VLM side: real-photo calibration (the synthetic panel margins are 0.0055-0.06).
+Optional text side: future-aware repair reward; the update retrain path with a promoted
+fact.
 
 ## Files
 
