@@ -38,23 +38,25 @@ unlearn honoured, capability 3/4 (cap4 was a tau false-positive fixed by 0.65; c
 base-bound). The update replaced p3's need for an expert (note rewrite); the retrain
 path for a promoted-then-updated fact is still unexercised (same commit transaction).
 
-## VLM mirror (feasibility + v2): `vlm_mirror*.py`
+## VLM mirror (feasibility + v3, done): `vlm_mirror*.py`, `vlm_keys.py`
 
 Qwen3-VL-2B-Instruct runs on the shared 8 GB. v0: the base sees, does not know a
-nonce; a 12-step LoRA delta teaches it; zeroing revokes exactly; an unanchored delta
-damaged a canary ("Tira" for 5x6) at that seed. Harness bug found and fixed: zeroing
-both LoRA factors before training is a dead gradient point (lora_norm 0.0) -
-`reset_lora` (B zero, A kaiming) fixed it; every lambda then teaches with an exact
-restore (diff 0). v2: two image-keyed facts ("Tira"/"Vok", same probe text, distinct
-panels), KL anchor, DINOv2 routing - served 2/2, revoke exact, A unaffected, leak
-within an expert recorded; **pending**: the abstain gate (DINOv2 CLS panel sims 0.985,
-margin 0.015) - needs a margin criterion and/or better keys.
+nonce; a 12-step LoRA delta teaches it; zeroing revokes exactly; unanchored deltas
+damaged a canary at that seed. Harness bug found and fixed: zeroing both LoRA factors
+before training is a dead gradient point (`reset_lora`: B zero, A kaiming); the restore
+diff is then exactly 0 for every lambda. v2: two image-keyed facts, served 2/2, revoke
+exact, but abstention failed (DINOv2 keys 0.985 similar). Key comparison: CLIP beats
+DINOv2 CLS/mean and concat on margin; v3 with CLIP keys and tau 0.97 passes all seven
+checks - route 2/2, served 2/2 ("Tira"/"Vok"), canary clean, distractor refusal (d1
+0.964, d2 0.522, d3 0.806), revoke abstains, A unaffected. Flagged: exact-panel
+regime; 0.006 margin on the colour-swap distractor.
 
 ## Next
 
-VLM mirror: key comparison (DINOv2 CLS/mean vs CLIP, margins) + margin-gated
-abstention, then port the full store (propose_and_commit KLD cap, state_hash,
-cross-session) to the VLM side.
+VLM mirror: port the full store (propose_and_commit KLD cap, state_hash,
+cross-session, controller) to the VLM side; calibrate keys on more distinctive
+panels/photos. Optional text side: future-aware repair reward; the update retrain path
+with a promoted fact.
 
 ## Files
 

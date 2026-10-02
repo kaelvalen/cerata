@@ -704,3 +704,41 @@ known panels. The mirror is green on teach/serve/revoke/A-isolation but pending 
 / CLIP keys) plus a margin criterion, not just a single tau. Pinned next: a key
 comparison (DINOv2 CLS vs mean-patch vs CLIP on the panels, margins recorded), then
 the revoke-abstain check with the margin gate.
+
+## VLM key comparison (pinned 2026-10-02, before the run)
+
+Pure measurement, no VLM: embed panels A, B' (v2), and three distractors - D1 (the old
+colour-swap panel), D2 (a single gray square), D3 (two shapes on a diagonal) - with
+four key types: DINOv2 CLS, DINOv2 mean-patch, CLIP (laion ViT-B/32) image embedding,
+and the concatenation DINOv2 CLS + CLIP (both normalised, renormalised). Readings: the
+A-B' cross similarity and the maximum distractor similarity to either key, per type.
+The v3 protocol (key type and tau by a pinned rule) is pinned after reading this.
+
+## VLM key comparison results + v3 protocol (pinned 2026-10-02)
+
+Margin = 1 - worst off-key similarity (the worst is the colour-swap distractor d1):
+DINOv2 CLS 0.0155 (cross A-B' 0.9845), DINOv2 mean 0.0078 (cross 0.9857, d1 0.9922),
+**CLIP 0.0362** (cross 0.9376, d1 0.9638), concat 0.0265. CLIP wins; all margins are
+small because the panels are near-identical scenes (same layout, swapped colours), so
+the exact-query regime (own similarity 1.0) is the one that matters here.
+
+v3 protocol: CLIP image keys (pooled vision output, projected, normalised); tau = 0.97
+(pinned rule: midway between the worst off-key 0.9638 and 1.0, rounded to 0.97);
+serving goes through route -> materialise (no delta below tau); otherwise the same v2
+protocol (KL-anchored deltas, 12 steps). Checks: base unknowns; route 2/2; served 2/2;
+canary clean; **distractor refusal** - D1 (colour-swap), D2 (gray square), D3
+(diagonal): all must abstain; **revoke B'**: route B' -> None (0.9376 < 0.97), serve ->
+base, no Vok and no Tira; A still "Tira". Prediction: all pass; the tightest margin is
+D1 at 0.0062, flagged as fragile (exact-panel regime; unseen-photo generalisation is
+out of scope).
+
+## VLM mirror v3 results (2026-10-02)
+
+**All seven checks pass**: base unknowns true; route 2/2 (own sims 1.0, cross 0.938);
+served "Tira"/"Vok"; canary clean; distractor refusal true (d1 0.964, d2 0.522, d3
+0.806 - all below tau 0.97); revoke B' abstains (0.938 < 0.97 -> base, no Vok and no
+Tira); A still "Tira". The VLM mirror now stands: a frozen 2B VLM acquires two
+image-keyed facts as KL-anchored deltas; the CLIP-key router serves each fact, abstains
+on distractors, and abstains after a revoke; zeroing is exact. Flagged: d1's margin is
+0.006 (exact-panel regime); unseen-photo generalisation is out of scope - keys must be
+recalibrated (or made more distinctive) before real photos.
