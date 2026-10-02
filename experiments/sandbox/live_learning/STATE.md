@@ -59,12 +59,19 @@ adversarial text-only candidate at 23.928 is refused with the hash unchanged), b
 revoke identity (pre-B and empty), save/load durability (hash equal) and a reloaded
 session serving both facts 2/2. All eight checks pass.
 
+## VLM repair controller (done): `vlm_controller.py`
+
+The v1.2 policy on the VLM: serve -> miss -> UCB repair, KLD-capped commits. Stream A
+x3, B' x3, C/D x1: all seven checks pass - base misses the first probes, experts 4
+(KLDs 0.098/0.191/0.167/0.020), final readout 4/4 through the CLIP router, route
+choices correct (max off-key sim 0.938 < tau 0.97), canary clean, hash changed. The
+first miss defers twice (A repairs at q3); later facts promote greedily.
+
 ## Next
 
-VLM side: the repair controller over an interaction stream (serve -> miss -> UCB
-repair), update/unlearn on the VLM (revoke done; update = retrain), keys calibrated on
-more distinctive panels/photos. Optional text side: future-aware repair reward; the
-update retrain path with a promoted fact.
+VLM side: update/unlearn battery (revoke done; update = retrain), keys on real photos
+or more distinctive panels. Optional text side: future-aware repair reward; the update
+retrain path with a promoted fact.
 
 ## Files
 

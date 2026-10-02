@@ -770,3 +770,29 @@ exactly and the reloaded session serves both facts (G4 + cross-session). The VLM
 now mirrors the text store's transaction core: CLIP-keyed per-fact deltas, KLD-capped
 commits, exact revoke, durable state, routed serving. Remaining VLM item: the repair
 controller over an interaction stream.
+
+## VLM repair controller over a stream (pinned 2026-10-02, before the run)
+
+The adopted v1.2 policy on the VLM store: serve through the CLIP router (base when no
+expert or below tau); a fact-tagged miss triggers the UCB repair decision (C=1.0,
+alpha=0.5, tie -> defer, context (last outcome, min(count,2)), cost 0.3, commit only
+through propose_and_commit's KLD cap). Stream: A and B' three queries each, C (a
+column panel) and D (two stacked circles) one query each; codes "Zun"/"Mek". Readings:
+the per-decision trace, experts and their KLDs, route choices, the final readout over
+all four panels, the canary with no delta active, the state hashes, and the CLIP sim
+matrix of the four panels. Predictions: the first miss (A q1) defers, A repairs at q3;
+B', C, D repair at their first miss; experts 4; final readout 4/4; route choices
+correct for promoted facts; every committed KLD under the cap; canary clean.
+
+## VLM repair controller results (2026-10-02)
+
+**All seven checks pass** and the trace matches the pinned predictions: A q1/q2 defer
+(the first samples of their contexts), A q3 promotes; B' promotes at its first miss by
+the unsampled-promote rule; C and D promote greedily once Q(promote) > Q(defer);
+experts 4 with committed KLDs 0.098 / 0.191 / 0.167 / 0.020 - all far under the 2.0
+cap; final readout 4/4 through the CLIP router ("Tira"/"Vok"/"Zun"/"Mek"), route
+choices correct, canary clean with no delta active, state hash changed. The CLIP sim
+matrix of the four panels has a maximum off-key similarity of 0.938 (A-B'), below tau
+0.97. The v1.2 policy transfers to the VLM side: serve -> observed miss -> UCB repair,
+with the same exploration cost (A's two deferred samples) and the same result (full
+recall, minimal experts).
