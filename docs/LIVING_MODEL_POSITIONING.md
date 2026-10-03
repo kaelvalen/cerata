@@ -12,7 +12,10 @@ measured program so far (Appendix B, 2026-10-03).** This note seeds the program 
 
 One sentence to defend: **ACID for model memory** - atomic, consistent, isolated,
 durable edits during interaction, fast enough to happen inside a conversation, and
-provable enough to survive an audit.
+provable enough to survive an audit. The acronym is a metaphor for the guarantee set
+below, not DB-ACID: our "isolation" is an interference budget (locality), not
+concurrent-transaction isolation, and G1-G5 are defined in Section 3, not imported
+from databases.
 
 ## 2. Why this is not already in the literature (first sweep)
 
@@ -30,6 +33,11 @@ The absent thing is a **system property**, not a block: *revoke(id), and the sta
 hash equals the pre-promote hash* - plus a per-answer provenance trail and a measured
 interference budget, across within-conversation, cross-session and task-level time
 scales.
+
+The per-fact LoRA + retrieval-router **architecture is prior art** (MELO, GRACE, WISE,
+LoraRetriever, T-Patcher - Appendix A). This program does not claim it; it claims the
+transaction ledger, provenance, and the measured guarantee set on that architecture,
+benchmarked against those systems on the same facts (Section 10).
 
 ## 3. The system
 
@@ -87,18 +95,25 @@ shared with the Counterpart project, so runs are small-model first.
    and the falsifiable predictions below.
 
 Then, in order: controller v1 (rules) -> v2 (learned), the expert organ, the VLM
-mirror.
+mirror, and the confirmatory scale study (Section 10).
 
-## 7. Falsifiable predictions
+## 7. Falsifiable predictions (revised 2026-10-03)
 
-- Memory-only baselines cannot pass G2 with weights untouched; a delta layer can, and
-  the measured gap is the contribution, not the accuracy.
-- Without G3's router invariant, revoke either fails or is a router trick (SEUF/GRIP
-  predict this); the invariant makes the difference measurable.
-- A controller over promotion beats both "always promote" (interference) and "never
-  promote" (no durability) on the three-timescale metric set.
-- If none of the above separates from the baselines, the thesis is wrong and the
-  mesa results say so.
+- Revocation itself is not the discriminator: a row delete is trivially exact with the
+  weights untouched. The measured claim is the **delta's existence proof** - at least
+  one task family where per-fact deltas beat retrieval at equal cost:
+  image-conditioned recognition (the VLM contrast result is the first), behaviour or
+  format changes that text cannot store, and paraphrase cases retrieval misses.
+- Memory-only passes exact revocation trivially; the delta layer must pass
+  **behavioural** return (canary KL and retain-set accuracy after revoke) and pay for
+  it in interference - the budget is the measurement.
+- Without a router invariant, revoke is a router trick (SEUF/GRIP predict this); with
+  it, locality and abstention are measurable at scale (the confirmatory study).
+- A controller over promotion beats always-promote (interference) and never-promote
+  (no durability) on the three-timescale metric set, at N where it is statistically
+  separable.
+- If the router and the guarantees do not survive N = 1000, that is the paper: the
+  scaling failure is the result.
 
 ## 8. Risks
 
@@ -117,6 +132,18 @@ mirror.
 - which external anchor is the pair for the mesa;
 - the controller's first signal set (recurrence, confidence, interference risk);
 - the VLM mirror's trigger (after the LLM slice passes, not before).
+
+## 10. The confirmatory study (2026-10-03)
+
+The slice record is an exploratory sequence; the single confirmatory run it points to
+is pinned in `docs/LIVING_MODEL_CONFIRMATORY_PREREG.md`: N in {50, 200, 1000} facts
+(nonce generator + CounterFact/zsRE subsets) with fresh held-out paraphrases and
+distractors; arms memory-only RAG, shared-LoRA sequential, summed deltas, GRACE, MELO,
+WISE, and this system; metrics with bootstrap CIs (efficacy, paraphrase
+generalisation, locality, router precision/recall/abstention, behavioural return after
+revoke, time, storage); primary claim - the router and the guarantees survive N = 1000
+- and the delta>memory existence proof on a task family retrieval cannot serve
+(image-conditioned recognition first).
 
 ## Appendix A: originality audit (step 0), 2026-10-02
 
@@ -146,20 +173,29 @@ invariant measured, G4 durable cross-session state identity, G5 per-answer prove
 | FIT to Forget (continual unlearning) | - | - | partial (utility metrics) | yes | - |
 | CURaTE (refusal gate) | - | partial (no weights changed) | - | yes | - |
 | Separable experts (deletable proxies) | - | partial (artifact deletion; behavioral return, KL ~ 0.21 nats, no bitwise identity) | partial (cross-user contamination) | yes | - |
-| **this program** | yes | yes (bitwise on the arithmetic path, tolerance reported) | yes (invariant, not a fix) | yes (hash) | yes (per answer, per fact) |
+| MELO (neuron-indexed dynamic LoRA, AAAI 2024) | - | partial (block deletion = artifact deletion) | partial (locality reported) | yes | - |
+| GRACE (key-value adaptors + deferral radius) | - | partial (artifact deletion) | partial (deferral radius ~ our tau) | yes | - |
+| WISE (side memory + router) | - | partial (artifact deletion) | partial (router measured) | yes | - |
+| LoraRetriever / T-Patcher | - | partial | - | yes | - |
+| **this program** | yes | partial (artifact deletion; behavioural return measured) | yes (invariant, not a fix) | yes (hash) | yes (per answer, per fact) |
 
-### A.2 The sharpened gap
+### A.2 The sharpened gap (revised 2026-10-03)
 
-No published system provides **G2 together with G5 under a measured G3**, across
-within-conversation, cross-session and task-level time scales in one live state. The
-closest three, precisely: **GRIP** treats router integrity as a *fix* for
-parameter-based unlearning and measures routing stability, but claims no state
-identity and no provenance; **Separable Expert** makes deletion deterministic by
-*architecture* (user data never in shared weights) and verifies a behavioral return
-to baseline, but that is artifact deletion, not exact revocation inside a shared,
-adapting state; **SEAL/Titans** adapt the model's own state at test time without any
-revocation or audit. The claim is therefore not "a better memory"; it is **a state
-with guarantees** - and the guarantees are the contribution.
+The earlier version of this section drew the line at "artifact deletion vs exact
+revocation inside a shared, adapting state". That line does not survive: the current
+system is itself artifact deletion - the base is frozen, and because independently
+trained deltas interfere when summed, each query activates exactly one delta, so
+revoking a fact removes an adapter. Either the program adds a genuinely shared,
+exactly-revocable layer (closed-form statistics on the linear paths), or the claim is
+the honest, narrower one:
+
+**artifact deletion + provenance + a measured router invariant + measured behavioural
+return**, with a delta>memory existence proof on a task family retrieval cannot serve
+(image-conditioned recognition first). The closest systems (MELO, GRACE, WISE) share
+the architecture; none reports the transaction ledger, the provenance trail, or the
+guarantee table, and none is benchmarked on the same facts at N = 1000. The claim is
+therefore not "a better memory" and not "exact revocation in a shared state"; it is
+**a state with an audited edit protocol**, and the protocol is the contribution.
 
 ### A.3 Consequences for the slice
 
@@ -185,12 +221,22 @@ for images) + the transaction ledger. Instrument:
 a pinned run (`docs/LIVING_MODEL_SLICE_PREREG.md`; the index at its end maps themes to
 commits).
 
+### B.0 How to read this
+
+Hash identity is a bookkeeping invariant of the design, not a measured property: the
+state hash is a pure function of the delta set, so "revoke restores the hash" cannot
+fail unless there is a bug. The load-bearing measurements are behavioural - canary KL
+and retain accuracy after revoke, router precision/recall/abstention, and the
+delta>memory existence proof. Rows below are annotated; the confirmatory study
+(`docs/LIVING_MODEL_CONFIRMATORY_PREREG.md`) turns them into CIs at N up to 1000.
+
 ### B.1 Text side
 
 | guarantee | measurement | result |
 | :-- | :-- | :-- |
 | G1 atomic | a strong candidate (KLD 21.62) refused at cap 2.0; an injected training exception and bad input leave the state hash and delta set unchanged | pass |
-| G2 state identity | revoke restores the recorded pre-add hash bitwise over the tensor set; after-revoke behaviour: the revoked fact gone, every other intact | exact |
+| G2 state identity | revoke restores the recorded pre-add hash bitwise | bookkeeping (by construction) |
+| G2 behaviour | after revoke the revoked token is gone, neighbours/canaries intact (17/17, 18/18 runs; the update retrain leaves no residue) | pass |
 | G3 isolation | per-expert canary KLD 0.93 with KL-anchored deltas (was 10.96); paraphrase margin positive only with MiniLM (own 0.742 vs other 0.569); held-out paraphrase augmentation routing 6/6, recall 6/6; abstention 4/4 | bounded, pass |
 | G4 durability | the state hash is a pure function of the delta set; cross-session replay reproduces it | exact |
 | G5 provenance | leave-one-out attribution 1.00 with the discriminative v2 token | pass |
@@ -206,7 +252,7 @@ commits).
 | mirror | the base sees and does not know a nonce; a 12-step KL-anchored delta teaches an image-keyed fact; zeroing revokes exactly | pass |
 | router | CLIP keys beat DINOv2 CLS/mean/concat on margin; v3 all seven checks: route 2/2, served 2/2, distractor refusal, revoke abstention | pass |
 | G1 atomic | KLD-capped commits: adds 0.098 / 0.191; an adversarial text-only candidate at 23.928 refused with the hash unchanged | pass |
-| G2 state identity | revoke restores the recorded pre-add hash bitwise in a multi-fact state | exact |
+| G2 state identity | revoke restores the recorded pre-add hash bitwise in a multi-fact state | bookkeeping (see B.0) |
 | G4 durability | save -> reload reproduces the hash; the reloaded session serves both facts | exact |
 | update/unlearn | update (revoke + retrain) commits (0.065) and serves the new code; unlearn is silent; the hash after unlearn equals the post-update hash | pass |
 | controller | serve -> miss -> UCB repair: experts 4, final readout 4/4, route choices correct | pass |

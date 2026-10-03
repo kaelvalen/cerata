@@ -933,3 +933,9 @@ q3; B' by the unsampled rule; C/D greedily), experts 4 with KLDs 0.011 / 0.021 /
 hash changed - plus **grounded_no_leak true**: every expert answers "Bilmiyorum." on its
 two negative panels (same probe text), so the controller stack is image-conditioned end
 to end, not just at the router.
+
+## Successor (2026-10-03)
+
+The exploratory sequence above is closed; the single confirmatory run it points to is
+pinned in `docs/LIVING_MODEL_CONFIRMATORY_PREREG.md` (N in {50, 200, 1000}, external
+subsets, GRACE/MELO/WISE arms, CIs, router-at-scale as the primary risk).

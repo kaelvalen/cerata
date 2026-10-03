@@ -102,10 +102,14 @@ All eight checks pass: same UCB trace, experts 4 (KLDs 0.011/0.021/0.011/0.005),
 4/4, canary clean - plus no leak: every expert answers "Bilmiyorum." on its negative
 panels, so the stack is image-conditioned end to end.
 
-## Next
+## Next (2026-10-03, revised direction)
 
-VLM side: real-photo calibration (synthetic panel margins are 0.0055-0.06). Optional
-text side: future-aware repair reward.
+The exploratory line is closed. The single confirmatory study is pinned in
+`docs/LIVING_MODEL_CONFIRMATORY_PREREG.md`: N in {50, 200, 1000}, nonce + CounterFact/
+zsRE subsets, arms RAG / shared-LoRA / summed / GRACE / MELO / WISE / ours, CIs, and
+the delta>memory existence proof (VLM image-conditioned first). Primary risk: the
+router at N = 1000. Optional remains: real-photo key calibration; future-aware repair
+reward.
 
 ## Files
 
