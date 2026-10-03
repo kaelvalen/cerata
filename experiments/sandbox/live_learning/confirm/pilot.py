@@ -330,10 +330,15 @@ def main() -> None:
     ap.add_argument("--n", type=int, default=50)
     ap.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
     ap.add_argument("--arms", default="rag,ours,summed,sequential")
+    ap.add_argument("--facts", default=None, help="external facts JSON (else nonce generator)")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
     torch.manual_seed(0)
-    facts = generate(args.n, args.n)
+    if args.facts:
+        data = json.loads(Path(args.facts).read_text())
+        facts = data["facts"] if isinstance(data, dict) else data
+    else:
+        facts = generate(args.n, args.n)
     words = [f["answer"] for f in facts if f["answer"] not in NUMBERS]
 
     from sentence_transformers import SentenceTransformer

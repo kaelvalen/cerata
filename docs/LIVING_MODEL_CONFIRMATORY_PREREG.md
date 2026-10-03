@@ -177,3 +177,21 @@ The predicted fix holds with no routing loss: the entity gate turns template-ide
 distractor abstention from 0.00 to 1.00 while probe and paraphrase routing stay 1.00.
 The serving half of pilot A2 (behavioural abstention through the model, no-leak) still
 waits for free VRAM; this measurement is CPU-only (MiniLM) and needs no model.
+
+## 15. Pilot A2 results (router v2, N = 50 nonce, wall 829 s)
+
+| arm | efficacy | paraphrase | distractor no-leak | route |
+| :-- | :-- | :-- | :-- | :-- |
+| rag | 0.80 [0.68, 0.92] | 0.82 [0.70, 0.92] | 1.00 | 1.00 |
+| ours | 0.82 [0.70, 0.92] | 0.76 [0.64, 0.88] | **1.00** | 1.00 |
+| summed | 0.00 [0.00, 0.00] | 0.00 | 1.00 | - |
+| sequential | 0.08 [0.02, 0.16] | 0.08 | 0.40 | - |
+| revoke (10/50) | gone 1.00 [1.00, 1.00] | retain 0.875 [0.775, 0.975] | | |
+
+Ours extras: add 9.27 s/fact, serve 0.43 s, storage 435.8 MB, distractor abstention
+1.00 (was 0.00), paraphrase route 1.00. The fix holds through the model: no-leak 0.60 ->
+1.00 and abstention 0.00 -> 1.00 with efficacy/paraphrase unchanged within CI. The
+pilot-A finding stands: on nonce facts memory-only matches the delta system; the
+delta's existence proof must come from another family (VLM image-conditioned first).
+Next: external sets (CounterFact/zsRE) and the GRACE/MELO/WISE-style arms before the
+freeze.
