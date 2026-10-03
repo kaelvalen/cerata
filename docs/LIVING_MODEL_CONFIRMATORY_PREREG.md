@@ -224,3 +224,35 @@ Readings:
    rephrase). Recorded, not fixed.
 4. Composition and sequential fail on external sets too (summed 0.00 / 0.02;
    sequential 0.34 / 0.80 with no_leak 0.06 / 0.26).
+
+## 17. Scale step 1: CounterFact N = 200 (pinned 2026-10-03, before the run)
+
+The existence proof scales first: same harness, router v2, cap 2.0; arms rag + ours
+only (summed/sequential return in stage 2); CounterFact sampled at N = 200 with the
+same adapter (seed 200, max_tokens 1). Prediction: ours efficacy stays at or near 1.00
+with CI separation from RAG; add cost ~7 s/fact (~25 min); abstention 1.00; revoke gone
+high (the base does not know the counterfactuals).
+
+## 18. Capacity guard (pinned 2026-10-03, before the N = 200 rerun)
+
+The N = 200 run hit the merged-adapter capacity (CAP = 64): `materialize` writes all
+active deltas into one adapter, which cannot hold more than 64. Routed serving only
+needs one delta at a time, so the pilot harness now uses a `PilotStore` whose
+`materialize` materialises sets <= CAP as before and zeroes above CAP. Consequence,
+recorded as a design limit: the **summed arm is CAP-bound by construction** (it needs
+all deltas merged) and cannot run at N > 64; the routed arm is unaffected. Stage-1
+N = 200 keeps arms rag + ours.
+
+## 19. Scale step 1 results: CounterFact N = 200 (2026-10-03, wall 2242 s)
+
+| arm | efficacy | paraphrase | no-leak | route |
+| :-- | :-- | :-- | :-- | :-- |
+| rag | 0.85 [0.80, 0.90] | 0.31 [0.25, 0.38] | 0.915 | 1.00 |
+| ours | **0.995 [0.985, 1.00]** | 0.295 [0.235, 0.36] | 0.915 | 1.00 |
+| revoke (10/200) | gone 0.90 [0.70, 1.00] | retain 0.995 [0.984, 1.00] | | |
+
+Ours extras: add 9.2 s/fact, serve 0.07 s, storage 1743 MB (~8.7 MB/fact, ~8.7 GB at
+N = 1000), abstention 1.00, paraphrase route 0.355. The existence proof scales: the
+efficacy gap survives (0.995 vs 0.85, CIs separated); abstention holds at 1.00; revoke
+stays behavioural (gone 0.90, retain 0.995). CounterFact paraphrase remains noisy for
+both arms (~0.3). Storage and training time are the scale costs to report.

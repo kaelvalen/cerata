@@ -26,11 +26,21 @@ import torch  # noqa: E402
 from facts import NUMBERS, generate  # noqa: E402
 from facts import pairs as fact_pairs  # noqa: E402
 from harness import load_model, make_lora  # noqa: E402
-from ledger import DeltaStore, R  # noqa: E402
+from ledger import CAP, DeltaStore, R  # noqa: E402
 
 SYSTEM = "Answer briefly."
 TAU = 0.656
 CANARIES = ["What is the capital of France?", "What is 7 times 8?"]
+
+
+class PilotStore(DeltaStore):
+    """CAP=64 is the merged-adapter capacity; routed serving needs one delta at a time."""
+
+    def materialize(self) -> None:
+        if len(self.deltas) <= CAP:
+            super().materialize()
+        else:
+            self._zero()
 
 
 def ci(values, n=2000, seed=0):
@@ -347,7 +357,7 @@ def main() -> None:
         "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     )
     router = Router(enc, facts)
-    store = DeltaStore(args.model, steps=16)
+    store = PilotStore(args.model, steps=16)
     store.kl_prompts = list(CANARIES)
 
     arms = args.arms.split(",")
