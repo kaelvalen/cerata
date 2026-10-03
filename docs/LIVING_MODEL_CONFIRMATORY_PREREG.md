@@ -143,3 +143,25 @@ Readings, honest:
 
 Pilot B (external adapters + GRACE/MELO/WISE) and the subject-aware router fix come
 before N = 200; the freeze happens after pilot B.
+
+## 12. Router v2 (entity-aware) + pilot A2 (pinned 2026-10-03, before the run)
+
+Pilot A's abstention failure (0.00) comes from template similarity: the distractor
+asks about an unseen subject with the same question template. Router v2 requires a
+**known subject** in the question (longest substring match over the fact base's subject
+strings; no match -> abstain), then the semantic key picks among that subject's facts
+(tau 0.656 unchanged). The same router serves every arm (RAG and ours) so the
+comparison stays fair. Pilot A2 reruns N = 50 with the fixed router; predictions:
+distractor abstention ~1.00 for RAG and ours, no-leak ~1.00, efficacy/paraphrase
+unchanged within CI.
+
+## 13. Pilot A2 blocked by the shared GPU; external adapters built (2026-10-03)
+
+The rerun with router v2 hit OOM: a Minecraft Java process holds ~1.7 GB of the 8 GB
+card, so the store model plus the sequential arm's second base do not fit. Per the
+house rule the process is not touched; pilot A2 reruns when the GPU frees (no result
+changed). Meanwhile the external adapters were built and sampled: counterfact 21,919
+adapted (target <= 1 token: 10,034; 50 sampled, seed 50); zsRE 19,086 adapted (<= 1
+token: 2,287; 50 sampled). The zsRE adapter uses `rephrase` as the held-out paraphrase
+(`alt` is an alternative answer, not a question) and both adapters require the subject
+in the paraphrase.

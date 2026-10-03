@@ -71,15 +71,25 @@ def serve_expert(store, fid, q):
 
 
 class Router:
+    """Entity-aware: a known subject must appear in the question, then the semantic key
+    picks among that subject's facts; unseen subjects abstain (the pilot A failure)."""
+
     def __init__(self, enc, facts, tau=TAU):
         self.tau = tau
         self.keys = enc.encode([f["probe"] for f in facts], normalize_embeddings=True)
+        self.subjects = [f["subject"].lower() for f in facts]
 
     def route(self, q, enc):
+        ql = q.lower()
+        cand = [i for i, s in enumerate(self.subjects) if s and s in ql]
+        if not cand:
+            return None, 0.0
+        if len(cand) > 1:  # keep the longest subject match (prefix safety)
+            cand = [max(cand, key=lambda i: len(self.subjects[i]))]
         v = enc.encode([q], normalize_embeddings=True)[0]
-        sims = self.keys @ v
-        j = int(sims.argmax())
-        return (j if float(sims[j]) >= self.tau else None), float(sims[j])
+        sims = {i: float(self.keys[i] @ v) for i in cand}
+        j = max(sims, key=sims.get)
+        return (j if sims[j] >= self.tau else None), sims[j]
 
 
 def summarize(rows):
