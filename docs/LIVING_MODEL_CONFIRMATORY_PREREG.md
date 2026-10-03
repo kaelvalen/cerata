@@ -256,3 +256,27 @@ N = 1000), abstention 1.00, paraphrase route 0.355. The existence proof scales: 
 efficacy gap survives (0.995 vs 0.85, CIs separated); abstention holds at 1.00; revoke
 stays behavioural (gone 0.90, retain 0.995). CounterFact paraphrase remains noisy for
 both arms (~0.3). Storage and training time are the scale costs to report.
+
+## 20. Scale step 2: zsRE N = 200 (pinned 2026-10-03, before the run)
+
+Same harness, router v2, cap 2.0; arms rag + ours; zsRE sampled at N = 200 (seed 200,
+max_tokens 1). Prediction: ours efficacy near 1.00 with CI separation from RAG (the
+N=50 gap was 1.00 vs 0.82); abstention 1.00; the no-leak artifact (answer-vocabulary
+collision) and the revoke-gone confound (parametric knowledge) are expected to persist
+and stay recorded as metric fixes, not arm failures.
+
+## 21. Scale step 2 results: zsRE N = 200 (2026-10-03, wall 1945 s)
+
+| arm | efficacy | paraphrase | no-leak | route |
+| :-- | :-- | :-- | :-- | :-- |
+| rag | 0.79 [0.73, 0.845] | 0.825 [0.77, 0.88] | 0.03 | 0.955 |
+| ours | **0.99 [0.975, 1.00]** | **0.98 [0.96, 0.995]** | 0.03 | 0.955 |
+| revoke (10/200) | gone 0.50 [0.20, 0.80] | retain 0.9895 [0.974, 1.00] | | |
+
+Ours extras: add 7.8 s/fact, serve 0.06 s, storage 1743 MB, abstention 1.00, paraphrase
+route 0.93. The gap scales on both external sets (efficacy and paraphrase CI-separated
+from RAG); abstention holds; the two known metric artifacts persist exactly as pinned
+(no-leak 0.03 = answer-vocabulary collision; revoke gone 0.50 = parametric knowledge
+confound, CounterFact 0.90 for contrast). Remaining before the freeze: the GRACE/MELO/
+WISE-style arms, the two metric fixes (collision-excluded leak; behavioural return),
+then N = 1000.
