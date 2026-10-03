@@ -281,6 +281,44 @@ def train_delta_kl(proc, model, image, pairs, steps: int, lr: float, lam: float 
     model.eval()
 
 
+def train_delta_contrast(proc, model, triples, steps: int, lr: float, lam: float = 1.0):
+    """Per-pair images: positives plus negative scenes (the visual-grounding recipe)."""
+    reset_lora(model)
+    with torch.no_grad():
+        base_logits = [cur_logits(proc, model, q) for q in CANARIES]
+    params = [p for n, p in model.named_parameters() if "lora_" in n and p.requires_grad]
+    opt = torch.optim.AdamW(params, lr=lr)
+    model.train()
+    for _ in range(steps):
+        for image, user, assistant in triples:
+            full_msgs = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "image": image},
+                        {"type": "text", "text": user},
+                    ],
+                },
+                {"role": "assistant", "content": [{"type": "text", "text": assistant}]},
+            ]
+            full = to_device(prep(proc, full_msgs, [image], False))
+            prompt = prep(proc, full_msgs[:1], [image], True)
+            labels = full["input_ids"].clone()
+            labels[:, : prompt["input_ids"].shape[1]] = -100
+            full["labels"] = labels
+            loss = model(**full).loss
+            kl = 0.0
+            for q, b in zip(CANARIES, base_logits):
+                pl = torch.log_softmax(cur_logits(proc, model, q), -1)
+                pb = torch.softmax(b, -1)
+                kl = kl + (pb * (pb.log() - pl)).sum()
+            loss = loss + lam * kl / len(CANARIES)
+            loss.backward()
+            opt.step()
+            opt.zero_grad()
+    model.eval()
+
+
 def train_text_candidate(proc, model, pairs, steps: int, lr: float) -> None:
     """A text-only candidate (no image, no anchor): the G1 refusal stress test."""
     reset_lora(model)

@@ -893,3 +893,43 @@ above like `vlm_mirror.py` map to `vlm/vlm_mirror.py`; no run was changed.
 | VLM update/unlearn | "VLM update/unlearn ..." | 8d77dbe |
 | VLM scene variants | "VLM scene variants ..." | f710971 |
 | VLM contrast-pair expert | "VLM contrast-pair ..." | fe06f57 |
+
+## Text update retrain path with a promoted fact (pinned 2026-10-03, before the run)
+
+The cross-session run left p3 memory-only at its update, so the replace transaction
+(revoke a promoted expert + retrain on the new fact) was never exercised. This run
+forces it: add p3 with the old pair ("sütsüz") through propose_and_commit and verify
+the expert serves; then the update - revoke the old delta, propose_and_commit the new
+pair ("sütlü", the UPDATES text) - and read: the add and the update commit under the
+cap, the probe answers "sütlü" and not "sütsüz", the revoke half leaves the empty-state
+hash (h_between == h0), and revoking the updated expert restores the empty-state hash
+bitwise (the replace transaction left no residue). Predictions: all true; KLDs small
+(the anchored recipe).
+
+## VLM controller with grounded experts (pinned 2026-10-03, before the run)
+
+The VLM controller run used plain pairs, so its experts text-leak (masked by routing);
+the contrast-pair recipe closed the leak. This run reruns the same stream (A x3, B' x3,
+C/D x1) with contrast-trained repairs: each promotion trains (own panel teach + probe
+-> code) plus two negative scenes (other panels, same probe -> "Bilmiyorum."), the same
+UCB repair policy and KLD cap. Readings: the controller checks plus a direct leak check
+- after the stream, each expert on its negative panels must not answer its code.
+Predictions: the controller checks pass as before; all four experts image-conditioned
+(no code on negative panels); final readout 4/4.
+
+## Text update retrain results (2026-10-03)
+
+**All seven checks pass**: the add commits (KLD 0.0167) and serves "Sütsüz"; the update
+(revoke + retrain "sütlü") commits (KLD 0.0145) and serves "sütlü" with "sütsüz" gone;
+the revoke half leaves the empty-state hash and revoking the updated expert restores it
+bitwise (h_between == h_after == h0) - the replace transaction is exercised and leaves
+no residue. The last untested text path is now measured.
+
+## VLM controller with grounded experts results (2026-10-03)
+
+**All eight checks pass**: the controller trace repeats (A defers twice and repairs at
+q3; B' by the unsampled rule; C/D greedily), experts 4 with KLDs 0.011 / 0.021 / 0.011 /
+0.005, final readout 4/4 through the CLIP router, route choices correct, canary clean,
+hash changed - plus **grounded_no_leak true**: every expert answers "Bilmiyorum." on its
+two negative panels (same probe text), so the controller stack is image-conditioned end
+to end, not just at the router.

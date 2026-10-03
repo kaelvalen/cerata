@@ -90,11 +90,22 @@ P2/P3 - the v2 text leak is closed and the variant answers are attributable to v
 Routed: P1 serves, P2 abstains; KLD 0.018; canary clean. First image-conditioned VLM
 delta.
 
+## Text update retrain (done): `ledger_update_retrain.py`
+
+All seven checks pass: add p3 ("sütsüz", KLD 0.0167) -> update (revoke + retrain
+"sütlü", KLD 0.0145) -> revoke restores the empty-state hash bitwise; the replace
+transaction leaves no residue. The last untested text path is now measured.
+
+## VLM controller with grounded experts (done): `vlm/vlm_controller_contrast.py`
+
+All eight checks pass: same UCB trace, experts 4 (KLDs 0.011/0.021/0.011/0.005), final
+4/4, canary clean - plus no leak: every expert answers "Bilmiyorum." on its negative
+panels, so the stack is image-conditioned end to end.
+
 ## Next
 
-VLM side: real-photo calibration (the synthetic panel margins are 0.0055-0.06).
-Optional text side: future-aware repair reward; the update retrain path with a promoted
-fact.
+VLM side: real-photo calibration (synthetic panel margins are 0.0055-0.06). Optional
+text side: future-aware repair reward.
 
 ## Files
 
