@@ -195,3 +195,32 @@ pilot-A finding stands: on nonce facts memory-only matches the delta system; the
 delta's existence proof must come from another family (VLM image-conditioned first).
 Next: external sets (CounterFact/zsRE) and the GRACE/MELO/WISE-style arms before the
 freeze.
+
+## 16. External results (pilot B, N = 50 per set, router v2, 2026-10-03)
+
+CounterFact (wall 691 s): rag eff 0.76 [0.64, 0.88], para 0.34; **ours eff 1.00
+[1.00, 1.00]**, para 0.34; summed 0.00; sequential 0.34; revoke gone 0.90, retain
+1.00; ours add 7.0 s, abstention 1.00, para_route 0.42.
+zsRE (wall 859 s): rag eff 0.82 [0.72, 0.92], para 0.84 [0.74, 0.94]; **ours eff 1.00
+[1.00, 1.00], para 0.98 [0.94, 1.00]**; summed 0.02; sequential 0.80; revoke gone 0.10,
+retain 1.00; ours add 9.3 s, abstention 1.00, para_route 0.98.
+
+Readings:
+1. **The delta > memory existence proof appears here**: on both external sets ours
+   reaches 1.00 efficacy with CI separation from RAG (0.76 / 0.82), and on zsRE also
+   paraphrase 0.98 vs 0.84. The mechanism is visible: these are counterfactual or
+   parametric facts - context injection (RAG) loses to the model's prior, a weight
+   edit overrides it. This is the measured answer to "why not a vector DB".
+2. Two measurement artifacts, pinned for the fix: (a) zsRE no-leak 0.04 for *both*
+   arms - the distractor asks a planet question and the base answers a planet that
+   coincides with a taught answer; the leak metric must exclude answer-vocabulary
+   collisions (or use off-template distractors); (b) zsRE revoke gone 0.10 - the base
+   already answers these true facts parametrically, so token absence is the wrong
+   return metric; the confirmatory metric is behavioural return to the pre-add state
+   (response/KL), not token removal (CounterFact, where the base does not know the
+   counterfactual, shows gone 0.90 - the contrast confirms the explanation).
+3. CounterFact paraphrase 0.34 and para_route 0.42: the dump's paraphrase prompts are
+   noisy; the held-out paraphrase policy needs a quality filter (or zsRE-style
+   rephrase). Recorded, not fixed.
+4. Composition and sequential fail on external sets too (summed 0.00 / 0.02;
+   sequential 0.34 / 0.80 with no_leak 0.06 / 0.26).
