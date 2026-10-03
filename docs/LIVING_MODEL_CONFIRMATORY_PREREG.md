@@ -82,3 +82,20 @@ art: MELO, GRACE, WISE, LoraRetriever, T-Patcher); not a full-transformer exactn
 claim; not a claim that memory cannot revoke (it can, trivially). The claim under
 test is the transaction ledger, provenance and the measured guarantee set - and the
 delta's existence proof against retrieval.
+
+## 9. Execution pin (2026-10-03)
+
+- **Nonce generator**: `experiments/sandbox/live_learning/confirm/facts.py`; seed policy
+  seed = n (50 / 200 / 1000 are independent draws); outputs regenerable at
+  `results/live_learning/confirm/facts_n{50,200,1000}.json` (untracked). Validation on
+  generation: unique subjects, unique word answers, paraphrase != probe. The generator
+  commit is the pin.
+- **External subsets**: dry check passed with an explicit certifi CA bundle (the bare
+  urllib path fails on this host's CA setup): `counterfact.json` 45,108,470 bytes and
+  `zsre_mend_eval.json` 8,091,864 bytes at `https://rome.baulab.info/data/dsets/`.
+  Adapters and filters are committed before the pilot: CounterFact -> teach = prompt +
+  target_new, probe = prompt, held-out paraphrase = first paraphrase_prompt, distractor
+  = another item's probe; zsRE -> probe = src, held-out paraphrase = alt, answer =
+  answers[0]; filter: single-token target with the Qwen2.5 tokenizer, balanced across
+  the top relations/subjects; the sampling seed lives in the adapter. Downloads use
+  certifi's CA bundle explicitly.
