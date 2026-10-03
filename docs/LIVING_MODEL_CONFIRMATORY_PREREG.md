@@ -280,3 +280,20 @@ from RAG); abstention holds; the two known metric artifacts persist exactly as p
 confound, CounterFact 0.90 for contrast). Remaining before the freeze: the GRACE/MELO/
 WISE-style arms, the two metric fixes (collision-excluded leak; behavioural return),
 then N = 1000.
+
+## 22. Behavioural-return metric (pinned 2026-10-03, before the verification run)
+
+The revoke metric becomes behavioural: for the first 10 facts the pre-add base response
+is recorded before any training; after revoke the served response must have the same
+token status as pre-add (return_match). Token absence (gone) stays reported but is only
+meaningful where the base does not already know the fact. Verification run: zsRE N = 50,
+arms rag + ours.
+
+## 23. Behavioural-return verification (zsRE N = 50, wall 588 s, 2026-10-03)
+
+The pre-add/post-revoke token-status match is **0.9 [0.7, 1.0]** (return_match), replacing token
+absence as the return metric: token gone stays 0.10 (the parametric confound), while
+the behaviour returns to the pre-add state. Efficacy/paraphrase/no-leak unchanged
+(ours 1.00 / 0.98 / 0.04; rag 0.82 / 0.84 / 0.04). The confirmatory return metric is
+now behavioural; the no-leak collision fix (base-referenced leak) remains pinned for
+the freeze pass.

@@ -298,7 +298,7 @@ def run_sequential_arm(store, facts, words, steps_per_fact=8):
     return summarize(rows)
 
 
-def run_revoke(store, facts, enc, router, sample=10):
+def run_revoke(store, facts, enc, router, pre, sample=10):
     sample = min(sample, max(1, len(facts) // 2))
     sample_facts, keep = facts[:sample], facts[sample:]
     times = []
@@ -316,6 +316,15 @@ def run_revoke(store, facts, enc, router, sample=10):
             else base_answer(store, f["probe"])
         )
         gone.append(not hit(resp, f["answer"]))
+    returned = []
+    for f in sample_facts:
+        j, _ = router_keep.route(f["probe"], enc)
+        resp = (
+            serve_expert(store, keep[j]["id"], f["probe"])
+            if j is not None
+            else base_answer(store, f["probe"])
+        )
+        returned.append(hit(resp, f["answer"]) == hit(pre[f["id"]], f["answer"]))
     retain = []
     for f in keep:
         j, _ = router_keep.route(f["probe"], enc)
@@ -329,6 +338,8 @@ def run_revoke(store, facts, enc, router, sample=10):
         "sample": len(sample_facts),
         "token_gone_rate": round(float(np.mean(gone)), 4),
         "token_gone_ci": ci(gone),
+        "return_match_rate": round(float(np.mean(returned)), 4),
+        "return_match_ci": ci(returned),
         "retain_rate": round(float(np.mean(retain)), 4),
         "retain_ci": ci(retain),
         "mean_revoke_seconds": round(float(np.mean(times)), 4),
@@ -370,6 +381,8 @@ def main() -> None:
         "results": {},
     }
     t0 = time.time()
+    sample_n = min(10, max(1, len(facts) // 2))
+    pre = {f["id"]: base_answer(store, f["probe"]) for f in facts[:sample_n]}
     if "rag" in arms:
         out["results"]["rag"] = run_rag(store, facts, enc, router, words)
     if "ours" in arms:
@@ -379,7 +392,7 @@ def main() -> None:
     if "sequential" in arms:
         out["results"]["sequential"] = run_sequential_arm(store, facts, words)
     if "ours" in arms:
-        out["results"]["revoke"] = run_revoke(store, facts, enc, router)
+        out["results"]["revoke"] = run_revoke(store, facts, enc, router, pre)
     out["wall_seconds"] = round(time.time() - t0, 1)
 
     path = Path(args.out or f"results/live_learning/confirm/pilot_n{args.n}.json")
