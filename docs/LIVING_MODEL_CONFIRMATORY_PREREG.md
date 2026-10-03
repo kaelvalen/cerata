@@ -311,3 +311,20 @@ answers coincide with taught answers). Verification: zsRE N = 50, arms rag + our
 paraphrase (0.98 / 0.84) unchanged: the collision was a metric artifact, not a leak.
 Both pinned metric fixes are now in the harness (behavioural return; base-referenced
 leak). Remaining before the freeze: the GRACE/MELO/WISE-style arms, then N = 1000.
+
+## 26. MELO-style arm (pinned 2026-10-03, before the verification run)
+
+MELO (AAAI 2024) is per-edit dynamic LoRA blocks activated by a vector index - the same
+architecture as ours minus the transaction protocol. The arm `melo_like` trains the
+identical per-fact deltas with the same anchor and router but commits via `add` without
+the KLD cap and without the ledger checks. Prediction: efficacy equals ours within CI
+(the cap is a guarantee, not an efficacy mechanism); the comparison is for the
+guarantee table, not accuracy. Verification: zsRE N = 50, arm melo_like.
+
+## 27. MELO-style arm verified (zsRE N = 50, wall 412 s, 2026-10-03)
+
+melo_like: efficacy 1.00 [1.00, 1.00], paraphrase 0.98 [0.94, 1.00], no-leak 1.00,
+route 0.98 - identical to ours within CI, as predicted. The KLD cap is a guarantee,
+not an efficacy mechanism; the MELO comparison belongs to the guarantee table, not the
+accuracy table. Remaining before the freeze: GRACE/WISE-style arms (logit-boost
+codebook with deferral radius; side-memory router), then N = 1000.

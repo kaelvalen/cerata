@@ -151,22 +151,33 @@ def run_rag(store, facts, enc, router, words):
     return summarize(rows)
 
 
-def run_ours(store, facts, enc, router, words):
+def run_ours(store, facts, enc, router, words, capped=True):
     adds = []
     t0 = time.time()
     for f in facts:
         t = time.time()
-        res = store.propose_and_commit(
-            f["id"], fact_pairs(f), key=f["probe"], kld_limit=2.0
-        )
-        adds.append(
-            {
-                "fid": f["id"],
-                "committed": res["committed"],
-                "kld": round(res["kld"], 3),
-                "seconds": round(time.time() - t, 2),
-            }
-        )
+        if capped:
+            res = store.propose_and_commit(
+                f["id"], fact_pairs(f), key=f["probe"], kld_limit=2.0
+            )
+            adds.append(
+                {
+                    "fid": f["id"],
+                    "committed": res["committed"],
+                    "kld": round(res["kld"], 3),
+                    "seconds": round(time.time() - t, 2),
+                }
+            )
+        else:
+            secs = store.add(f["id"], fact_pairs(f), key=f["probe"])
+            adds.append(
+                {
+                    "fid": f["id"],
+                    "committed": True,
+                    "kld": None,
+                    "seconds": round(secs, 2),
+                }
+            )
     train_seconds = time.time() - t0
     rows = []
     serve_times = []
@@ -397,6 +408,10 @@ def main() -> None:
         out["results"]["rag"] = run_rag(store, facts, enc, router, words)
     if "ours" in arms:
         out["results"]["ours"] = run_ours(store, facts, enc, router, words)
+    if "melo_like" in arms:
+        out["results"]["melo_like"] = run_ours(
+            store, facts, enc, router, words, capped=False
+        )
     if "summed" in arms:
         out["results"]["summed"] = run_summed(store, facts, words)
     if "sequential" in arms:
