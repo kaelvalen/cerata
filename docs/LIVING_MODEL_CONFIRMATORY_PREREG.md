@@ -165,3 +165,15 @@ adapted (target <= 1 token: 10,034; 50 sampled, seed 50); zsRE 19,086 adapted (<
 token: 2,287; 50 sampled). The zsRE adapter uses `rephrase` as the held-out paraphrase
 (`alt` is an alternative answer, not a question) and both adapters require the subject
 in the paraphrase.
+
+## 14. Router v2 results (CPU-only, N = 50, 2026-10-03)
+
+| router | probe route | paraphrase route | distractor abstention |
+| :-- | :-- | :-- | :-- |
+| v1 semantic (pilot A) | 1.00 | 1.00 | **0.00** |
+| v2 entity-aware | 1.00 | 1.00 | **1.00** |
+
+The predicted fix holds with no routing loss: the entity gate turns template-identical
+distractor abstention from 0.00 to 1.00 while probe and paraphrase routing stay 1.00.
+The serving half of pilot A2 (behavioural abstention through the model, no-leak) still
+waits for free VRAM; this measurement is CPU-only (MiniLM) and needs no model.
