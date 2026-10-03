@@ -297,3 +297,17 @@ the behaviour returns to the pre-add state. Efficacy/paraphrase/no-leak unchange
 (ours 1.00 / 0.98 / 0.04; rag 0.82 / 0.84 / 0.04). The confirmatory return metric is
 now behavioural; the no-leak collision fix (base-referenced leak) remains pinned for
 the freeze pass.
+
+## 24. Base-referenced no-leak (pinned 2026-10-03, before the verification run)
+
+The leak metric becomes base-referenced: the base response for every distractor is
+recorded before any training, and a response counts as a leak only when it contains a
+taught word the pre-edit base did not produce (the zsRE collision artifact: planet
+answers coincide with taught answers). Verification: zsRE N = 50, arms rag + ours.
+
+## 25. Base-referenced no-leak verified (zsRE N = 50, wall 517 s, 2026-10-03)
+
+**no_leak 0.04 -> 1.00 for both arms** with efficacy (ours 1.00 / rag 0.82) and
+paraphrase (0.98 / 0.84) unchanged: the collision was a metric artifact, not a leak.
+Both pinned metric fixes are now in the harness (behavioural return; base-referenced
+leak). Remaining before the freeze: the GRACE/MELO/WISE-style arms, then N = 1000.

@@ -31,6 +31,7 @@ from ledger import CAP, DeltaStore, R  # noqa: E402
 SYSTEM = "Answer briefly."
 TAU = 0.656
 CANARIES = ["What is the capital of France?", "What is 7 times 8?"]
+BASE_DIST: dict = {}
 
 
 class PilotStore(DeltaStore):
@@ -140,7 +141,9 @@ def run_rag(store, facts, enc, router, words):
                 "fid": f["id"],
                 "eff": hit(resp, f["answer"]),
                 "para": hit(resp_para, f["answer"]),
-                "no_leak": not any(hit(d_resp, w) for w in words),
+                "no_leak": not any(
+                    hit(d_resp, w) and not hit(BASE_DIST[f["id"]], w) for w in words
+                ),
                 "route_ok": j == i,
                 "resp": resp[:70],
             }
@@ -193,7 +196,9 @@ def run_ours(store, facts, enc, router, words):
                 "fid": f["id"],
                 "eff": hit(resp, f["answer"]),
                 "para": hit(resp_para, f["answer"]),
-                "no_leak": not any(hit(d_resp, w) for w in words),
+                "no_leak": not any(
+                    hit(d_resp, w) and not hit(BASE_DIST[f["id"]], w) for w in words
+                ),
                 "route_ok": j == i,
                 "para_route_ok": pj == i,
                 "dist_abstained": dj is None,
@@ -237,7 +242,9 @@ def run_summed(store, facts, words):
                 "fid": f["id"],
                 "eff": hit(resp, f["answer"]),
                 "para": hit(resp_para, f["answer"]),
-                "no_leak": not any(hit(d_resp, w) for w in words),
+                "no_leak": not any(
+                    hit(d_resp, w) and not hit(BASE_DIST[f["id"]], w) for w in words
+                ),
                 "route_ok": False,
                 "resp": resp[:70],
             }
@@ -288,7 +295,9 @@ def run_sequential_arm(store, facts, words, steps_per_fact=8):
                 "fid": f["id"],
                 "eff": hit(resp, f["answer"]),
                 "para": hit(resp_para, f["answer"]),
-                "no_leak": not any(hit(d_resp, w) for w in words),
+                "no_leak": not any(
+                    hit(d_resp, w) and not hit(BASE_DIST[f["id"]], w) for w in words
+                ),
                 "route_ok": False,
                 "resp": resp[:70],
             }
@@ -381,6 +390,7 @@ def main() -> None:
         "results": {},
     }
     t0 = time.time()
+    BASE_DIST.update({f["id"]: base_answer(store, f["distractor"]) for f in facts})
     sample_n = min(10, max(1, len(facts) // 2))
     pre = {f["id"]: base_answer(store, f["probe"]) for f in facts[:sample_n]}
     if "rag" in arms:
