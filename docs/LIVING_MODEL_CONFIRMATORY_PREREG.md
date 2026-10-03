@@ -99,3 +99,47 @@ delta's existence proof against retrieval.
   answers[0]; filter: single-token target with the Qwen2.5 tokenizer, balanced across
   the top relations/subjects; the sampling seed lives in the adapter. Downloads use
   certifi's CA bundle explicitly.
+
+## 10. Staged pilot (2026-10-03, before the pilot)
+
+The harness is built in two stages so bugs are fixed cheaply: **pilot A** (this run)
+covers the in-house arms on the nonce set - rag, sequential (shared LoRA), summed,
+ours - with the full metric set and CIs at N = 50. **Pilot B** adds the external
+adapters (CounterFact/zsRE) and the GRACE/MELO/WISE arms before N = 200; the freeze
+happens after pilot B. Harness pins for pilot A: answer system "Answer briefly.";
+router tau = 0.656 (the slice-1 MiniLM value); anchors = two English canaries; ours =
+propose_and_commit (cap 2.0) with 16 steps x 2 pairs per fact; sequential = one shared
+LoRA, 8 steps x 2 pairs per fact (stated: half the per-fact budget); summed = the
+per-fact deltas materialised together; revoke sample = the first 10 facts (token gone
++ retain on the rest); bootstrap 95% CIs over facts.
+
+## 11. Pilot A results (2026-10-03, N = 50 nonce, wall 676 s)
+
+| arm | efficacy | paraphrase | distractor no-leak | route |
+| :-- | :-- | :-- | :-- | :-- |
+| rag (memory-only) | 0.80 [0.68, 0.92] | 0.82 [0.70, 0.92] | 1.00 | 1.00 |
+| ours | 0.82 [0.70, 0.92] | 0.76 [0.64, 0.88] | 0.60 | 1.00 |
+| summed | 0.00 [0.00, 0.00] | 0.00 | 1.00 | - |
+| sequential (shared LoRA) | 0.08 [0.02, 0.16] | 0.08 [0.02, 0.16] | 0.40 | - |
+| revoke (10 of 50) | gone 1.00 [1.00, 1.00] | retain 0.875 [0.775, 0.975] | | |
+
+Ours extras: add 7.19 s/fact, serve 0.36 s, storage 435.8 MB for 50 facts (~8.7 MB/
+fact), paraphrase route accuracy 1.00, **router abstention on distractors 0.00**.
+
+Readings, honest:
+1. **Memory-only matches the delta system on this fact family** (CIs overlap; RAG is
+   ahead on paraphrase). The reviewer's first question stands: on nonce facts the
+   vector DB is the baseline to beat, and pilot A does not beat it. The delta's
+   existence proof must come from another family (VLM image-conditioned first).
+2. Composition replicates: summed 0/50; sequential 0.08 - the per-fact delta + routing
+   architecture is the only working delta design here, at 7.2 s/fact and 8.7 MB/fact
+   (~2 h and ~8.7 GB at N = 1000 - the scale cost is real and reported).
+3. **The router abstention fails on template-identical distractors** (0.00): the
+   distractor asks about an unseen subject with the same question template, so the
+   semantic key matches; the router needs subject-aware keys (entity in the key or a
+   verify step), not template similarity alone. The predicted router-at-scale failure
+   is visible already at N = 50.
+4. Revoke is behaviourally clean on this set (token gone 1.00; retain within efficacy).
+
+Pilot B (external adapters + GRACE/MELO/WISE) and the subject-aware router fix come
+before N = 200; the freeze happens after pilot B.
