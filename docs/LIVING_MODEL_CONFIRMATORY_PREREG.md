@@ -361,3 +361,19 @@ ours, same harness (router v2, cap 2.0, behavioural return, base-referenced leak
 Predictions: ours efficacy >= 0.98 with CI separation from RAG; abstention >= 0.99;
 return_match >= 0.8; add cost ~7-9 s/fact (~2.5 h); storage ~8.7 GB. The zsRE N = 1000
 run follows the same pin (same arms) if the session allows.
+
+## 31. N = 1000 results: CounterFact (2026-10-04, chunked; eval wall 1815 s)
+
+| arm | efficacy | paraphrase | no-leak | route |
+| :-- | :-- | :-- | :-- | :-- |
+| rag | 0.834 [0.812, 0.858] | 0.326 [0.298, 0.356] | 1.00 | 0.997 |
+| ours | **0.999 [0.997, 1.000]** | 0.323 [0.295, 0.352] | 1.00 | 0.997 |
+| revoke (10/1000) | gone 1.00 [1.00, 1.00] | retain 0.999 [0.997, 1.00] | | |
+
+Ours extras: add 8.45 s/fact, serve 0.04 s, storage 8716 MB, abstention 1.00,
+paraphrase route 0.362. **The primary scale claim holds**: the efficacy gap is
+CI-separated at N = 1000 (0.999 vs 0.834), abstention stays 1.00, the router route
+0.997, revoke behavioural (gone 1.00, retain 0.999). Paraphrase stays noisy for both
+arms (CounterFact dump). Execution note: the run was chunked (host-RSS glibc arena
+retention; malloc_trim per fact + idempotent ranges) - the protocol is unchanged; the
+chunking is an execution detail.
