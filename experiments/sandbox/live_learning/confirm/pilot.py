@@ -36,13 +36,23 @@ BASE_DIST: dict = {}
 
 
 class PilotStore(DeltaStore):
-    """CAP=64 is the merged-adapter capacity; routed serving needs one delta at a time."""
+    """CAP=64 is the merged-adapter capacity; routed serving needs one delta at a time.
+    The store model is parked on CPU while a candidate trains (the fresh base needs the
+    GPU; peak memory halves)."""
 
     def materialize(self) -> None:
         if len(self.deltas) <= CAP:
             super().materialize()
         else:
             self._zero()
+
+    def _train_delta(self, pairs):
+        self.model.to("cpu")
+        torch.cuda.empty_cache()
+        try:
+            return super()._train_delta(pairs)
+        finally:
+            self.model.to("cuda:0")
 
 
 def ci(values, n=2000, seed=0):
