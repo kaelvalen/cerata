@@ -162,40 +162,28 @@ def run_rag(store, facts, enc, router, words):
     return summarize(rows)
 
 
-def run_ours(store, facts, enc, router, words, capped=True):
-    adds = []
+def train_part(store, part, adds, offset=0):
     t0 = time.time()
-    for i, f in enumerate(facts):
+    for k, f in enumerate(part):
+        i = offset + k
         t = time.time()
-        if capped:
-            res = store.propose_and_commit(
-                f["id"], fact_pairs(f), key=f["probe"], kld_limit=2.0
-            )
-            adds.append(
-                {
-                    "fid": f["id"],
-                    "committed": res["committed"],
-                    "kld": round(res["kld"], 3),
-                    "seconds": round(time.time() - t, 2),
-                }
-            )
-        else:
-            secs = store.add(f["id"], fact_pairs(f), key=f["probe"])
-            adds.append(
-                {
-                    "fid": f["id"],
-                    "committed": True,
-                    "kld": None,
-                    "seconds": round(secs, 2),
-                }
-            )
+        res = store.propose_and_commit(
+            f["id"], fact_pairs(f), key=f["probe"], kld_limit=2.0
+        )
+        adds.append(
+            {
+                "fid": f["id"],
+                "committed": res["committed"],
+                "kld": round(res["kld"], 3),
+                "seconds": round(time.time() - t, 2),
+            }
+        )
         if (i + 1) % 50 == 0:
-            print(
-                f"ours: trained {i + 1}/{len(facts)} "
-                f"({time.time() - t0:.0f}s elapsed)",
-                flush=True,
-            )
-    train_seconds = time.time() - t0
+            print(f"ours: trained {i + 1} ({time.time() - t0:.0f}s elapsed)", flush=True)
+    return time.time() - t0
+
+
+def eval_ours(store, facts, enc, router, words, train_seconds, adds):
     print(f"ours: evaluating ({train_seconds:.0f}s training)", flush=True)
     rows = []
     serve_times = []
@@ -257,6 +245,28 @@ def run_ours(store, facts, enc, router, words, capped=True):
         }
     )
     return m
+
+
+def run_ours(store, facts, enc, router, words, capped=True, train=True, adds=None):
+    adds = [] if adds is None else adds
+    if train and capped:
+        train_seconds = train_part(store, facts, adds)
+    elif train:
+        t0 = time.time()
+        for f in facts:
+            secs = store.add(f["id"], fact_pairs(f), key=f["probe"])
+            adds.append(
+                {
+                    "fid": f["id"],
+                    "committed": True,
+                    "kld": None,
+                    "seconds": round(secs, 2),
+                }
+            )
+        train_seconds = time.time() - t0
+    else:
+        train_seconds = 0.0
+    return eval_ours(store, facts, enc, router, words, train_seconds, adds)
 
 
 def run_summed(store, facts, words):
@@ -507,6 +517,9 @@ def main() -> None:
     ap.add_argument("--arms", default="rag,ours,summed,sequential")
     ap.add_argument("--facts", default=None, help="external facts JSON (else nonce generator)")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--ckpt", default=None, help="checkpoint path for chunked runs")
+    ap.add_argument("--train-range", default=None, help="train facts[lo:hi] and exit")
+    ap.add_argument("--eval-only", action="store_true", help="load ckpt and evaluate only")
     args = ap.parse_args()
     torch.manual_seed(0)
     if args.facts:
@@ -535,6 +548,26 @@ def main() -> None:
         "results": {},
     }
     t0 = time.time()
+    ckpt_path = (
+        Path(args.ckpt)
+        if args.ckpt
+        else Path(f"results/live_learning/confirm/pilot_n{args.n}.ckpt")
+    )
+    adds: list = []
+    if ckpt_path.exists():
+        st = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+        store.deltas = st["deltas"]
+        store.keys = st["keys"]
+        adds = st.get("adds", [])
+        print(f"resumed {len(store.deltas)}/{len(facts)}", flush=True)
+    if args.train_range:
+        lo, hi = [int(x) for x in args.train_range.split(":")]
+        t = train_part(store, facts[lo:hi], adds, offset=lo)
+        torch.save({"deltas": store.deltas, "keys": store.keys, "adds": adds}, ckpt_path)
+        print(f"ckpt saved: {len(store.deltas)}/{len(facts)} ({t:.0f}s)", flush=True)
+        return
+    if args.eval_only and len(store.deltas) != len(facts):
+        raise SystemExit(f"ckpt incomplete: {len(store.deltas)}/{len(facts)}")
     print("base distractor references", flush=True)
     BASE_DIST.update({f["id"]: base_answer(store, f["distractor"]) for f in facts})
     sample_n = min(10, max(1, len(facts) // 2))
@@ -543,7 +576,9 @@ def main() -> None:
         print("rag: evaluating", flush=True)
         out["results"]["rag"] = run_rag(store, facts, enc, router, words)
     if "ours" in arms:
-        out["results"]["ours"] = run_ours(store, facts, enc, router, words)
+        out["results"]["ours"] = run_ours(
+            store, facts, enc, router, words, train=not args.eval_only, adds=adds
+        )
     if "melo_like" in arms:
         out["results"]["melo_like"] = run_ours(
             store, facts, enc, router, words, capped=False
