@@ -165,7 +165,7 @@ def run_rag(store, facts, enc, router, words):
 def run_ours(store, facts, enc, router, words, capped=True):
     adds = []
     t0 = time.time()
-    for f in facts:
+    for i, f in enumerate(facts):
         t = time.time()
         if capped:
             res = store.propose_and_commit(
@@ -189,7 +189,14 @@ def run_ours(store, facts, enc, router, words, capped=True):
                     "seconds": round(secs, 2),
                 }
             )
+        if (i + 1) % 50 == 0:
+            print(
+                f"ours: trained {i + 1}/{len(facts)} "
+                f"({time.time() - t0:.0f}s elapsed)",
+                flush=True,
+            )
     train_seconds = time.time() - t0
+    print(f"ours: evaluating ({train_seconds:.0f}s training)", flush=True)
     rows = []
     serve_times = []
     for i, f in enumerate(facts):
@@ -528,10 +535,12 @@ def main() -> None:
         "results": {},
     }
     t0 = time.time()
+    print("base distractor references", flush=True)
     BASE_DIST.update({f["id"]: base_answer(store, f["distractor"]) for f in facts})
     sample_n = min(10, max(1, len(facts) // 2))
     pre = {f["id"]: base_answer(store, f["probe"]) for f in facts[:sample_n]}
     if "rag" in arms:
+        print("rag: evaluating", flush=True)
         out["results"]["rag"] = run_rag(store, facts, enc, router, words)
     if "ours" in arms:
         out["results"]["ours"] = run_ours(store, facts, enc, router, words)
