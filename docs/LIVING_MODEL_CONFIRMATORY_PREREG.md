@@ -353,3 +353,11 @@ Both below ours (1.00 / 0.98) and at or below RAG (0.82 / 0.84): logit-space for
 does not teach (grace), and the side-memory ceiling equals RAG on zsRE (the base
 already knows most facts; the conflicts are exactly where a weight edit wins). Every
 arm in the prereg's table now has a measured reading. Next: N = 1000.
+
+## 30. N = 1000 (pinned 2026-10-04, before the run)
+
+The primary scale claim: CounterFact N = 1000 (seed 1000, max_tokens 1), arms rag +
+ours, same harness (router v2, cap 2.0, behavioural return, base-referenced leak).
+Predictions: ours efficacy >= 0.98 with CI separation from RAG; abstention >= 0.99;
+return_match >= 0.8; add cost ~7-9 s/fact (~2.5 h); storage ~8.7 GB. The zsRE N = 1000
+run follows the same pin (same arms) if the session allows.

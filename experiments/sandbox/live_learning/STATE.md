@@ -102,14 +102,16 @@ All eight checks pass: same UCB trace, experts 4 (KLDs 0.011/0.021/0.011/0.005),
 4/4, canary clean - plus no leak: every expert answers "Bilmiyorum." on its negative
 panels, so the stack is image-conditioned end to end.
 
-## Next (2026-10-03, revised direction)
+## Next (2026-10-04, revised direction)
 
 The exploratory line is closed. The single confirmatory study is pinned in
-`docs/LIVING_MODEL_CONFIRMATORY_PREREG.md`: N in {50, 200, 1000}, nonce + CounterFact/
-zsRE subsets, arms RAG / shared-LoRA / summed / GRACE / MELO / WISE / ours, CIs, and
-the delta>memory existence proof (VLM image-conditioned first). Primary risk: the
-router at N = 1000. Optional remains: real-photo key calibration; future-aware repair
-reward.
+`docs/LIVING_MODEL_CONFIRMATORY_PREREG.md`. Status: nonce pilots A/A2 done (router v2
+fixes abstention 0.00 -> 1.00); external N=50 and N=200 done with CI-separated gaps
+(ours 1.00/0.98-0.99 vs rag 0.76-0.85); every prereg arm measured (summed 0.00,
+sequential 0.08-0.80, melo_like == ours, grace_like 0.70, wise_like 0.82); both metric
+fixes verified (behavioural return; base-referenced leak). Running now: CounterFact
+N=1000 (background); zsRE N=1000 follows. Remaining after that: the freeze pass and
+the VLM image-conditioned family at N=50 scenes.
 
 ## Files
 
