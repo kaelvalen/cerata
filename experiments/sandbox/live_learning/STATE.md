@@ -109,9 +109,13 @@ The exploratory line is closed. The single confirmatory study is pinned in
 fixes abstention 0.00 -> 1.00); external N=50 and N=200 done with CI-separated gaps
 (ours 1.00/0.98-0.99 vs rag 0.76-0.85); every prereg arm measured (summed 0.00,
 sequential 0.08-0.80, melo_like == ours, grace_like 0.70, wise_like 0.82); both metric
-fixes verified (behavioural return; base-referenced leak). Running now: CounterFact
-N=1000 (background); zsRE N=1000 follows. Remaining after that: the freeze pass and
-the VLM image-conditioned family at N=50 scenes.
+fixes verified (behavioural return; base-referenced leak); **CounterFact N=1000 done:
+ours 0.999 [0.997, 1.0] vs rag 0.834 [0.812, 0.858], abstention 1.00, route 0.997,
+revoke gone 1.00 / retain 0.999**. The zsRE N=1000 wrapper was launched and stopped on
+request (its partial checkpoint is untracked and resumable). Remaining: zsRE N=1000
+when wanted, the freeze pass, and the VLM image-conditioned family at N=50 scenes.
+Execution note: chunked runs + malloc_trim per fact (glibc arena retention was the
+host-RSS balloon); ranges are idempotent, so a relaunch resumes from the checkpoint.
 
 ## Files
 
