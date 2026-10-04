@@ -12,6 +12,7 @@ storage; bootstrap 95% CIs over facts.
 from __future__ import annotations
 
 import argparse
+import ctypes
 import json
 import sys
 import time
@@ -33,6 +34,12 @@ SYSTEM = "Answer briefly."
 TAU = 0.656
 CANARIES = ["What is the capital of France?", "What is 7 times 8?"]
 BASE_DIST: dict = {}
+_LIBC = ctypes.CDLL("libc.so.6")
+
+
+def trim() -> None:
+    """Return glibc arena memory to the OS (the training loop's RSS balloon)."""
+    _LIBC.malloc_trim(0)
 
 
 class PilotStore(DeltaStore):
@@ -166,6 +173,8 @@ def train_part(store, part, adds, offset=0):
     t0 = time.time()
     for k, f in enumerate(part):
         i = offset + k
+        if f["id"] in store.deltas:
+            continue
         t = time.time()
         res = store.propose_and_commit(
             f["id"], fact_pairs(f), key=f["probe"], kld_limit=2.0
@@ -178,6 +187,7 @@ def train_part(store, part, adds, offset=0):
                 "seconds": round(time.time() - t, 2),
             }
         )
+        trim()
         if (i + 1) % 50 == 0:
             print(f"ours: trained {i + 1} ({time.time() - t0:.0f}s elapsed)", flush=True)
     return time.time() - t0
@@ -222,6 +232,7 @@ def eval_ours(store, facts, enc, router, words, train_seconds, adds):
                 "resp": resp[:70],
             }
         )
+        trim()
     m = summarize(rows)
     storage = sum(
         t.numel() * t.element_size()
