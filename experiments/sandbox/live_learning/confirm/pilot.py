@@ -27,6 +27,7 @@ from facts import NUMBERS, generate  # noqa: E402
 from facts import pairs as fact_pairs  # noqa: E402
 from harness import load_model, make_lora  # noqa: E402
 from ledger import CAP, DeltaStore, R  # noqa: E402
+from transformers import LogitsProcessor, LogitsProcessorList  # noqa: E402
 
 SYSTEM = "Answer briefly."
 TAU = 0.656
@@ -318,6 +319,122 @@ def run_sequential_arm(store, facts, words, steps_per_fact=8):
     return summarize(rows)
 
 
+class ForceToken(LogitsProcessor):
+    def __init__(self, token_id: int, bias: float = 10.0):
+        self.token_id = token_id
+        self.bias = bias
+
+    def __call__(self, input_ids, scores):
+        scores[:, self.token_id] += self.bias
+        return scores
+
+
+def grace_answer(store, q, token_id):
+    ids = store.tok.apply_chat_template(
+        [
+            {"role": "system", "content": SYSTEM},
+            {"role": "user", "content": q},
+        ],
+        add_generation_prompt=True,
+        return_tensors="pt",
+    )
+    ids = (ids["input_ids"] if hasattr(ids, "keys") else ids).to(store.model.device)
+    out = store.model.generate(
+        input_ids=ids,
+        max_new_tokens=24,
+        do_sample=False,
+        pad_token_id=store.tok.eos_token_id,
+        logits_processor=LogitsProcessorList([ForceToken(token_id)]),
+    )
+    return store.tok.decode(out[0, ids.shape[1]:], skip_special_tokens=True).strip()
+
+
+def run_grace(store, facts, enc, router, words):
+    """GRACE-style: codebook + deferral radius, value forced in logit space."""
+    saved = dict(store.deltas)
+    store.deltas = {}
+    store.materialize()
+    token_ids = [store.tok.encode(f["answer"], add_special_tokens=False)[0] for f in facts]
+    rows = []
+    for i, f in enumerate(facts):
+        j, _ = router.route(f["probe"], enc)
+        resp = (
+            grace_answer(store, f["probe"], token_ids[j])
+            if j is not None
+            else base_answer(store, f["probe"])
+        )
+        pj, _ = router.route(f["paraphrase"], enc)
+        resp_para = (
+            grace_answer(store, f["paraphrase"], token_ids[pj])
+            if pj is not None
+            else base_answer(store, f["paraphrase"])
+        )
+        dj, _ = router.route(f["distractor"], enc)
+        d_resp = (
+            grace_answer(store, f["distractor"], token_ids[dj])
+            if dj is not None
+            else base_answer(store, f["distractor"])
+        )
+        rows.append(
+            {
+                "fid": f["id"],
+                "eff": hit(resp, f["answer"]),
+                "para": hit(resp_para, f["answer"]),
+                "no_leak": not any(
+                    hit(d_resp, w) and not hit(BASE_DIST[f["id"]], w) for w in words
+                ),
+                "route_ok": j == i,
+                "resp": resp[:70],
+            }
+        )
+    store.deltas = saved
+    store.materialize()
+    return summarize(rows)
+
+
+def run_wise(store, facts, enc, router, words):
+    """WISE-style: side memory only for facts the base does not already answer."""
+    base = {f["id"]: base_answer(store, f["probe"]) for f in facts}
+    conflicts = [f for f in facts if not hit(base[f["id"]], f["answer"])]
+    side = Router(enc, conflicts)
+    rows = []
+    for f in facts:
+        j, _ = side.route(f["probe"], enc)
+        served_side = j is not None and conflicts[j]["id"] == f["id"]
+        resp = (
+            base_answer(store, f["probe"], note=conflicts[j]["teach"])
+            if served_side
+            else base_answer(store, f["probe"])
+        )
+        pj, _ = side.route(f["paraphrase"], enc)
+        served_para = pj is not None and conflicts[pj]["id"] == f["id"]
+        resp_para = (
+            base_answer(store, f["paraphrase"], note=conflicts[pj]["teach"])
+            if served_para
+            else base_answer(store, f["paraphrase"])
+        )
+        dj, _ = side.route(f["distractor"], enc)
+        d_resp = (
+            base_answer(store, f["distractor"], note=conflicts[dj]["teach"])
+            if dj is not None
+            else base_answer(store, f["distractor"])
+        )
+        is_conflict = f["id"] in {c["id"] for c in conflicts}
+        rows.append(
+            {
+                "fid": f["id"],
+                "eff": hit(resp, f["answer"]),
+                "para": hit(resp_para, f["answer"]),
+                "no_leak": not any(
+                    hit(d_resp, w) and not hit(BASE_DIST[f["id"]], w) for w in words
+                ),
+                "route_ok": served_side if is_conflict else not served_side,
+                "resp": resp[:70],
+            }
+        )
+    return summarize(rows)
+
+
 def run_revoke(store, facts, enc, router, pre, sample=10):
     sample = min(sample, max(1, len(facts) // 2))
     sample_facts, keep = facts[:sample], facts[sample:]
@@ -414,6 +531,10 @@ def main() -> None:
         )
     if "summed" in arms:
         out["results"]["summed"] = run_summed(store, facts, words)
+    if "grace_like" in arms:
+        out["results"]["grace_like"] = run_grace(store, facts, enc, router, words)
+    if "wise_like" in arms:
+        out["results"]["wise_like"] = run_wise(store, facts, enc, router, words)
     if "sequential" in arms:
         out["results"]["sequential"] = run_sequential_arm(store, facts, words)
     if "ours" in arms:

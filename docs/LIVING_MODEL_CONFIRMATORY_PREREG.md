@@ -328,3 +328,28 @@ route 0.98 - identical to ours within CI, as predicted. The KLD cap is a guarant
 not an efficacy mechanism; the MELO comparison belongs to the guarantee table, not the
 accuracy table. Remaining before the freeze: GRACE/WISE-style arms (logit-boost
 codebook with deferral radius; side-memory router), then N = 1000.
+
+## 28. GRACE- and WISE-style arms (pinned 2026-10-04, before the verification run)
+
+`grace_like`: codebook (MiniLM key -> single-token answer id) + deferral radius = the
+same entity router; when routed, the value token is forced in logit space (bias +10 on
+the answer id during generation), else the base answers. No weights change.
+`wise_like`: side memory only for facts the base does not already answer (conflicts);
+the same entity router selects the side entry; non-conflict facts stay with the base
+model. Both arms share the harness router (fairness) and the base-referenced leak
+metric. Verification: zsRE N = 50, arms grace_like + wise_like. Predictions:
+grace_like efficacy high but paraphrase weaker (logit forcing does not teach); wise_like
+efficacy equals the base on non-conflicts and gains on conflicts - the side-memory
+ceiling.
+
+## 29. GRACE- and WISE-style results (zsRE N = 50, wall 137 s, 2026-10-04)
+
+| arm | efficacy | paraphrase | no-leak | route |
+| :-- | :-- | :-- | :-- | :-- |
+| grace_like | 0.70 [0.56, 0.82] | 0.72 [0.60, 0.84] | 1.00 | 0.98 |
+| wise_like | 0.82 [0.72, 0.92] | 0.74 [0.62, 0.84] | 1.00 | 1.00 |
+
+Both below ours (1.00 / 0.98) and at or below RAG (0.82 / 0.84): logit-space forcing
+does not teach (grace), and the side-memory ceiling equals RAG on zsRE (the base
+already knows most facts; the conflicts are exactly where a weight edit wins). Every
+arm in the prereg's table now has a measured reading. Next: N = 1000.
