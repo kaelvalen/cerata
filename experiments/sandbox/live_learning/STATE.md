@@ -102,20 +102,17 @@ All eight checks pass: same UCB trace, experts 4 (KLDs 0.011/0.021/0.011/0.005),
 4/4, canary clean - plus no leak: every expert answers "Bilmiyorum." on its negative
 panels, so the stack is image-conditioned end to end.
 
-## Next (2026-10-04, revised direction)
+## Next (2026-10-04, review round; no runs started)
 
-The exploratory line is closed. The single confirmatory study is pinned in
-`docs/LIVING_MODEL_CONFIRMATORY_PREREG.md`. Status: nonce pilots A/A2 done (router v2
-fixes abstention 0.00 -> 1.00); external N=50 and N=200 done with CI-separated gaps
-(ours 1.00/0.98-0.99 vs rag 0.76-0.85); every prereg arm measured (summed 0.00,
-sequential 0.08-0.80, melo_like == ours, grace_like 0.70, wise_like 0.82); both metric
-fixes verified (behavioural return; base-referenced leak); **CounterFact N=1000 done:
-ours 0.999 [0.997, 1.0] vs rag 0.834 [0.812, 0.858], abstention 1.00, route 0.997,
-revoke gone 1.00 / retain 0.999**. The zsRE N=1000 wrapper was launched and stopped on
-request (its partial checkpoint is untracked and resumable). Remaining: zsRE N=1000
-when wanted, the freeze pass, and the VLM image-conditioned family at N=50 scenes.
-Execution note: chunked runs + malloc_trim per fact (glibc arena retention was the
-host-RSS balloon); ranges are idempotent, so a relaunch resumes from the checkpoint.
+The 2026-10-04 review is accepted in full; findings and corrections are recorded in
+`docs/LIVING_MODEL_REVIEW_2026-10-04.md` and Appendix B.4. **Pinned order, each pinning
+before its run:** (1) strong-RAG arms - the gating experiment: if the gap closes, stop
+and narrow the thesis to the guaranteed expert bank (no runs started); (2) router
+stress: aliases/typos/pronouns (CPU); (3) official EasyEdit baselines (GRACE/WISE/MELO,
+MEMIT/AlphaEdit); (4) prereg metric completion (revoke n >= 100, the pinned thresholds);
+(5) multi-fact delta capacity k in {1, 4, 16, 64}, then group-by-subject experts;
+(6) zsRE N=1000 (checkpoint at 100/1000 resumable). The N=1000 CounterFact result
+(0.999 vs 0.834) stands only as "delta > plain-prompt RAG" until (1) reports.
 
 ## Files
 

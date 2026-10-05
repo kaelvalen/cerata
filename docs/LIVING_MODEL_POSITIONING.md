@@ -261,7 +261,23 @@ delta>memory existence proof. Rows below are annotated; the confirmatory study
 
 ### B.3 Open items
 
-- Text: future-aware repair reward (recurrence signal); the update retrain path with a
-  promoted fact is unexercised; capability cap3 is base-bound.
+- Text: future-aware repair reward (recurrence signal); capability cap3 is base-bound.
 - VLM: real-photo key calibration (synthetic panel margins are 0.0055-0.06); the
   pixel-level expert generalises to synthetic variants but has not seen real scenes.
+
+### B.4 Review round (2026-10-04): what the N=1000 table does not yet prove
+
+- The delta > RAG gap (0.999 vs 0.834) is measured against a **plain-prompt RAG only**;
+  strong-RAG arms (explicit instruction, few-shot, Q/A formatting) are pinned as the
+  first gating experiment - if the gap closes, the editing claim is dropped and the
+  thesis narrows to the guaranteed expert bank.
+- The router is effectively a **subject-string dictionary** (substring gate + semantic
+  pick); route 0.997 / abstention 1.00 are near-tautological, and aliases, typos and
+  pronouns are untested. The CounterFact paraphrase score (~0.32) is a **router
+  failure**, not delta generalisation.
+- The GRACE/WISE/MELO columns are **approximations** (logit bias / side-memory rule /
+  uncapped self), not official implementations; EasyEdit baselines are pinned.
+- The prereg's own thresholds (canary KL <= 0.05, retain +/-1, provenance >= 0.95,
+  router precision >= 0.95, revoke n >= 100) were **not reported** in the N=1000 table.
+- Paper identity is unresolved (editing vs systems/guarantee); see
+  `docs/LIVING_MODEL_REVIEW_2026-10-04.md` for the pinned order and the gate.

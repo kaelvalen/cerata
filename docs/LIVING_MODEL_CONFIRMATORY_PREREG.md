@@ -377,3 +377,17 @@ CI-separated at N = 1000 (0.999 vs 0.834), abstention stays 1.00, the router rou
 arms (CounterFact dump). Execution note: the run was chunked (host-RSS glibc arena
 retention; malloc_trim per fact + idempotent ranges) - the protocol is unchanged; the
 chunking is an execution detail.
+
+## 32. Review round (2026-10-04): accepted limits and the gating order
+
+The review received after `77c5f70` is accepted in full and recorded in
+`docs/LIVING_MODEL_REVIEW_2026-10-04.md` (six findings, point by point) and in
+Positioning Appendix B.4. Consequences for this prereg: the N=1000 table stands only as
+"delta > plain-prompt RAG" until the strong-RAG arms report; the router metrics are
+dictionary-like and the paraphrase score is a router failure; the GRACE/WISE/MELO
+columns are approximations, not official implementations; the §5 thresholds (canary
+KL, retain, provenance, router precision) and a revoke sample of n >= 100 are owed;
+the cost-scaling question becomes the multi-fact delta capacity curve; the paper
+identity (editing vs systems/guarantee) is an open choice. **No runs were started for
+this round; each item pins before its run, and item 1 is the gate: if the gap closes,
+stop and narrow the thesis.**
