@@ -78,11 +78,12 @@ def hit(resp, token):
     return token.lower() in resp.lower()
 
 
-def base_answer(store, q, note=None):
+def base_answer(store, q, note=None, system=None):
     full = store.deltas
     store.deltas = {}
     store.materialize()
-    system = SYSTEM if note is None else f"{SYSTEM} Context: {note}"
+    if system is None:
+        system = SYSTEM if note is None else f"{SYSTEM} Context: {note}"
     resp = store.answer(q, system=system)
     store.deltas = full
     store.materialize()
@@ -138,18 +139,37 @@ def summarize(rows):
     }
 
 
-def run_rag(store, facts, enc, router, words):
+def rag_system(mode, facts, j):
+    f = facts[j]
+    if mode == "plain":
+        return f"{SYSTEM} Context: {f['teach']}"
+    if mode == "instruct":
+        return (
+            f"{SYSTEM} Use the context even if it contradicts what you know. "
+            f"Context: {f['teach']}"
+        )
+    if mode == "qa":
+        return f"{SYSTEM} Context:\nQ: {f['probe']}\nA: {f['answer']}"
+    demo = facts[(j + 1) % len(facts)]
+    return (
+        f"{SYSTEM} Follow the context over your prior knowledge.\n"
+        f"Example:\nQ: {demo['probe']}\nA: {demo['answer']}\n"
+        f"Context: {f['teach']}"
+    )
+
+
+def run_rag(store, facts, enc, router, words, mode="plain"):
     rows = []
     for i, f in enumerate(facts):
         j, sim = router.route(f["probe"], enc)
         resp = (
-            base_answer(store, f["probe"], note=facts[j]["teach"])
+            base_answer(store, f["probe"], system=rag_system(mode, facts, j))
             if j is not None
             else base_answer(store, f["probe"])
         )
         pj, _ = router.route(f["paraphrase"], enc)
         resp_para = (
-            base_answer(store, f["paraphrase"], note=facts[pj]["teach"])
+            base_answer(store, f["paraphrase"], system=rag_system(mode, facts, pj))
             if pj is not None
             else base_answer(store, f["paraphrase"])
         )
@@ -586,6 +606,19 @@ def main() -> None:
     if "rag" in arms:
         print("rag: evaluating", flush=True)
         out["results"]["rag"] = run_rag(store, facts, enc, router, words)
+    if "rag_instruct" in arms:
+        print("rag_instruct: evaluating", flush=True)
+        out["results"]["rag_instruct"] = run_rag(
+            store, facts, enc, router, words, mode="instruct"
+        )
+    if "rag_qa" in arms:
+        print("rag_qa: evaluating", flush=True)
+        out["results"]["rag_qa"] = run_rag(store, facts, enc, router, words, mode="qa")
+    if "rag_fewshot" in arms:
+        print("rag_fewshot: evaluating", flush=True)
+        out["results"]["rag_fewshot"] = run_rag(
+            store, facts, enc, router, words, mode="fewshot"
+        )
     if "ours" in arms:
         out["results"]["ours"] = run_ours(
             store, facts, enc, router, words, train=not args.eval_only, adds=adds

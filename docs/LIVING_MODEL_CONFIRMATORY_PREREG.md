@@ -391,3 +391,28 @@ the cost-scaling question becomes the multi-fact delta capacity curve; the paper
 identity (editing vs systems/guarantee) is an open choice. **No runs were started for
 this round; each item pins before its run, and item 1 is the gate: if the gap closes,
 stop and narrow the thesis.**
+
+## 33. Strong-RAG arms (pinned 2026-10-04, before the run; review item 1 - the gate)
+
+CounterFact N=200 first (confirmed at N=1000 only if the gap survives). Arms:
+`rag_instruct` ("use the context even if it contradicts what you know"), `rag_qa`
+(context as a Q/A pair), `rag_fewshot` (a note-following demonstration from another
+fact). Same entity router, same facts, same base-referenced metrics. The plain arm's
+N=200 numbers are the reference (ours 0.995 vs rag 0.85). Predictions per the review:
+the gap narrows; the gate is whether it stays CI-separated from ours. If it closes,
+stop and narrow the thesis to the guaranteed expert bank.
+
+## 34. Strong-RAG results (CounterFact N = 200, wall 490 s, 2026-10-04)
+
+| arm | efficacy | paraphrase |
+| :-- | :-- | :-- |
+| rag_instruct | 0.865 [0.815, 0.91] | 0.315 |
+| rag_qa | 0.71 [0.645, 0.77] | 0.275 |
+| rag_fewshot | 0.52 [0.45, 0.59] | 0.20 |
+| (plain rag, N=200) | 0.85 [0.80, 0.90] | 0.31 |
+| (ours, N=200) | 0.995 [0.985, 1.0] | 0.295 |
+
+**The gate passes**: the strongest strong-RAG variant (explicit instruction) reaches
+0.865 and stays CI-separated from ours (0.995); Q/A formatting and few-shot hurt
+(0.71 / 0.52). The headline stands as "delta > strong RAG" at N=200; the N=1000
+confirmation for rag_instruct is launched.
