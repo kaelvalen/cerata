@@ -416,3 +416,21 @@ stop and narrow the thesis to the guaranteed expert bank.
 0.865 and stays CI-separated from ours (0.995); Q/A formatting and few-shot hurt
 (0.71 / 0.52). The headline stands as "delta > strong RAG" at N=200; the N=1000
 confirmation for rag_instruct is launched.
+
+## 35. Router stress results (review item 2; N=50 nonce, CPU, 2026-10-06)
+
+| perturbation | route acc | abstain | semantic-only acc |
+| :-- | :-- | :-- | :-- |
+| typo_swap | 0.00 | 1.00 | 0.88 |
+| typo_drop | 0.00 | 1.00 | 1.00 |
+| lower | 1.00 | 0.00 | 1.00 |
+| space (hyphen -> space) | 0.00 | 1.00 | 1.00 |
+| partial (first token) | 0.00 | 1.00 | 1.00 |
+| pronoun (subject -> "it") | 0.00 | 1.00 | 0.10 |
+
+The review's item-2 prediction is exact: the entity gate is a **dictionary** - any
+subject-string deviation abstains (fails safe, but recall 0), and **semantic-only
+routing recovers 88-100 % of the typo/space/partial cases**. The pinned fix: replace
+the substring entity match with an embedding-based (or fuzzy) entity match; pronoun
+follow-ups need dialogue coreference and stay out of scope for a stateless router
+(semantic-only accuracy 0.10 - there is nothing to match).
