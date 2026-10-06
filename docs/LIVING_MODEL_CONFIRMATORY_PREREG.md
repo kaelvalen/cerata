@@ -523,3 +523,9 @@ official qwen2.5-7b hparams (adapt layers to 28 for 1.5B; GRACE ~6 GB, WISE ~7 G
 Next (GPU after zsRE N=1000): run GRACE then WISE on the CounterFact N=200 subset
 with PYTHONPATH=.deps/EasyEdit; evaluate efficacy/paraphrase/locality with our
 metric definitions; MEMIT/AlphaEdit only if VRAM allows; MELO has no Qwen support.
+
+## 43. zsRE N=1000 stopped on request (2026-10-06)
+
+Training stopped at the 100/1000 checkpoint (the chunk 100:200 in progress was
+abandoned; the checkpoint holds the first 100 facts). Resumable with the same chunked
+wrapper; the CounterFact N=1000 result is unaffected.

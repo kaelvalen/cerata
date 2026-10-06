@@ -112,7 +112,8 @@ n >= 100; thresholds owed at the next full ours run). (5) **capacity DONE - one
 jointly-trained delta carries 64 facts at full efficacy (nonce and CounterFact),
 leakage 0, tiny KLD; the summed collapse is an additivity artifact, not a capacity
 limit**; follow-up pinned: grouped experts (~64 facts/delta, ~64x storage cut, coarse
-router) + seeds/CIs. (6) zsRE N=1000 (checkpoint at 100/1000 resumable) - pending.
+router) + seeds/CIs. (6) zsRE N=1000 - stopped on request at the 100/1000 checkpoint (resumable with the
+same chunked wrapper).
 
 ## Files
 
