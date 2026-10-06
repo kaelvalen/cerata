@@ -109,3 +109,8 @@ meeting_notes.md
 # experiments/ regenerate them and the docs reference them by path; they are not
 # tracked, so a fresh clone must re-run the runners.
 results/
+
+# graphify build cache and machine-local pointers
+graphify-out/cache/
+graphify-out/.graphify_python
+graphify-out/.graphify_root
