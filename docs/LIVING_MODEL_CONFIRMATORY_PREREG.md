@@ -434,3 +434,12 @@ routing recovers 88-100 % of the typo/space/partial cases**. The pinned fix: rep
 the substring entity match with an embedding-based (or fuzzy) entity match; pronoun
 follow-ups need dialogue coreference and stay out of scope for a stateless router
 (semantic-only accuracy 0.10 - there is nothing to match).
+
+## 36. Metric-completion pin (review item 4; 2026-10-06)
+
+The revoke sample default is raised to **100** (min(100, n//2) in practice), per the
+review. The reportable pinned metrics at the next full `ours` run: canary KLD per
+committed expert (mean/max, from the commit records - the cap keeps each <= 2.0),
+behavioural return (`return_match`), retain accuracy, router precision and
+abstention. Provenance (leave-one-out) at N=1000 is expensive and stays a separate
+pinned run; N=200 used the old metrics, so the final table is built on N=1000 only.

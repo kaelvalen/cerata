@@ -493,7 +493,7 @@ def run_wise(store, facts, enc, router, words):
     return summarize(rows)
 
 
-def run_revoke(store, facts, enc, router, pre, sample=10):
+def run_revoke(store, facts, enc, router, pre, sample=100):
     sample = min(sample, max(1, len(facts) // 2))
     sample_facts, keep = facts[:sample], facts[sample:]
     times = []
