@@ -451,3 +451,47 @@ route 0.997. Plain RAG: 0.834 [0.812, 0.858]. Ours: 0.999 [0.997, 1.0].
 **The gate passes at full scale**: the strongest external-evidence prompt does not
 close the gap (0.837 vs 0.834, statistically the same); ours stays CI-separated.
 The editing claim stands; the review's contingency (stop and narrow) does not fire.
+
+## 38. Multi-fact delta capacity (review item 5; pinned 2026-10-06, before the run)
+
+One delta trained on the union of k facts' pairs (nonce N=100, group = facts[:k]),
+k in {1, 4, 16, 64}; readings per k: in-group efficacy and paraphrase (the delta
+active alone), leakage onto 10 held-out facts, canary KLD of the group delta, training
+seconds. Predictions: efficacy stays high for small k and degrades with k (a single
+delta must hold conflicting pairs); KLD grows with k (the interference budget);
+leakage stays ~0 (the facts are unrelated). The reading informs expert granularity:
+if a delta carries k* facts, experts can group by subject instead of per-fact.
+
+## 39. Multi-fact delta capacity results, nonce (review item 5; 2026-10-06)
+
+| k | efficacy | paraphrase | leakage | KLD | train s |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| 1 | 1.00 | 0.00 | 0.00 | 0.038 | 16.7 |
+| 4 | 0.75 | 0.75 | 0.00 | 0.007 | 22.4 |
+| 16 | 1.00 | 0.875 | 0.00 | 0.007 | 76.6 |
+| 64 | **1.00** | **0.875** | 0.00 | 0.002 | 308.5 |
+
+A **single jointly-trained delta carries 64 facts** at full efficacy with a tiny
+canary footprint - the opposite of the summed-independent-deltas collapse (0/1000).
+The distinction is joint vs additive training: a shared low-rank solution exists;
+summing independently trained solutions interferes. Consequences: per-fact deltas are
+not necessary; experts can group ~k* facts (cheaper storage, fewer router keys - the
+review's "real MoE" direction). Caveats: nonce facts are templated (5 relations), one
+prefix group per k, no seeds/CIs yet; the external-fact check follows.
+
+## 40. Multi-fact delta capacity results, external (CounterFact N=200; 2026-10-06)
+
+| k | efficacy | paraphrase | leakage | KLD | train s |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| 1 | 1.00 | 0.00 | 0.10 | 0.014 | 33.8 |
+| 4 | 1.00 | 0.25 | 0.00 | 0.011 | 40.1 |
+| 16 | 0.938 | 0.438 | 0.00 | 0.003 | 112.8 |
+| 64 | **1.00** | **0.656** | 0.00 | 0.007 | 368.2 |
+
+The finding holds on real counterfactual facts: one jointly-trained delta carries 64
+facts at full efficacy (paraphrase 0.656 - real paraphrases are harder than nonce;
+leakage 0; KLD 0.007). Scale consequences: effective storage per fact drops ~64x (one
+~11 MB delta instead of 64 per-fact deltas), router keys drop from facts to groups,
+and the expert becomes a grouped jointly-trained organ - the review's real-MoE
+direction. Next: group-by-subject experts with a coarse router (which group), then
+in-group serve; capacity with seeds/CIs for the paper.

@@ -104,14 +104,15 @@ panels, so the stack is image-conditioned end to end.
 
 ## Next (2026-10-06, review round)
 
-Review items: (1) **strong-RAG gate PASSED** - instruct 0.837 [0.815, 0.86] at N=1000
-vs ours 0.999 [0.997, 1.0], CI-separated; Q/A 0.71 and few-shot 0.52 at N=200; the
-editing claim stands. (2) router stress done (entity gate is a dictionary; semantic
-keys recover 88-100%; fix pinned: embedding/fuzzy entity match). (3) official
-EasyEdit baselines (GRACE/WISE/MELO, MEMIT/AlphaEdit). (4) metric completion pinned
-(revoke n >= 100; thresholds owed at the next full ours run; provenance separate).
-(5) multi-fact delta capacity k in {1, 4, 16, 64}. (6) zsRE N=1000 (checkpoint at
-100/1000 resumable). No runs started beyond the completed gate.
+Review items: (1) **strong-RAG gate PASSED** (instruct 0.837 vs ours 0.999 at N=1000).
+(2) router stress done - entity gate is a dictionary; semantic keys recover 88-100%;
+fix pinned (embedding/fuzzy entity match). (3) official EasyEdit baselines
+(GRACE/WISE/MELO, MEMIT/AlphaEdit) - pending. (4) metric completion pinned (revoke
+n >= 100; thresholds owed at the next full ours run). (5) **capacity DONE - one
+jointly-trained delta carries 64 facts at full efficacy (nonce and CounterFact),
+leakage 0, tiny KLD; the summed collapse is an additivity artifact, not a capacity
+limit**; follow-up pinned: grouped experts (~64 facts/delta, ~64x storage cut, coarse
+router) + seeds/CIs. (6) zsRE N=1000 (checkpoint at 100/1000 resumable) - pending.
 
 ## Files
 
