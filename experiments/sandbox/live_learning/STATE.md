@@ -116,17 +116,19 @@ MEMIT/AlphaEdit); (4) prereg metric completion (revoke n >= 100, the pinned thre
 
 ## Files
 
-- Text side (live_learning/): `stream.py` facts/fillers; `harness.py` model+chat+LoRA;
+- Text side (text/): `stream.py` facts/fillers; `harness.py` model+chat+LoRA;
   `ledger.py` DeltaStore (add/revoke/propose_and_commit/answer_routed/embed);
   `ledger_metrics.py` G3/G5; `ledger_router.py` separation; `ledger_embedder.py` MiniLM
   router; `ledger_organ.py` invariants; `ledger_controller.py` v0; `ledger_bandit.py`
   controller v1 (rule/eps/ucb/repair); `ledger_session.py` cross-session hybrid;
   `ledger_para_holdout.py`; `ledger_atomic_fail.py`; `ledger_c6_v2.py`;
-  `mechanisms.py`+`run.py` the three-mechanism mesa.
+  `ledger_update_retrain.py`; `mechanisms.py`+`run.py` the three-mechanism mesa.
+- Confirmatory (confirm/): `facts.py` nonce generator; `external.py` CounterFact/zsRE
+  adapters; `pilot.py` arms/metrics/chunked runs; `router_eval.py` CPU router compare.
 - VLM side (vlm/): `vlm_core.py` shared helpers (harness, training, embeddings, scenes);
   `vlm_mirror.py`+`vlm_mirror2..5.py` the v0/v1/v2/v3 record runs; `vlm_keys.py` key
-  comparison; `vlm_ledger.py` VlmDeltaStore; `vlm_controller.py`; `vlm_update_unlearn.py`;
-  `vlm_variants.py`; `vlm_contrast.py` contrast-pair expert.
+  comparison; `vlm_ledger.py` VlmDeltaStore; `vlm_controller.py`; `vlm_controller_contrast.py`;
+  `vlm_update_unlearn.py`; `vlm_variants.py`; `vlm_contrast.py` contrast-pair expert.
 
 ## Environment (NixOS quirks, essential)
 
@@ -134,7 +136,7 @@ MEMIT/AlphaEdit); (4) prereg metric completion (revoke n >= 100, the pinned thre
 export LD_LIBRARY_PATH=/nix/store/38v10xhwhypb747h3z4c2i0a19hkiwx2-nvidia-x11-615.71.09/lib
 export TRITON_LIBCUDA_PATH=$LD_LIBRARY_PATH     # triton wants /sbin/ldconfig
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-.venv/bin/python experiments/sandbox/live_learning/<script>.py
+.venv/bin/python experiments/sandbox/live_learning/<dir>/<script>.py
 ```
 
 GPU is an 8 GB RTX 5060 shared with the Counterpart project (check `nvidia-smi`

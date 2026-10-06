@@ -876,7 +876,9 @@ into a visually gated one, and it still generalises to unseen variants of its sc
 
 Layout: the VLM scripts moved to `experiments/sandbox/live_learning/vlm/` (names
 unchanged; shared helpers consolidated in `vlm_core.py`). References in the sections
-above like `vlm_mirror.py` map to `vlm/vlm_mirror.py`; no run was changed.
+above like `vlm_mirror.py` map to `vlm/vlm_mirror.py`; no run was changed. The
+text-side scripts moved to `text/` on 2026-10-06 (names unchanged); references like
+`ledger.py` map to `text/ledger.py`; the confirmatory harness lives in `confirm/`.
 
 | theme | sections | commit |
 | :-- | :-- | :-- |
