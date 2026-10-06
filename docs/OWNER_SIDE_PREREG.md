@@ -128,7 +128,7 @@ no tuning               epochs 10, lr 1e-3, batch 128, rank 8, one prototype per
                         construction, feature cache and inference path
 ```
 
-Artifacts: `experiments/owner_side.py`, `results/owner_side/owner_side_study.json`,
+Artifacts: `experiments/stage1/owner_side.py`, `results/owner_side/owner_side_study.json`,
 `docs/OWNER_SIDE_RESULTS.md`.
 
 ## 6. Feasibility

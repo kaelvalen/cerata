@@ -64,3 +64,13 @@ indexed in [`../experiments/README.md`](../experiments/README.md).
 repository README), the v1 protocol and design facts (`v1/BENCHMARK.md`), the v1 paper
 plan, the superseded v2 specification, the pre-v3 code review and the Turkish
 presentation notes.
+
+## Living model (October sandbox)
+
+The sandbox program - transactional, auditable learning during interaction - lives in
+`experiments/sandbox/live_learning/` (`README.md`, `STATE.md`; subdirs `text/`,
+`confirm/`, `vlm/`), with its docs kept at their paths per the rule above:
+`LIVING_MODEL_POSITIONING.md` (claim, audit, measured guarantees),
+`LIVING_MODEL_SLICE_PREREG.md` (exploratory record + index),
+`LIVING_MODEL_CONFIRMATORY_PREREG.md` (confirmatory study) and
+`LIVING_MODEL_REVIEW_2026-10-04.md` (review round + pinned next experiments).

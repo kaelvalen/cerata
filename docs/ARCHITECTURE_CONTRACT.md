@@ -93,7 +93,7 @@ Acceptance criterion: `max |delta metric| = 0` on a fixed smoke, with only
 timing and the additive contract field masked.
 
 ```
-before: experiments/run_benchmark.py --dataset mnist --methods naive \
+before: experiments/stage1/run_benchmark.py --dataset mnist --methods naive \
         --epochs 1 --device cpu --seed 42        (pre-S1, S0 commit)
 after:  same command
 result: 15 non-masked result keys compared, 0 differences (NaN-aware)
@@ -104,7 +104,7 @@ Additional guards:
 
 - the full test suite: **154 passed** (106 v1 + 18 S0 contract + 30 S1 arch);
 - `ruff` and `black --check` clean;
-- the registry reproduces a real experiment: `experiments/e0_representation_ceiling.py`
+- the registry reproduces a real experiment: `experiments/stage1/e0_representation_ceiling.py`
   was switched from its in-script adapter to `pal_moe.arch.ResidualAdapter` and
   re-run; the L2 numbers are identical (76.62 joint / 55.67 sequential,
   89,088 parameters).

@@ -1577,7 +1577,7 @@ def test_periodic_stability_and_ood_knobs():
 
 def test_pretrain_cache_roundtrip(tmp_path):
     """The pretraining cache is content-addressed and restores exact weights."""
-    from experiments.run_benchmark import (
+    from experiments.stage1.run_benchmark import (
         _load_pretrained_encoder,
         _pretrain_cache_path,
         _save_pretrained_encoder,
@@ -1602,7 +1602,7 @@ def test_pretrain_cache_roundtrip(tmp_path):
 
 def test_runner_baseline_helpers():
     """Factory/record helpers used by the benchmark runner."""
-    from experiments.run_benchmark import _record_baseline_result
+    from experiments.stage1.run_benchmark import _record_baseline_result
 
     from cerata.legacy.factory import build_single_head
 
@@ -1740,7 +1740,7 @@ def test_resnet_identity_head_makes_features_seed_invariant():
 
 
 def test_diagnose_detects_resnet_and_encoder_meta(tmp_path):
-    from experiments.diagnose_checkpoint import (
+    from experiments.stage1.diagnose_checkpoint import (
         _detect_encoder_arch,
         build_model,
         infer_config,
@@ -2057,7 +2057,7 @@ def test_relative_gate_relaxes_for_weak_majority():
 
 def test_param_reporting_fields():
     """total/trainable/active parameter counts must tell the compute story."""
-    from experiments.run_benchmark import _active_params_per_sample
+    from experiments.stage1.run_benchmark import _active_params_per_sample
 
     from cerata.legacy.factory import build_moe, build_single_head
 
@@ -2366,7 +2366,7 @@ def test_shared_generalist_expert():
 
 
 def test_diagnose_infer_config_detects_shared_expert(tmp_path):
-    from experiments.diagnose_checkpoint import build_model, infer_config
+    from experiments.stage1.diagnose_checkpoint import build_model, infer_config
 
     from cerata.legacy.factory import build_moe
     from cerata.legacy.persistence import save_checkpoint
@@ -2731,7 +2731,7 @@ def test_factory_builds_consistent_models():
 
 def test_diagnose_infer_config_rebuilds_every_router_and_cached_encoder(tmp_path):
     """diagnose_checkpoint must rebuild all router kinds and cached encoders."""
-    from experiments.diagnose_checkpoint import build_model, infer_config
+    from experiments.stage1.diagnose_checkpoint import build_model, infer_config
 
     from cerata.legacy.factory import build_cached_encoder, build_moe
     from cerata.legacy.persistence import save_checkpoint
@@ -2759,7 +2759,7 @@ def test_diagnose_infer_config_rebuilds_every_router_and_cached_encoder(tmp_path
 
 def test_runner_baseline_loop_forwards_per_task_kwargs():
     """The shared baseline loop forwards per-task kwargs and evaluates each step."""
-    from experiments.run_benchmark import _run_baseline_loop
+    from experiments.stage1.run_benchmark import _run_baseline_loop
 
     recorded = []
 

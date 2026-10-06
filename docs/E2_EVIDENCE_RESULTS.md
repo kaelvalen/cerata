@@ -7,7 +7,7 @@ scale. The pre-registration is unchanged: `docs/E2_EVIDENCE_PREREG.md`.
 
 ## 1. What was built and what passed
 
-The implementation exists (`experiments/e2_evidence.py`) and the full veto chain
+The implementation exists (`experiments/stage1/e2_evidence.py`) and the full veto chain
 passed on the seed-42 smoke:
 
 ```text

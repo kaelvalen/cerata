@@ -225,7 +225,7 @@ are unchanged unless a point below is adopted.
 
 ### Amendment 2, measurement note (2026-09-26; still proposed, nothing evaluated)
 
-Point 3's estimate is now a measurement, from `experiments/v3_lm_cost.py` on the review
+Point 3's estimate is now a measurement, from `experiments/v3/v3_lm_cost.py` on the review
 container (4 CPU threads, float64, synthetic corpus prior; no LM, so canary passes are
 excluded). The code change it motivated is in the same commit: the facade's canary
 order check reused nothing and re-solved the permutation `order_report` had just

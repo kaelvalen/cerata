@@ -1,7 +1,7 @@
 # PTM-CIL: when does an expert bank earn its keep over an analytic readout? - pre-registration
 
-Status: **proposed, not run.** The runner (`experiments/ptm_cil.py`), the feature
-extractor (`experiments/extract_ptm_features.py`), the benchmark protocol
+Status: **proposed, not run.** The runner (`experiments/ptm/ptm_cil.py`), the feature
+extractor (`experiments/ptm/extract_ptm_features.py`), the benchmark protocol
 (`cerata/data/ptm_benchmarks.py`) and the decomposition
 (`cerata/eval/decomposition.py`) are committed with this document and pass a synthetic
 smoke (`tests/test_ptm_cil.py`); no benchmark feature has been extracted and no number
@@ -195,7 +195,7 @@ loading the cache, before any cell; fixed in kaelvalen/cerata#5).
 **1. Data integrity.** All six archives match the md5 sums the maintainers published in
 RevisitingCIL issue #5 (cub.zip, imagenet-r.zip, ina.zip, omnibenchmark.zip, vtab.zip,
 objnet.tgz), and every benchmark's class and image counts equal the reference table
-(`experiments/prepare_ptm_data.py`, `data/ptm/MANIFEST.json`). CIFAR-100 is checked by
+(`experiments/ptm/prepare_ptm_data.py`, `data/ptm/MANIFEST.json`). CIFAR-100 is checked by
 torchvision's own md5.
 
 **2. The sanity references, from the primary source.** The SimpleCIL numbers come from
@@ -219,7 +219,7 @@ vtab__in21k            0.8437
   `in21k_1k`. The sanity veto is therefore checked on the `in21k` cells. An `in21k_1k`
   cell passes when the same benchmark's `in21k` check passed (same pipeline, other
   weights), and fails when no referenced backbone of that benchmark was run
-  (`experiments/ptm_cil.py::sanity_veto`). This makes the secondary backbone
+  (`experiments/ptm/ptm_cil.py::sanity_veto`). This makes the secondary backbone
   mandatory for every benchmark in the primary run.
 - **Rejected.** A set of numbers offered in review (attributed to the APER paper;
   CIFAR-100 76.21, CUB 61.31, ImageNet-R and ImageNet-A both 61.35, VTAB also 61.35) was
@@ -307,8 +307,8 @@ table are unchanged. No number from the source brief that failed the re-check is
 repository).
 
 Implementation record (2026-09-28, before the first real cell): A3.1 landed in
-`cerata/eval/decomposition.py` and `experiments/ptm_cil.py`; A3.2 is the second own-bank
-dump `pal_l3-ridgewp` in the same runner; A3.3 is `experiments/ptm_headroom.py`. No real
+`cerata/eval/decomposition.py` and `experiments/ptm/ptm_cil.py`; A3.2 is the second own-bank
+dump `pal_l3-ridgewp` in the same runner; A3.3 is `experiments/ptm/ptm_headroom.py`. No real
 cell has run.
 
 **1. The question this adds.** E-TID2 and P2-BOUND measured, in one frozen regime, that the
@@ -400,8 +400,8 @@ PETL line owns it); gap < 10 pp marks it **readout-limited** (the frozen-regime 
 the whole story). The labels go into `PTM_CIL_RESULTS.md` as labels, not as hypotheses with
 a p-value.
 
-**5. Code, guards and order.** Every new arm is implemented in `experiments/ptm_cil.py`
-(or a small `experiments/ptm_headroom.py`) and committed before the first real cell; the
+**5. Code, guards and order.** Every new arm is implemented in `experiments/ptm/ptm_cil.py`
+(or a small `experiments/ptm/ptm_headroom.py`) and committed before the first real cell; the
 section 5 identity and dump-order vetoes apply to every rule and arm, with the A3.1 premise
 note above; the API arm is unchanged. No hyperparameter is tuned after the first cell. A
 failed new arm is reported as failed, not removed.

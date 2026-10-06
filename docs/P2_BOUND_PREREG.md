@@ -39,7 +39,7 @@ measures the terms `m` multiplies.
 ## 3. Part A design: per-sample 2x2 decomposition of E-TID2
 
 Re-run the 12 E-TID2 cells (2 regimes x seeds 42, 1, 2, 3, 4, 5) with
-`experiments/e_tid2_ridge_router.py`'s exact code path (float32 ridge, the stored
+`experiments/stage1/e_tid2_ridge_router.py`'s exact code path (float32 ridge, the stored
 recipe), additionally recording per test sample: `r` = ridge class correct,
 `tau` = ridge-routed task correct, `s` = `ridge_routed` system correct. No computation
 changes; only outputs are added.

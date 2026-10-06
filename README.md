@@ -76,9 +76,9 @@ that call. The LM facade (`cerata.api.lm.CerataLM`) has the same calls:
 
 ```bash
 export PYTHONPATH=.
-python experiments/v3_api_smoke.py --synthetic   # write -> predict -> forget, every guard
+python experiments/v3/v3_api_smoke.py --synthetic   # write -> predict -> forget, every guard
 python -m pytest                                 # the whole suite
-python experiments/run_all.py --list             # Stage 1: what is done, what is left
+python experiments/stage1/run_all.py --list             # Stage 1: what is done, what is left
 ```
 
 Every runner, with its pre-registration: [`experiments/README.md`](experiments/README.md).

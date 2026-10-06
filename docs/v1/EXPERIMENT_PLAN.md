@@ -15,8 +15,8 @@
 | :-- | :-- | :-- |
 | M1 byte accounting + budget overrides | **Done** | `memory_bytes`/`state_bytes`/`stored_bytes` in every result; `--buffer_size`, `--icarl_k`; generic `replay`/`latent_replay`/`mir` ids |
 | M2 per-task instrumentation | **Done** | `--track_routing` records `experts_per_task`, expansion/gate counts and routing retention `RR_t` |
-| M3 folder streams | **Done** | `--dataset folder --data_dir ... --classes_per_task --image_size`; Tiny-ImageNet flattened via `experiments/prepare_tiny_imagenet.py` (100k images ready under `data/`) |
-| M4 latency | **Done** | `experiments/measure_latency.py` |
+| M3 folder streams | **Done** | `--dataset folder --data_dir ... --classes_per_task --image_size`; Tiny-ImageNet flattened via `experiments/stage1/prepare_tiny_imagenet.py` (100k images ready under `data/`) |
+| M4 latency | **Done** | `experiments/stage1/measure_latency.py` |
 | E1a CIFAR-10 ViT 3-seed | **Done** (commit `d430a6e`) | pure **91.74 ± 0.28 / 5.61**; iCaRL 84.18 / 10.38; ER 82.89 / 20.29 (`results/cifar10_vit_multiseed`) |
 | E1b CIFAR-100 ViT 3-seed | **Done, latent-replay row queued** | pure **59.34 ± 0.32 / 18.17**; iCaRL 64.94 / 12.25 (8.0 MB vs PAL 14.2 MB); DER++ 50.97 / 47.30 (`results/cifar100_vit_multiseed`) |
 | E2 CIFAR-100 ResNet-18 3-seed | **Done** (commit `490eb79`) | pure **15.65 ± 0.39 / 31.69**; iCaRL 13.97 / 10.96; DER++ 13.12 / 66.91 (`results/cifar100_resnet18_multiseed`) |
@@ -29,7 +29,7 @@
 | E10 Tiny-ImageNet | **Queued** (dataset prepared) | `results/tinyimagenet_multiseed` |
 | E11 domain-incremental | **Pilot queued** (MNIST rotate 5 seeds); CORe50 blocked on a domain-stream loader | `results/mnist_domainshift_multiseed` |
 | E12 modern baselines | **Partial**: MIR implemented and queued; prompt-based methods deferred (scope decision) | `pal_moe/baselines/mir.py` |
-| E13 report/release | **Partial**: `experiments/paper_report.py` writes `results/paper_report.md` + figures; final tables after the run | `results/paper_report.md` |
+| E13 report/release | **Partial**: `experiments/stage1/paper_report.py` writes `results/paper_report.md` + figures; final tables after the run | `results/paper_report.md` |
 
 ### How to run (one command, detached)
 
@@ -50,7 +50,7 @@ not stop the queue.
 Afterwards:
 
 ```bash
-python experiments/paper_report.py     # tables + Pareto/growth/matrix figures
+python experiments/stage1/paper_report.py     # tables + Pareto/growth/matrix figures
 ```
 
 then fold the numbers into `README.md` / `BENCHMARK.md` (design facts 18-19
@@ -207,10 +207,10 @@ show what the allocation policy actually decides.
 
 | ID | Work | Where | Done when |
 | :-- | :-- | :-- | :-- |
-| M1 | `memory_bytes` per result entry: replay buffer tensors + DER++ logits + iCaRL herding state + prototype elements + model params. Add `--buffer_size` / `--icarl_k` overrides (currently hardcoded 60/250/360 and k=25 in `run_benchmark.py`). | `experiments/run_benchmark.py`, `pal_moe/memory/prototype_memory.py` | every result JSON has `memory_bytes`; a byte sweep is a flag change. |
-| M2 | Per-task instrumentation: `experts_per_task`, `expansions_per_task`, `gate_rejections`, and router top-1 snapshots on a fixed probe set at each task boundary. The trainer already returns `hist` (`experts_added`, `gate_rejections`) but the runner only prints it. | `experiments/run_benchmark.py` (`_run_palmoe_variant`), `pal_moe/adaptation/ttt.py` | E6/E7 can be computed from a normal run. |
-| M3 | Folder-stream wiring: `--dataset folder --data_dir DIR` using `pal_moe.data.split_folder.get_split_folder_tasks`, with an encoder-appropriate transform. | `experiments/run_benchmark.py` dataset builders | Tiny-ImageNet / CORe50 run with one command. |
-| M4 | Latency script: per-sample forward latency (batch 1 and 128) + FLOPs estimate, using the three parameter counts. | new `experiments/measure_latency.py` | cost table row per method. |
+| M1 | `memory_bytes` per result entry: replay buffer tensors + DER++ logits + iCaRL herding state + prototype elements + model params. Add `--buffer_size` / `--icarl_k` overrides (currently hardcoded 60/250/360 and k=25 in `run_benchmark.py`). | `experiments/stage1/run_benchmark.py`, `pal_moe/memory/prototype_memory.py` | every result JSON has `memory_bytes`; a byte sweep is a flag change. |
+| M2 | Per-task instrumentation: `experts_per_task`, `expansions_per_task`, `gate_rejections`, and router top-1 snapshots on a fixed probe set at each task boundary. The trainer already returns `hist` (`experts_added`, `gate_rejections`) but the runner only prints it. | `experiments/stage1/run_benchmark.py` (`_run_palmoe_variant`), `pal_moe/adaptation/ttt.py` | E6/E7 can be computed from a normal run. |
+| M3 | Folder-stream wiring: `--dataset folder --data_dir DIR` using `pal_moe.data.split_folder.get_split_folder_tasks`, with an encoder-appropriate transform. | `experiments/stage1/run_benchmark.py` dataset builders | Tiny-ImageNet / CORe50 run with one command. |
+| M4 | Latency script: per-sample forward latency (batch 1 and 128) + FLOPs estimate, using the three parameter counts. | new `experiments/stage1/measure_latency.py` | cost table row per method. |
 
 ---
 
@@ -229,10 +229,10 @@ ImageNet ViT-B/16, feature cache, one expert per task). Complete seed 2 and
 re-run 42/1 in one session.
 
 ```bash
-python experiments/run_benchmark_multi.py --seeds "42 1 2" --device cuda \
+python experiments/stage1/run_benchmark_multi.py --seeds "42 1 2" --device cuda \
   --config configs/cifar10_vit.json --output_dir results/cifar10_vit_multiseed
 
-python experiments/run_benchmark_multi.py --seeds "42 1 2" --device cuda \
+python experiments/stage1/run_benchmark_multi.py --seeds "42 1 2" --device cuda \
   --config configs/cifar100_vit.json --output_dir results/cifar100_vit_multiseed
 ```
 
@@ -269,7 +269,7 @@ per-class k for iCaRL). 3 seeds.
 
 ```bash
 # template (after --buffer_size / --icarl_k land); one cell per method x budget
-python experiments/run_benchmark.py --config configs/cifar10_resnet18_frozen.json \
+python experiments/stage1/run_benchmark.py --config configs/cifar10_resnet18_frozen.json \
   --methods replay250,derpp,icarl,palmoe,hybrid \
   --buffer_size 85 --icarl_k 8 --proto_size 480 \
   --output_dir results/equalbyte/c10r18_1MB --device cuda

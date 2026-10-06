@@ -2,7 +2,7 @@
 
 Pre-registration: `docs/P2_BOUND_PREREG.md` (`2aea973`), amendment 1 (`4a30aad`),
 amendment 2 (`af52036`, the review condition for Part B). Runner
-`experiments/p2_bound.py` (`1b18147`), committed before the run. Data:
+`experiments/stage1/p2_bound.py` (`1b18147`), committed before the run. Data:
 `results/p2_bound/p2_bound_study.json` (untracked) - 12 Part A cells and 12 Part B
 cells (2 regimes x seeds 42, 1, 2, 3, 4, 5), device `cuda`, 1196 s.
 

@@ -57,7 +57,7 @@ numbers.
 ## Benchmark Results
 
 The headline table is produced by
-`python experiments/run_benchmark_multi.py --seeds "42 1 2 3 4" --config configs/mnist_default.json --device cuda`
+`python experiments/stage1/run_benchmark_multi.py --seeds "42 1 2 3 4" --config configs/mnist_default.json --device cuda`
 (single-seed 42 via `run_benchmark.py --config configs/mnist_default.json`; full methodology in [`BENCHMARK.md`](BENCHMARK.md)).
 All methods share the same pretrained encoder and the same head width
 (`hidden_dim=256` per head); PAL-MoE grows to one head per spawned expert, so
@@ -249,43 +249,43 @@ source .venv/bin/activate
 export PYTHONPATH=.
 
 # Full benchmark, single seed (MNIST, current recipe)
-python experiments/run_benchmark.py --config configs/mnist_default.json --device cuda
+python experiments/stage1/run_benchmark.py --config configs/mnist_default.json --device cuda
 
 # Multi-seed results (5 seeds, mean ± std)
-python experiments/run_benchmark_multi.py --seeds "42 1 2 3 4" \
+python experiments/stage1/run_benchmark_multi.py --seeds "42 1 2 3 4" \
   --config configs/mnist_default.json --device cuda
 
 # CIFAR-10 / CIFAR-100
-python experiments/run_benchmark.py --dataset cifar10 --device cuda
-python experiments/run_benchmark.py --dataset cifar100 --device cuda
+python experiments/stage1/run_benchmark.py --dataset cifar10 --device cuda
+python experiments/stage1/run_benchmark.py --dataset cifar100 --device cuda
 
 # Config-driven run (same as above, explicit)
-python experiments/run_benchmark.py --config configs/mnist_default.json --device cuda
+python experiments/stage1/run_benchmark.py --config configs/mnist_default.json --device cuda
 
 # Big CIFAR-10 run (wide encoder, 15 epochs/task, frozen encoder; see BENCHMARK.md)
-python experiments/run_benchmark.py --config configs/cifar10_big_frozen.json --device cuda
+python experiments/stage1/run_benchmark.py --config configs/cifar10_big_frozen.json --device cuda
 
 # Same recipe with frozen-feature caching (faster, mathematically equivalent)
-python experiments/run_benchmark.py --config configs/cifar10_big_frozen.json \
+python experiments/stage1/run_benchmark.py --config configs/cifar10_big_frozen.json \
   --feature_cache --device cuda
 
 # PAL-MoE v2: frozen ImageNet ViT-B/16, one expert per task, persistent cache
-python experiments/run_benchmark.py --config configs/cifar10_vit.json --device cuda
-python experiments/run_benchmark_multi.py --seeds "42 1 2" \
+python experiments/stage1/run_benchmark.py --config configs/cifar10_vit.json --device cuda
+python experiments/stage1/run_benchmark_multi.py --seeds "42 1 2" \
   --config configs/cifar100_vit.json --device cuda
 
 # Run only a subset of methods (fast iteration)
-python experiments/run_benchmark.py --dataset cifar10 --methods palmoe,hybrid --device cuda
+python experiments/stage1/run_benchmark.py --dataset cifar10 --methods palmoe,hybrid --device cuda
 
 # Diagnose forgetting from per-task checkpoints (written with --save_checkpoints;
 # not available for --feature_cache runs, the encoder is not stored there)
-python experiments/run_benchmark.py --config configs/mnist_default.json \
+python experiments/stage1/run_benchmark.py --config configs/mnist_default.json \
   --save_checkpoints --device cuda
-python experiments/diagnose_checkpoint.py \
+python experiments/stage1/diagnose_checkpoint.py \
   --checkpoint results/checkpoints_palmoe/task_4.pt --dataset mnist
 
 # Controlled ablation (shared pretrained encoder per seed)
-python experiments/run_ablation.py --seeds 42 1 2 --configs "OOD" --device cuda
+python experiments/stage1/run_ablation.py --seeds 42 1 2 --configs "OOD" --device cuda
 
 # Tests
 python -m pytest tests/

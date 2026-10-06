@@ -21,18 +21,18 @@ systematically* is a successful Stage 1.
 | :-- | :-- | :-- |
 | S0 | measurement contract: run/study records, blocks, v0 ingest | **done** (`MEASUREMENT_CONTRACT.md`, `pal_moe/evaluation/schema.py`) |
 | S1 | architecture contract: Backbone / Expert / Readout / Router registries | **done** (`ARCHITECTURE_CONTRACT.md`, `pal_moe/arch/`) |
-| S2 | complexity ladder, one backbone, 3 seeds | **done** (`experiments/s2_ladder.py`, section 3) |
-| S3 | backbone generalization: `random -> mlp -> conv -> resnet18 -> vit` | **done** (`experiments/s3_run.py`, `s3_report.py`, section 5) |
+| S2 | complexity ladder, one backbone, 3 seeds | **done** (`experiments/stage1/s2_ladder.py`, section 3) |
+| S3 | backbone generalization: `random -> mlp -> conv -> resnet18 -> vit` | **done** (`experiments/stage1/s3_run.py`, `s3_report.py`, section 5) |
 | S4 | dataset generalization: MNIST / CIFAR-10 / CIFAR-100 / Tiny-ImageNet | **done** (`STAGE1_RESULTS.md` section 6) |
-| S5 | protocol axis: Class-IL / Task-IL factorial | **done** (`experiments/s5_protocols.py`, `STAGE1_RESULTS.md` section 7) |
-| S5b | Domain-IL: rotated MNIST, unseen domain | **done** (`experiments/s5b_domains.py`, `STAGE1_RESULTS.md` section 8) |
-| S6 | order sensitivity: class order, task order, unseen task | **done** (`experiments/s6_order.py`, `STAGE1_RESULTS.md` section 9) |
-| S6b | designed difficulty: coherent vs dispersed task partitions | **done** (`experiments/s6b_difficulty.py`, `STAGE1_RESULTS.md` section 10) |
-| S7 | representation transfer: checkpoint -> frozen probe on an unseen dataset | **done** (`experiments/s7_transfer.py`, section 6) |
-| S8 | resource budget: parameter / memory / active, in both routing regimes | **done** (`experiments/s8_budget.py`, `s8_report.py`, `STAGE1_RESULTS.md` section 11) |
-| S9 | robustness: corruption, spurious cue, both routing regimes | **done** (`experiments/s9_robustness.py`, `s9_corruptions.py`, `STAGE1_RESULTS.md` section 12) |
-| S10 | scalability: task count, two datasets, candidate-set control | **done** (`experiments/s10_scaling.py`, `STAGE1_RESULTS.md` section 13) |
-| S11 | confirmatory protocol: six hypotheses, paired over six seeds | **done** (`experiments/s11_confirmatory.py`, `STAGE1_RESULTS.md` section 14) |
+| S5 | protocol axis: Class-IL / Task-IL factorial | **done** (`experiments/stage1/s5_protocols.py`, `STAGE1_RESULTS.md` section 7) |
+| S5b | Domain-IL: rotated MNIST, unseen domain | **done** (`experiments/stage1/s5b_domains.py`, `STAGE1_RESULTS.md` section 8) |
+| S6 | order sensitivity: class order, task order, unseen task | **done** (`experiments/stage1/s6_order.py`, `STAGE1_RESULTS.md` section 9) |
+| S6b | designed difficulty: coherent vs dispersed task partitions | **done** (`experiments/stage1/s6b_difficulty.py`, `STAGE1_RESULTS.md` section 10) |
+| S7 | representation transfer: checkpoint -> frozen probe on an unseen dataset | **done** (`experiments/stage1/s7_transfer.py`, section 6) |
+| S8 | resource budget: parameter / memory / active, in both routing regimes | **done** (`experiments/stage1/s8_budget.py`, `s8_report.py`, `STAGE1_RESULTS.md` section 11) |
+| S9 | robustness: corruption, spurious cue, both routing regimes | **done** (`experiments/stage1/s9_robustness.py`, `s9_corruptions.py`, `STAGE1_RESULTS.md` section 12) |
+| S10 | scalability: task count, two datasets, candidate-set control | **done** (`experiments/stage1/s10_scaling.py`, `STAGE1_RESULTS.md` section 13) |
+| S11 | confirmatory protocol: six hypotheses, paired over six seeds | **done** (`experiments/stage1/s11_confirmatory.py`, `STAGE1_RESULTS.md` section 14) |
 
 Stage 1 is **frozen**. The next programme is the Router Ranking Study, pre-registered in `ROUTER_RANKING_PREREG.md` and reported in `ROUTER_RANKING_RESULTS.md`: a new hypothesis aimed at the failure mode Stage 1 measured, not evidence for Stage 1. It has run and the hypothesis was refuted in the opposite direction (R2 is significantly worse than prototype ranking). The next pre-registration was `REPRESENTATION_ROUTING_PREREG.md` (a 2x2 factorial separating the routing objective from representation plasticity) and it has run: neither factor succeeds alone, the interaction is real but insufficient, and the dissociation it found locates the constraint in cross-expert separability (`REPRESENTATION_ROUTING_RESULTS.md`).
 

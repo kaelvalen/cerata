@@ -57,24 +57,24 @@ Protocol problems a reviewer sees at once:
 ## 3. Paper A (do first): "When does an expert bank earn its keep?"
 
 Pre-registration: [`PTM_CIL_PREREG.md`](PTM_CIL_PREREG.md). Code: built and smoke-tested
-(`experiments/ptm_cil.py`, `experiments/extract_ptm_features.py`,
+(`experiments/ptm/ptm_cil.py`, `experiments/ptm/extract_ptm_features.py`,
 `cerata/eval/decomposition.py`, `cerata/data/ptm_benchmarks.py`). What remains is on
 the GPU machine, in this order:
 
-1. `python experiments/prepare_ptm_data.py`: downloads the processed splits linked
+1. `python experiments/ptm/prepare_ptm_data.py`: downloads the processed splits linked
    from the RevisitingCIL README (ObjectNet by hand from OneDrive), unpacks them into
    `data/ptm/`, verifies the class lists and counts, checks each archive's md5 against
    the sums published in RevisitingCIL issue #5, and records md5, sha256 and counts in
    `data/ptm/MANIFEST.json`. CIFAR-100 downloads itself.
 2. `uv sync --extra dev --extra ptm`, then per benchmark and backbone:
-   `python experiments/extract_ptm_features.py --benchmark <b> --backbone in21k_1k --device cuda`.
+   `python experiments/ptm/extract_ptm_features.py --benchmark <b> --backbone in21k_1k --device cuda`.
 3. Copy SimpleCIL's published accuracy for each benchmark into a dated amendment 1 of
    the pre-registration (the sanity veto), and approve or edit the rest of it.
 4. Export the external banks: clone EASE, MOS (LAMDA-PILOT) and MoTE, run each with its
    published config on the same splits, and add a small exporter per method under
    `experiments/external/` that writes an `ExpertDump` (section 8 of the
    pre-registration). Commit the exporters before running them.
-5. `python experiments/ptm_cil.py --benchmarks cifar100,cub,imagenet_r,imagenet_a,objectnet,omnibenchmark,vtab --backbones in21k_1k --external_dir results/ptm_cil/external --simplecil_reference results/ptm_cil/simplecil_reference.json --api --device cuda`
+5. `python experiments/ptm/ptm_cil.py --benchmarks cifar100,cub,imagenet_r,imagenet_a,objectnet,omnibenchmark,vtab --backbones in21k_1k --external_dir results/ptm_cil/external --simplecil_reference results/ptm_cil/simplecil_reference.json --api --device cuda`
    (the reference file holds amendment 1's numbers as `{"<benchmark>__<backbone>": accuracy}`).
 6. Write `PTM_CIL_RESULTS.md` against the outcome table, whatever row lands.
 
@@ -87,7 +87,7 @@ of study, not the claim.
 Prerequisites, in order:
 
 1. Adopt, edit or reject amendment 2 of `V3_LLM_PREREG.md`; with the measurements
-   there, pin `mode="woodbury"` and re-run `experiments/v3_lm_cost.py` on the study
+   there, pin `mode="woodbury"` and re-run `experiments/v3/v3_lm_cost.py` on the study
    machine with a measured canary pass.
 2. Run V3-LLM-1.
 3. Add GRACE, WISE, MEMOIR and AlphaEdit through EasyEdit on the same CounterFact / zsRE
