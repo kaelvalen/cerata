@@ -150,7 +150,7 @@ the whole point of S3 is to separate them.
 | `accuracy` | mean over tasks of `R[T, i]` (final row) | exists |
 | `forgetting` | repo convention: mean of `max(0, max_{t<T} R[t,i] - R[T,i])` | exists |
 | `bwt` | backward transfer, same sign convention as the repo | exists |
-| `fwt` | **forward transfer**, measured at the representation level: a closed-form probe fitted on the incoming task using the model's current representation, minus the same probe on the raw frozen features. Positive means the adaptation so far helps a task it has never seen | S2 (`experiments/stage1/s2_ladder.py::forward_transfer`) |
+| `fwt` | **forward transfer**, measured at the representation level: a closed-form probe fitted on the incoming task using the model's current representation, minus the same probe on the raw frozen features. Positive means the adaptation so far helps a task it has never seen | S2 (`experiments/stage1/ladder/s2_ladder.py::forward_transfer`) |
 | `acc_matrix` | `R[t, i]`, the full lower triangle | exists |
 | `acc_curve` | `accuracy(t)` over the run (derived from `acc_matrix`, exposed for plotting) | cheap |
 

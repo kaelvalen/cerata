@@ -124,7 +124,7 @@ jobs:
         PY
     - name: CPU benchmark smoke (1 epoch, all methods)
       run: |
-        python experiments/stage1/run_benchmark.py --epochs 1 --device cpu --output_dir /tmp/ci-bench
+        python experiments/stage1/infra/run_benchmark.py --epochs 1 --device cpu --output_dir /tmp/ci-bench
     - name: Assert benchmark sanity bounds
       run: |
         python - <<'PY'
@@ -145,7 +145,7 @@ jobs:
         PY
     - name: "CPU smoke: feature-cache + frozen encoder + router-anchor distillation"
       run: |
-        python experiments/stage1/run_benchmark.py --epochs 1 --device cpu --methods palmoe \
+        python experiments/stage1/infra/run_benchmark.py --epochs 1 --device cpu --methods palmoe \
           --freeze_encoder --feature_cache --router_anchor_steps 50 \
           --proto_threshold auto --output_dir /tmp/ci-distill
     - name: Assert distillation smoke + run metadata

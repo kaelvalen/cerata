@@ -2,7 +2,7 @@
 
 What every directory under `results/` contains, what it is evidence for, and
 whether it is current. Regenerate the auto tables with
-`python experiments/stage1/paper_report.py` (skips `results/archive/`).
+`python experiments/stage1/infra/paper_report.py` (skips `results/archive/`).
 Status legend: HEADLINE (quoted in v1/README or v1/SUNUM), EVIDENCE (design facts and
 ablations), RUN-DAY (2026-09-22/23), PENDING (queued), ARCHIVE (exploratory,
 not cited).
@@ -36,10 +36,10 @@ Status legend adds: STAGE1 (evidence for `docs/STAGE1_RESULTS.md`).
 | `s3/s3_caches.json` | the projected-cache index (latent_dim 768, rep_seed) | STAGE1 | PLAN 5 |
 | `s7/s7_transfer_cifar10.json` | per-checkpoint transfer curves, few-shot suite, evaluator validation | STAGE1 | RESULTS §5 |
 | `s4/s4_dataset_study.json` | four datasets x six levels x three seeds, transfer per cell, S0 contracts, recipe stamp | STAGE1 | RESULTS §6 |
-| `logs/` | per-stage logs from `experiments/stage1/run_all.py` | STAGE1 | - |
+| `logs/` | per-stage logs from `experiments/stage1/infra/run_all.py` | STAGE1 | - |
 
 Feature caches (`results/s3/cache_*`, `results/s4/cache_*`, `results/feature_cache/*`)
-are gitignored (`*.pt`); `experiments/stage1/s3_run.py` and `experiments/stage1/s4_datasets.py`
+are gitignored (`*.pt`); `experiments/stage1/ladder/s3_run.py` and `experiments/stage1/ladder/s4_datasets.py`
 rebuild them from scratch.
 
 ## Follow-up chain and the v2 programme (2026-09-25)

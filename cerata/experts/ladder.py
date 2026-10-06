@@ -1,7 +1,7 @@
 """The Stage 1 ladder model: `(experts) -> readout` over a frozen cached backbone.
 
-Moved verbatim from `experiments/s2_ladder.py` (LevelSpec, LADDER, LadderModel,
-forward_transfer) and `experiments/s11_confirmatory.py` (train_model, evaluate)
+Moved verbatim from `experiments/stage1/ladder/s2_ladder.py` (LevelSpec, LADDER, LadderModel,
+forward_transfer) and `experiments/stage1/ladder/s11_confirmatory.py` (train_model, evaluate)
 in the v3 restructure, phase 1. Behaviour is frozen: the S11 E0 anchor must stay
 bitwise (see `experiments/v3_anchors.py`).
 """
@@ -613,7 +613,7 @@ def forward_transfer(model, task, num_classes: int, dim: int) -> tuple[float, fl
 
 
 # ---------------------------------------------------------------------------
-# S11 train / evaluate (moved from experiments/s11_confirmatory.py)
+# S11 train / evaluate (moved from experiments/stage1/ladder/s11_confirmatory.py)
 # ---------------------------------------------------------------------------
 
 

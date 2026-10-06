@@ -78,7 +78,7 @@ that call. The LM facade (`cerata.api.lm.CerataLM`) has the same calls:
 export PYTHONPATH=.
 python experiments/v3/v3_api_smoke.py --synthetic   # write -> predict -> forget, every guard
 python -m pytest                                 # the whole suite
-python experiments/stage1/run_all.py --list             # Stage 1: what is done, what is left
+python experiments/stage1/infra/run_all.py --list             # Stage 1: what is done, what is left
 ```
 
 Every runner, with its pre-registration: [`experiments/README.md`](experiments/README.md).
@@ -103,7 +103,7 @@ cerata/
 │   ├── legacy/      # v1, frozen bitwise (models, memory, trainer, baselines, builder, trigger)
 │   └── ...
 ├── pal_moe/         # compatibility only: the old name and the v1 import paths, same module objects
-├── experiments/     # thin runners: v3, the study chain, Stage 1, the v1 benchmark
+├── experiments/     # thin runners by program: stage1/, v3/, ptm/, recipes/, sandbox/
 ├── configs/         # validated JSON configs for the v1 benchmark
 ├── docs/            # architecture, pre-registrations, results, contracts; v1/ is the v1 record
 └── tests/           # v1, S0/S1 contracts, v3 API and guards, v1 checkpoint shims, LM backend

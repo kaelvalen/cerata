@@ -2,7 +2,7 @@
 
 Pre-registration: **none committed.** The arms, the two primary contrasts, the guards
 and the outcome table were fixed in the docstring of
-`experiments/stage1/e_tid2_ridge_router.py` before it was run, but the script was not
+`experiments/stage1/diagnostics/e_tid2_ridge_router.py` before it was run, but the script was not
 committed before the run (it was written as `e_tid_ridge_router.py`, renamed to match
 its output file, and first committed in the Phase 0 record commit of
 `v3-restructure`, after the JSON existed). Read everything below as **exploratory**.
@@ -110,7 +110,7 @@ but a weight difference of 1e-3 is not what an "exact" closed-form edit should l
 ## 6. Records
 
 ```text
-experiments/stage1/e_tid2_ridge_router.py        the script (docstring = the readings)
+experiments/stage1/diagnostics/e_tid2_ridge_router.py        the script (docstring = the readings)
 results/e_tid2/e_tid2_ridge_router.json   12 cells + report, untracked
 this                                      the write-up
 ```

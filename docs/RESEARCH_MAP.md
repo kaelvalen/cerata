@@ -31,13 +31,13 @@ they enter a bibliography (see the checklist in `v1/EXPERIMENT_PLAN.md` section 
 | Progressive networks | PNN (Rusu et al., 2016) | function-preserving clone in `cerata/legacy/models/expert.py` (`clone_function_preserving`, `widen`) | tests; `--expansion_action widen` |
 | Expert selection | Expert Gate (Aljundi et al., 2017) | `cerata/legacy/trigger/` + `cerata/legacy/builder/expert_builder.py` (validation gate) | E7 (gated vs forced) |
 | Parameter isolation | PackNet (Mallya & Lazebnik, 2018), HAT (Serra et al., 2018) | expert freezing + exact routing lock (`freeze_historical_experts`, zero-weight-decay router group) | design fact 15 |
-| Merging | model soup / TIES / task arithmetic | `cerata/legacy/merge.py`, `experiments/stage1/merge_experts.py` | toolbox tests |
+| Merging | model soup / TIES / task arithmetic | `cerata/legacy/merge.py`, `experiments/stage1/infra/merge_experts.py` | toolbox tests |
 
 ## 3. Mixture-of-Experts in continual learning
 
 | Literature line | Representative work | In this repo | Evidence |
 | :-- | :-- | :-- | :-- |
-| Fixed sparse MoE | Switch-style load balancing | `experiments/stage1/run_benchmark.py::_run_standard_moe` ("Standard MoE") | v1 baselines |
+| Fixed sparse MoE | Switch-style load balancing | `experiments/stage1/infra/run_benchmark.py::_run_standard_moe` ("Standard MoE") | v1 baselines |
 | MoE theory in CL | theory of MoE in continual learning (2024) | motivation for the allocation/reuse question (H5); no theory implementation | E7 result (no reuse) |
 | Adaptive expert expansion | adaptive / Incremental MoE (2025), MoE-Adapters++ (2025) | dynamic allocation via trigger + gate; direct comparison is future work | E7; `v1/EXPERIMENT_PLAN.md §7` |
 | Routing stability | router anchoring / distillation | `--router_anchor_steps`, `--router_anchor_margin`, prototype-owner distillation | design facts 11, 15; E5 |
@@ -46,7 +46,7 @@ they enter a bibliography (see the checklist in `v1/EXPERIMENT_PLAN.md` section 
 
 | Literature line | Representative work | In this repo | Evidence |
 | :-- | :-- | :-- | :-- |
-| Benchmark framework | Mammoth (Boschini et al., 2022) | protocol inspiration; all methods re-implemented in one codebase | `experiments/stage1/run_benchmark.py` |
+| Benchmark framework | Mammoth (Boschini et al., 2022) | protocol inspiration; all methods re-implemented in one codebase | `experiments/stage1/infra/run_benchmark.py` |
 | Equal-byte fairness | equal-byte non-inferiority protocol (2026) | `memory_bytes`/`state_bytes`/`stored_bytes` in every result; `--buffer_size`/`--icarl_k`; E4 sweep | `results/equalbyte*` |
 | Online / task-free CL | MOSE (Yan et al., CVPR 2024) | `cerata/eval/task_free.py`, `--task_free_eval`, `--trigger energy` | domain-shift pilot |
 | Foundation backbones | frozen ImageNet ResNet-18 / ViT-B/16 | `cerata/legacy/models/encoder.py`, `--encoder_weights imagenet`, feature cache | ViT promotion (fact 18) |

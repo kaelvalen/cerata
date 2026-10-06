@@ -56,9 +56,9 @@ pal_moe/factory.py  is the only place that constructs routers/models/memory.
 | `factory.py` | 174 | the anti-drift constructors; keep |
 | `config.py` | 136 | validates configs strictly (unknown keys are errors); good |
 | `baselines/*` | 1149 | nine trainers, uniform interface, 55-216 lines each; the most modular part |
-| `experiments/stage1/run_benchmark.py` | 2173 | **monolith**: CLI + dataset setup + 14 method blocks + reporting. Largest structural weakness |
-| `experiments/stage1/run_benchmark_multi.py` | 512 | thin driver; `--aggregate_only` supports repairs |
-| `experiments/stage1/run_ablation.py` | 578 | separate controlled grid; some duplication with the runner, acceptable for now |
+| `experiments/stage1/infra/run_benchmark.py` | 2173 | **monolith**: CLI + dataset setup + 14 method blocks + reporting. Largest structural weakness |
+| `experiments/stage1/infra/run_benchmark_multi.py` | 512 | thin driver; `--aggregate_only` supports repairs |
+| `experiments/stage1/infra/run_ablation.py` | 578 | separate controlled grid; some duplication with the runner, acceptable for now |
 | `tests/test_pal_moe.py` | 3100 | one file for 105 tests; fine for a paper, split later if the suite grows |
 
 ## Comment style

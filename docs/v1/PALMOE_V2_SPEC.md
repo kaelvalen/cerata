@@ -853,8 +853,8 @@ loader.
 | `pal_moe/evaluation/*` | metrics, diagnostics, geometry, task-free evaluator |
 | `pal_moe/baselines/*` | all baselines and the equal-byte protocol |
 | `pal_moe/persistence.py` | extend with a v2 state-dict branch |
-| `experiments/stage1/run_benchmark.py` | add `palmoe_v2` to `method_keys` and one method block |
-| `experiments/stage1/run_benchmark_multi.py`, `experiments/recipes/*` | reuse as-is |
+| `experiments/stage1/infra/run_benchmark.py` | add `palmoe_v2` to `method_keys` and one method block |
+| `experiments/stage1/infra/run_benchmark_multi.py`, `experiments/recipes/*` | reuse as-is |
 
 ### 9.3 v1 files that v2 bypasses (not deleted)
 
@@ -879,7 +879,7 @@ Deletion of the v1 paths happens only after the paper's v1 tables are frozen.
 
 Purpose: decide whether the *premise* holds - frozen pretrained
 representation + small residual adapters - before any v2 package code is
-written. E0 is a standalone script (`experiments/stage1/e0_representation_ceiling.py`)
+written. E0 is a standalone script (`experiments/stage1/diagnostics/e0_representation_ceiling.py`)
 on the cached features, not part of `pal_moe/v2/`. E0 and M1 must not be
 developed in parallel: if the headroom is small, the rank and adapter
 decisions change.

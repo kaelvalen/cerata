@@ -57,7 +57,7 @@ is therefore *pure + latent-exemplar replay*; new runs name it
   - `Forgetting` = mean over tasks of `max_{t>=i} R[t, i] - R[T, i]`.
   - `BWT` = `R[T, i] - R[i, i]` averaged over tasks.
 - Multi-seed results report `mean ± std` (seeds 42 1 2 3 4) via
-  `experiments/stage1/run_benchmark_multi.py`.
+  `experiments/stage1/infra/run_benchmark_multi.py`.
 
 ### Hyperparameters (all models)
 
@@ -87,22 +87,22 @@ source .venv/bin/activate
 export PYTHONPATH=.
 
 # Single run (MNIST, seed 42, current recipe)
-python experiments/stage1/run_benchmark.py --config configs/mnist_default.json --device cuda
+python experiments/stage1/infra/run_benchmark.py --config configs/mnist_default.json --device cuda
 
 # Multi-seed run (5 seeds, mean ± std): source of the README headline table
-python experiments/stage1/run_benchmark_multi.py --seeds "42 1 2 3 4" \
+python experiments/stage1/infra/run_benchmark_multi.py --seeds "42 1 2 3 4" \
   --config configs/mnist_default.json --device cuda
 
 # Same knobs as plain flags (what the config contains)
-python experiments/stage1/run_benchmark.py --epochs 3 --device cuda \
+python experiments/stage1/infra/run_benchmark.py --epochs 3 --device cuda \
   --lambda_ood 0.5 --router_anchor_steps 300 --proto_routing_alpha 0.5
 
 # Controlled ablation (one pretrained encoder shared per seed across configs)
-python experiments/stage1/run_ablation.py --seeds 42 1 2 --device cuda
+python experiments/stage1/infra/run_ablation.py --seeds 42 1 2 --device cuda
 
 # CIFAR runs: overlap CPU decode/transform with GPU compute (results-neutral)
-python experiments/stage1/run_benchmark.py --dataset cifar10 --device cuda --num_workers 8
-python experiments/stage1/run_benchmark_multi.py --dataset cifar10 --device cuda --num_workers 8
+python experiments/stage1/infra/run_benchmark.py --dataset cifar10 --device cuda --num_workers 8
+python experiments/stage1/infra/run_benchmark_multi.py --dataset cifar10 --device cuda --num_workers 8
 
 # 3-seed CIFAR error bars: CIFAR-10 ResNet/conv + CIFAR-100 (~1.5-2 h)
 bash experiments/recipes/multiseed_cifar.sh
@@ -164,7 +164,7 @@ full-table run at this geometry requires re-running every baseline, which the
 same flags support):
 
 ```bash
-python experiments/stage1/run_benchmark.py --config configs/cifar10_big.json --device cuda
+python experiments/stage1/infra/run_benchmark.py --config configs/cifar10_big.json --device cuda
 ```
 
 Note: explicit CLI flags win over the config file (and config values win over
@@ -181,7 +181,7 @@ the recency funnel) from a *destructive calibration* failure (joint fine-tuning
 overwrote the experts):
 
 ```bash
-python experiments/stage1/diagnose_checkpoint.py \
+python experiments/stage1/infra/diagnose_checkpoint.py \
   --checkpoint results/cifar10_big/checkpoints_palmoe/task_4.pt
 ```
 
@@ -249,7 +249,7 @@ more stable, more accurate" without forking the code.
 | Uncertainty weighting | `--loss_weighting uncertainty` | learned homoscedastic weights for task/router/expert/ood |
 | Adapter experts | `--freeze_expansion_base` | frozen clones, only the residual adapter trains |
 | Width growth | `--expansion_action widen --widen_by` | function-preserving growth instead of new experts |
-| Expert merging | `pal_moe.merge`, `experiments/stage1/merge_experts.py` | soup / TIES / task arithmetic into one serving head |
+| Expert merging | `pal_moe.merge`, `experiments/stage1/infra/merge_experts.py` | soup / TIES / task arithmetic into one serving head |
 | Generic streams | `pal_moe.data.split_folder`, `pal_moe.data.domain_shift` | ImageFolder splits and domain-shifting phases |
 | Task-free metrics | `pal_moe.evaluation.task_free.StreamingEvaluator` | online/recent accuracy, surprise, per-domain |
 | External encoders | `--encoder_checkpoint` | plug exported foundation-backbone weights into `SharedEncoder` |
@@ -323,7 +323,7 @@ results are summarized in design fact 12 and stored under `results/ablation/`:
 ```bash
 # Distillation on/off  x  OOD on/off  x  calibration on/off (pure, frozen, CIFAR)
 for ood in 0.0 0.1; do for calib in 0 5; do for dist in 0 300; do
-  python experiments/stage1/run_benchmark.py --dataset cifar10 --device cuda \
+  python experiments/stage1/infra/run_benchmark.py --dataset cifar10 --device cuda \
     --feature_cache --freeze_encoder --methods palmoe --epochs 5 --pretrain_epochs 50 \
     --lambda_ood $ood --joint_calib_epochs $calib --router_anchor_steps $dist \
     --proto_threshold auto --output_dir results/ablation/ood${ood}_calib${calib}_dist${dist}
@@ -723,7 +723,7 @@ The following fact documents the correction of the CIFAR-10 comparison table.
 
 ## Ablations
 
-`experiments/stage1/run_ablation.py` sweeps loss components, expert-init strategy,
+`experiments/stage1/infra/run_ablation.py` sweeps loss components, expert-init strategy,
 the validation gate, routing top-k, encoder adaptation and the OOD term, with
 one pretrained encoder **shared per seed** across all configs (controlled
 ablation). Config selection supports case-insensitive substring filters

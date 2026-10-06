@@ -29,7 +29,7 @@ what a fixed-space ranking picks is exactly the unmeasured question.
 ## 2. Design: an evaluation-only re-scoring ablation
 
 In the pinned E2 contract **routing is inference-only**. The training loss
-(`L_task + lambda L_evidence`) contains no routing term (`experiments/stage1/e2_evidence.py`),
+(`L_task + lambda L_evidence`) contains no routing term (`experiments/stage1/diagnostics/e2_evidence.py`),
 so the address can be swapped at evaluation time without retraining and without
 changing a single trained weight.
 

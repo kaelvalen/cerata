@@ -1,7 +1,7 @@
 # E-TID: the offline task-ID ceiling on the frozen feature space - results
 
 Pre-registration: **none committed.** The question, the five arms, the anchor and the
-three reading thresholds were fixed in the docstring of `experiments/stage1/e_tid_ceiling.py`
+three reading thresholds were fixed in the docstring of `experiments/stage1/diagnostics/e_tid_ceiling.py`
 before it was run, but that script was not committed before the run (it was first
 committed in the Phase 0 record commit of `v3-restructure`, after the JSON existed).
 Read everything below as **exploratory**: the thresholds are stated as they were
@@ -96,7 +96,7 @@ is why a task-level linear probe is the wrong router and a class-level one is no
 ## 6. Records
 
 ```text
-experiments/stage1/e_tid_ceiling.py      the script (docstring = the readings)
+experiments/stage1/diagnostics/e_tid_ceiling.py      the script (docstring = the readings)
 results/e_tid/e_tid_ceiling.json  6 cells, untracked
 this                              the write-up
 ```

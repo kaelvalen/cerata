@@ -34,7 +34,7 @@ with its own README, STATE and `text/` / `confirm/` / `vlm/` subdirectories; doc
 | `ptm/extract_ptm_features.py` | Frozen timm ViT-B/16 (in21k / in21k_ft_in1k) features for the seven benchmarks, original labels (needs the `ptm` extra) |
 | `ptm/ptm_cil.py` | NCM / ridge / RanPAC readouts, our bank and external `ExpertDump`s routed and decomposed (including A3.1's alternative rules and the A3.2 `pal_l3-ridgewp` dump, amendment 3), the guarded API arm; `--synthetic` runs in CI |
 | `ptm/ptm_headroom.py` | A3.3: the representation headroom scan - the joint arm (`L2a_shared_joint`) against frozen, `ridge`/`rp` readouts, the 10 pp labels; `--synthetic` covered by the test suite |
-| `external/ease_export.py` | EASE (official code, published configs) on the pinned splits as an `ExpertDump`; `--check` is amendment 2's fidelity veto against the official logs (needs a clone of the EASE repository and timm) |
+| `ptm/external/ease_export.py` | EASE (official code, published configs) on the pinned splits as an `ExpertDump`; `--check` is amendment 2's fidelity veto against the official logs (needs a clone of the EASE repository and timm) |
 
 ## Diagnostic studies after Stage 1 (in the order they were run)
 
@@ -44,61 +44,61 @@ to the address, then to task identity.
 
 | Script | Study | Docs |
 | :-- | :-- | :-- |
-| `stage1/rr_ranking.py` | Router ranking: a supervised `z -> T` gate against prototype ranking | `ROUTER_RANKING_*` |
-| `stage1/rr_factorial.py` | Representation x routing-objective factorial | `REPRESENTATION_ROUTING_*` |
-| `stage1/decision_routing.py` | Comparative vs pointwise supervision of the routing scores | `DECISION_ROUTING_*` |
-| `stage1/aggregation.py` | Winner-take-all vs uniform top-3 aggregation | `AGGREGATION_*` |
-| `stage1/expert_formulation.py` | E1: one shared decision space for every expert | `EXPERT_FORMULATION_*` |
-| `stage1/e2_evidence.py` | E2: evidence-producing experts | `E2_EVIDENCE_*` |
-| `stage1/coupling_ablation.py` | Accumulated evidence re-alignment (C0 vs C1) | `COUPLING_*` |
-| `stage1/interference.py` | New prototypes against old projections (passive instrumentation) | `INTERFERENCE_*` |
-| `stage1/intervention.py` | Cutting the non-owner evidence path | `INTERVENTION_*` |
-| `stage1/owner_side.py` | Owner-side residual of the E2 collapse | `OWNER_SIDE_*` |
-| `stage1/ac1_address_freeze.py` | Freezing the shared query in the routing path | `AC1_ADDRESS_FREEZE_*` |
-| `stage1/ac3_address_space.py` | Fixed retrieval address vs the learned evidence address | `AC3_ADDRESS_SPACE_*` |
-| `stage1/e_tid_ceiling.py` | Offline task-ID ceiling on the frozen space (exploratory) | `E_TID_RESULTS.md` |
-| `stage1/e_tid2_ridge_router.py` | Continual class-level ridge router over the L3 bank (exploratory) | `E_TID2_RESULTS.md` |
-| `stage1/p2_bound.py` | Why the bank adds < 1 pp over ridge: decomposition + consolidation policy | `P2_BOUND_*` |
+| `stage1/diagnostics/rr_ranking.py` | Router ranking: a supervised `z -> T` gate against prototype ranking | `ROUTER_RANKING_*` |
+| `stage1/diagnostics/rr_factorial.py` | Representation x routing-objective factorial | `REPRESENTATION_ROUTING_*` |
+| `stage1/diagnostics/decision_routing.py` | Comparative vs pointwise supervision of the routing scores | `DECISION_ROUTING_*` |
+| `stage1/diagnostics/aggregation.py` | Winner-take-all vs uniform top-3 aggregation | `AGGREGATION_*` |
+| `stage1/diagnostics/expert_formulation.py` | E1: one shared decision space for every expert | `EXPERT_FORMULATION_*` |
+| `stage1/diagnostics/e2_evidence.py` | E2: evidence-producing experts | `E2_EVIDENCE_*` |
+| `stage1/diagnostics/coupling_ablation.py` | Accumulated evidence re-alignment (C0 vs C1) | `COUPLING_*` |
+| `stage1/diagnostics/interference.py` | New prototypes against old projections (passive instrumentation) | `INTERFERENCE_*` |
+| `stage1/diagnostics/intervention.py` | Cutting the non-owner evidence path | `INTERVENTION_*` |
+| `stage1/diagnostics/owner_side.py` | Owner-side residual of the E2 collapse | `OWNER_SIDE_*` |
+| `stage1/diagnostics/ac1_address_freeze.py` | Freezing the shared query in the routing path | `AC1_ADDRESS_FREEZE_*` |
+| `stage1/diagnostics/ac3_address_space.py` | Fixed retrieval address vs the learned evidence address | `AC3_ADDRESS_SPACE_*` |
+| `stage1/diagnostics/e_tid_ceiling.py` | Offline task-ID ceiling on the frozen space (exploratory) | `E_TID_RESULTS.md` |
+| `stage1/diagnostics/e_tid2_ridge_router.py` | Continual class-level ridge router over the L3 bank (exploratory) | `E_TID2_RESULTS.md` |
+| `stage1/diagnostics/p2_bound.py` | Why the bank adds < 1 pp over ridge: decomposition + consolidation policy | `P2_BOUND_*` |
 
 ## Stage 1 (`docs/STAGE1_PLAN.md`, `docs/STAGE1_RESULTS.md`)
 
-`stage1/run_all.py` is the single entry point: `--list` shows what is done and what is left,
+`stage1/infra/run_all.py` is the single entry point: `--list` shows what is done and what is left,
 `--dry-run` prints the exact commands.
 
 | Script | Stage |
 | :-- | :-- |
-| `stage1/e0_representation_ceiling.py` | E0: representation ceiling and adapter headroom on cached features |
-| `stage1/s2_ladder.py` | S2: the complexity ladder under one fixed recipe (the shared ladder code now lives in `cerata/experts/ladder.py`) |
-| `stage1/s3_run.py`, `stage1/s3_backbones.py`, `stage1/s3_report.py`, `stage1/s3_check_vit_features.py` | S3: backbone generalization (driver, per-backbone cache, table, ViT-feature regression check) |
-| `stage1/s4_datasets.py` | S4: dataset generalization |
-| `stage1/s5_protocols.py`, `stage1/s5b_domains.py` | S5: Class-IL vs Task-IL; S5b: Domain-IL |
-| `stage1/s6_order.py`, `stage1/s6b_difficulty.py` | S6: order sensitivity; S6b: the designed `coherent` / `dispersed` contrast |
-| `stage1/s7_transfer.py` | S7: representation transfer at every checkpoint |
-| `stage1/s8_budget.py`, `stage1/s8_report.py` | S8: what a capacity / memory budget buys, per routing regime |
-| `stage1/s9_corruptions.py`, `stage1/s9_robustness.py` | S9: controlled shifts and whether the decomposition survives them |
-| `stage1/s10_scaling.py` | S10: bank capacity vs candidate count |
-| `stage1/s11_confirmatory.py` | S11: the pre-registered confirmatory tests (paired stats now in `cerata/eval/stats.py`) |
+| `stage1/diagnostics/e0_representation_ceiling.py` | E0: representation ceiling and adapter headroom on cached features |
+| `stage1/ladder/s2_ladder.py` | S2: the complexity ladder under one fixed recipe (the shared ladder code now lives in `cerata/experts/ladder.py`) |
+| `stage1/ladder/s3_run.py`, `stage1/ladder/s3_backbones.py`, `stage1/ladder/s3_report.py`, `stage1/ladder/s3_check_vit_features.py` | S3: backbone generalization (driver, per-backbone cache, table, ViT-feature regression check) |
+| `stage1/ladder/s4_datasets.py` | S4: dataset generalization |
+| `stage1/ladder/s5_protocols.py`, `stage1/ladder/s5b_domains.py` | S5: Class-IL vs Task-IL; S5b: Domain-IL |
+| `stage1/ladder/s6_order.py`, `stage1/ladder/s6b_difficulty.py` | S6: order sensitivity; S6b: the designed `coherent` / `dispersed` contrast |
+| `stage1/ladder/s7_transfer.py` | S7: representation transfer at every checkpoint |
+| `stage1/ladder/s8_budget.py`, `stage1/ladder/s8_report.py` | S8: what a capacity / memory budget buys, per routing regime |
+| `stage1/ladder/s9_corruptions.py`, `stage1/ladder/s9_robustness.py` | S9: controlled shifts and whether the decomposition survives them |
+| `stage1/ladder/s10_scaling.py` | S10: bank capacity vs candidate count |
+| `stage1/ladder/s11_confirmatory.py` | S11: the pre-registered confirmatory tests (paired stats now in `cerata/eval/stats.py`) |
 
 ## v1 benchmark (the published v1 record, `docs/v1/BENCHMARK.md`, `docs/v1/README.md`)
 
 | Script | Purpose | Typical use |
 | :-- | :-- | :-- |
-| `stage1/run_benchmark.py` | The v1 benchmark: 14+ method ids, all knobs, single seed | `--config configs/...` |
-| `stage1/run_benchmark_multi.py` | Multi-seed driver (mean ± std), `--aggregate_only` to rebuild an aggregate | `--seeds "42 1 2" --config ...` |
-| `stage1/run_ablation.py` | Controlled grid: loss components, init, gate, top-k, encoder | `--configs "OOD"` |
+| `stage1/infra/run_benchmark.py` | The v1 benchmark: 14+ method ids, all knobs, single seed | `--config configs/...` |
+| `stage1/infra/run_benchmark_multi.py` | Multi-seed driver (mean ± std), `--aggregate_only` to rebuild an aggregate | `--seeds "42 1 2" --config ...` |
+| `stage1/infra/run_ablation.py` | Controlled grid: loss components, init, gate, top-k, encoder | `--configs "OOD"` |
 
 Tools:
 
 | Script | Purpose |
 | :-- | :-- |
-| `stage1/paper_report.py` | Scan `results/` into `results/paper_report.md` + Pareto/growth/latency figures |
-| `stage1/plot_results.py` | Standalone figure generation for single/multi-seed JSONs |
-| `stage1/measure_latency.py` | Per-sample forward latency (batch 1/128) for the runner geometries |
-| `stage1/diagnose_checkpoint.py` | Per-task expert-accuracy / routing-share diagnosis (router vs expert bottleneck) |
-| `stage1/debug_routing_asymmetry.py` | Early routing-funnel dump; its `results/routing_asymmetry_debug.json` is cited in `cerata/legacy/adaptation/ttt.py` |
-| `stage1/merge_experts.py` | Merge trained experts into one serving head (soup / TIES / task arithmetic) |
-| `stage1/repair_missing_rows.py` | Merge a single-method re-run into existing per-seed JSONs (dry run by default) |
-| `stage1/prepare_tiny_imagenet.py` | Flatten the official Tiny-ImageNet train layout into an ImageFolder tree (symlinks) |
+| `stage1/infra/paper_report.py` | Scan `results/` into `results/paper_report.md` + Pareto/growth/latency figures |
+| `stage1/infra/plot_results.py` | Standalone figure generation for single/multi-seed JSONs |
+| `stage1/infra/measure_latency.py` | Per-sample forward latency (batch 1/128) for the runner geometries |
+| `stage1/infra/diagnose_checkpoint.py` | Per-task expert-accuracy / routing-share diagnosis (router vs expert bottleneck) |
+| `stage1/diagnostics/debug_routing_asymmetry.py` | Early routing-funnel dump; its `results/routing_asymmetry_debug.json` is cited in `cerata/legacy/adaptation/ttt.py` |
+| `stage1/infra/merge_experts.py` | Merge trained experts into one serving head (soup / TIES / task arithmetic) |
+| `stage1/infra/repair_missing_rows.py` | Merge a single-method re-run into existing per-seed JSONs (dry run by default) |
+| `stage1/infra/prepare_tiny_imagenet.py` | Flatten the official Tiny-ImageNet train layout into an ImageFolder tree (symlinks) |
 
 Recipes (`recipes/`, the v1 paper queue):
 
@@ -114,6 +114,6 @@ Recipes (`recipes/`, the v1 paper queue):
 | `cifar100_gate_ablation.sh`, `readout_ablation.sh` | Focused ablations |
 | `memory_pareto.sh`, `mnist_domainshift_shared.sh` | Memory-budget sweep and domain-shift pilot |
 
-`stage1/run_benchmark.py` writes `benchmark_results_seed<s>.json` (metrics, byte accounting,
+`stage1/infra/run_benchmark.py` writes `benchmark_results_seed<s>.json` (metrics, byte accounting,
 routing diagnostics) and `benchmark_meta_seed<s>.json` (seed, git hash, args, duration)
 into the output directory.

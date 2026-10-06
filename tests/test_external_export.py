@@ -1,4 +1,4 @@
-"""The external-bank exporters' plumbing (experiments/external/), without the official
+"""The external-bank exporters' plumbing (experiments/ptm/external/), without the official
 repositories or timm: data mapping, row order, forced-expert predictions, log parsing.
 """
 
@@ -12,7 +12,7 @@ import torch
 import torch.nn.functional as F
 
 sys.path.insert(
-    0, str(Path(__file__).resolve().parents[1] / "experiments" / "external")
+    0, str(Path(__file__).resolve().parents[1] / "experiments" / "ptm" / "external")
 )
 
 import common  # noqa: E402

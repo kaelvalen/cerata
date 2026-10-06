@@ -12,9 +12,9 @@ was measured and what it means. Companions:
 Reproduce everything with one command (skips finished stages, logs per stage):
 
 ```bash
-.venv/bin/python experiments/stage1/run_all.py --list      # what is done, what is left
-.venv/bin/python experiments/stage1/run_all.py --dry-run   # the exact commands
-nohup .venv/bin/python -u experiments/stage1/run_all.py > /tmp/run_all.log 2>&1 &
+.venv/bin/python experiments/stage1/infra/run_all.py --list      # what is done, what is left
+.venv/bin/python experiments/stage1/infra/run_all.py --dry-run   # the exact commands
+nohup .venv/bin/python -u experiments/stage1/infra/run_all.py > /tmp/run_all.log 2>&1 &
 ```
 
 ---
@@ -1391,7 +1391,7 @@ Twelve, each of which would have produced a confident wrong number:
    plus an up-projection back to 768: feature norm 4.3 instead of 18.4, NCM 28%
    instead of 70%. The raw accuracy table looked internally consistent; every
    S3 row was wrong. A regression check now guards it
-   (`experiments/stage1/s3_check_vit_features.py`).
+   (`experiments/stage1/ladder/s3_check_vit_features.py`).
 4. **Dataset statistics must reach the encoder.** Without `input_mean`/
    `input_std` the ViT path double-normalises.
 5. **A copied loop loses the original's branching.** S4's loop was re-derived
@@ -1579,8 +1579,8 @@ is S8/S11's memory axis, already measured, so the new hypothesis is specifically
 | `results/s9/` | shift caches (13 conditions) + 170-cell robustness study (2 regimes x 2 families) |
 | `results/s10/` | 160-cell scalability study (2 datasets x 4 task counts x 2 constructions x 2 seeds) |
 | `results/s11/` | 228-cell confirmatory study (6 seeds, rank and prototype sweeps, scale endpoints) + hypotheses, order variance, anchors |
-| `results/logs/` | per-stage logs from `experiments/stage1/run_all.py` |
-| feature caches | gitignored (`*.pt`); `experiments/stage1/s3_run.py` and `s4_datasets.py` rebuild them |
+| `results/logs/` | per-stage logs from `experiments/stage1/infra/run_all.py` |
+| feature caches | gitignored (`*.pt`); `experiments/stage1/ladder/s3_run.py` and `s4_datasets.py` rebuild them |
 
 Every cell carries an S0 contract record; the S4 study stores its recipe
 (epochs/lr/rank/levels) so a resume cannot mix incompatible rows.

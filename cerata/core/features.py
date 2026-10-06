@@ -1,6 +1,6 @@
 """Cached frozen-feature tasks: loading, batching, seeding.
 
-Moved verbatim from `experiments/s2_ladder.py` (v3 restructure, phase 1). The
+Moved verbatim from `experiments/stage1/ladder/s2_ladder.py` (v3 restructure, phase 1). The
 runner re-exports every name, so `s2_ladder.load_tasks` etc. are the same
 objects as these.
 """

@@ -143,11 +143,11 @@ Moved code and its shims:
 
 | moved from | to | shim |
 | :-- | :-- | :-- |
-| `experiments/stage1/s2_ladder.py` (LevelSpec, LADDER, LEVELS_BY_NAME, CLOSED_FORM_READOUTS, LadderModel, forward_transfer, `_entropy`) | `cerata/experts/ladder.py` | re-exported by `s2_ladder` |
-| `experiments/stage1/s2_ladder.py` (load_tasks, iter_batches, set_seed) | `cerata/core/features.py` | re-exported by `s2_ladder` |
-| `experiments/stage1/s11_confirmatory.py` (paired_stats, signed_rank_statistic, westfall_young, tost, holm) | `cerata/eval/stats.py` | re-exported by `s11_confirmatory` |
-| `experiments/stage1/s11_confirmatory.py` (train_model, evaluate) | `cerata/experts/ladder.py` | re-exported by `s11_confirmatory` |
-| `experiments/stage1/s6b_difficulty.py` (superclass_of, args_data_dir, build_construction, separability) | `cerata/core/constructions.py` | re-exported by `s6b_difficulty` |
+| `experiments/stage1/ladder/s2_ladder.py` (LevelSpec, LADDER, LEVELS_BY_NAME, CLOSED_FORM_READOUTS, LadderModel, forward_transfer, `_entropy`) | `cerata/experts/ladder.py` | re-exported by `s2_ladder` |
+| `experiments/stage1/ladder/s2_ladder.py` (load_tasks, iter_batches, set_seed) | `cerata/core/features.py` | re-exported by `s2_ladder` |
+| `experiments/stage1/ladder/s11_confirmatory.py` (paired_stats, signed_rank_statistic, westfall_young, tost, holm) | `cerata/eval/stats.py` | re-exported by `s11_confirmatory` |
+| `experiments/stage1/ladder/s11_confirmatory.py` (train_model, evaluate) | `cerata/experts/ladder.py` | re-exported by `s11_confirmatory` |
+| `experiments/stage1/ladder/s6b_difficulty.py` (superclass_of, args_data_dir, build_construction, separability) | `cerata/core/constructions.py` | re-exported by `s6b_difficulty` |
 | `pal_moe/evaluation/*` | `cerata/eval/*` | `pal_moe.evaluation` alias |
 | `pal_moe/{models,adaptation,baselines,builder,trigger}` | `cerata/legacy/...` | `pal_moe.<name>` aliases |
 | `pal_moe/{factory,merge,persistence}.py`, `pal_moe/memory/{prototype_memory,generative}.py` | `cerata/legacy/...` | `pal_moe.<name>` aliases |

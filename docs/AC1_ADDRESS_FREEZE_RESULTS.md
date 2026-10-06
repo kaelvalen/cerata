@@ -23,7 +23,7 @@ are recorded here rather than edited back.
 
 ```
 LD_LIBRARY_PATH=/run/opengl-driver/lib .venv/bin/python \
-    experiments/stage1/ac1_address_freeze.py --device cuda --epochs 10 --seeds 42,1,2
+    experiments/stage1/diagnostics/ac1_address_freeze.py --device cuda --epochs 10 --seeds 42,1,2
 ```
 
 ## 1. The two arms, twelve cells (means over seeds)

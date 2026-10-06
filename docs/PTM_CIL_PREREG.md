@@ -183,7 +183,7 @@ Rows must follow `cerata.data.ptm_benchmarks.stream_test_order(...)`: task by ta
 original ImageFolder order within a task. "Forced to expert t" means, per method: EASE -
 the classifier on the features of adapter t only; MOS - the adapter retrieval replaced
 by adapter t; MoTE - the expert filter replaced by expert t alone. Each exporter is a
-small patch to the method's evaluation loop, committed under `experiments/external/`
+small patch to the method's evaluation loop, committed under `experiments/ptm/external/`
 before its bank is run.
 
 ## Amendment 1 (2026-09-27, before any benchmark cell was run)
@@ -235,7 +235,7 @@ numbers above (as fractions).
 
 ## Amendment 2 (2026-09-27, proposed, before any external bank was run)
 
-Written with the EASE exporter (`experiments/external/ease_export.py`, `common.py`),
+Written with the EASE exporter (`experiments/ptm/external/ease_export.py`, `common.py`),
 before it was run on any real benchmark (it has run only on synthetic images with random
 weights, `tests/test_external_export.py` and a CPU smoke).
 

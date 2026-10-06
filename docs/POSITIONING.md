@@ -72,7 +72,7 @@ the GPU machine, in this order:
    the pre-registration (the sanity veto), and approve or edit the rest of it.
 4. Export the external banks: clone EASE, MOS (LAMDA-PILOT) and MoTE, run each with its
    published config on the same splits, and add a small exporter per method under
-   `experiments/external/` that writes an `ExpertDump` (section 8 of the
+   `experiments/ptm/external/` that writes an `ExpertDump` (section 8 of the
    pre-registration). Commit the exporters before running them.
 5. `python experiments/ptm/ptm_cil.py --benchmarks cifar100,cub,imagenet_r,imagenet_a,objectnet,omnibenchmark,vtab --backbones in21k_1k --external_dir results/ptm_cil/external --simplecil_reference results/ptm_cil/simplecil_reference.json --api --device cuda`
    (the reference file holds amendment 1's numbers as `{"<benchmark>__<backbone>": accuracy}`).

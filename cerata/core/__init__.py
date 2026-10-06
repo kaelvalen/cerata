@@ -1,6 +1,6 @@
 """v3 core: frozen backbone adapters and state hashing.
 
-- `features`       cached frozen-feature tasks (moved from `experiments/s2_ladder.py`)
+- `features`       cached frozen-feature tasks (moved from `experiments/stage1/ladder/s2_ladder.py`)
 - `constructions`  S6b `coherent` / `dispersed` task constructions (moved from s6b)
 - `hashing`        bitwise content hashes for the state / reversibility guards
 - `backbones`      `FrozenFeatureBackbone` (cached features, identity keys) and the

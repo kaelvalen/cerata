@@ -442,17 +442,17 @@ cd /home/kael/pal-moe
 .venv/bin/python -m pytest tests/test_pal_moe.py -q
 
 # hızlı MNIST demosu (~1 dk, GPU)
-.venv/bin/python experiments/stage1/run_benchmark.py --config configs/mnist_default.json \
+.venv/bin/python experiments/stage1/infra/run_benchmark.py --config configs/mnist_default.json \
   --methods palmoe,hybrid,derpp --device cuda
 
 # checkpoint teşhisi (hata router'da mı, expert'te mi)
-.venv/bin/python experiments/stage1/run_benchmark.py --config configs/mnist_default.json \
+.venv/bin/python experiments/stage1/infra/run_benchmark.py --config configs/mnist_default.json \
   --save_checkpoints --device cuda
-.venv/bin/python experiments/stage1/diagnose_checkpoint.py \
+.venv/bin/python experiments/stage1/infra/diagnose_checkpoint.py \
   --checkpoint results/checkpoints_palmoe/task_4.pt --dataset mnist
 
 # tablolar ve figürler
-.venv/bin/python experiments/stage1/paper_report.py
+.venv/bin/python experiments/stage1/infra/paper_report.py
 
 # arka plan koşularının durumu
 bash experiments/recipes/paper_status.sh

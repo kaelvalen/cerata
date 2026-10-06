@@ -1,7 +1,7 @@
 """Small-sample paired statistics: exact sign / permutation tests, TOST,
 Westfall-Young max-T, Holm.
 
-Moved verbatim from `experiments/s11_confirmatory.py` (v3 restructure, phase 1).
+Moved verbatim from `experiments/stage1/ladder/s11_confirmatory.py` (v3 restructure, phase 1).
 """
 
 import itertools

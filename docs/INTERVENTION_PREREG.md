@@ -177,7 +177,7 @@ are unchanged), implemented inside `_evidence_loss`; with the flag off the code
 path is the pinned one. The audit may use `autograd.grad` because it is a separate
 diagnostic run - never a study cell and never the training path.
 
-Artifacts: `experiments/stage1/intervention.py`, `results/intervention/intervention_study.json`,
+Artifacts: `experiments/stage1/diagnostics/intervention.py`, `results/intervention/intervention_study.json`,
 `docs/INTERVENTION_RESULTS.md`.
 
 ## 6. Feasibility
