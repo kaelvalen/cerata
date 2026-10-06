@@ -495,3 +495,31 @@ leakage 0; KLD 0.007). Scale consequences: effective storage per fact drops ~64x
 and the expert becomes a grouped jointly-trained organ - the review's real-MoE
 direction. Next: group-by-subject experts with a coarse router (which group), then
 in-group serve; capacity with seeds/CIs for the paper.
+
+## 41. EasyEdit official baselines (review item 3; pinned 2026-10-06)
+
+Feasibility (researched): EasyEdit main pins transformers 5.5.4 / torch 2.9.1 and
+loads Qwen2.5 by name match (no registry change); official qwen2.5-7b hparams exist
+for GRACE, WISE, MEMIT and AlphaEdit (adapt to 28 layers for 1.5B); on the gpt2-xl
+(1.5B) class GRACE ~6 GB and WISE ~7 GB fit the 8 GB card, MEMIT ~11 GB and AlphaEdit
+are tight, and MELO is gpt2-xl-only out of the box (a faithful Qwen port is a research
+project - the `melo_like` arm stays the recorded approximation). Plan: a separate venv
+(`.venv-easyedit`) and a clone under `.deps/` (both ignored); a CounterFact N=200
+subset adapted to the KnowEdit format; run GRACE then WISE on the same facts;
+evaluate efficacy/paraphrase/locality with our metric definitions; MEMIT/AlphaEdit
+only if VRAM allows. No run starts before zsRE N=1000 finishes.
+
+## 42. EasyEdit setup status (2026-10-06)
+
+Venv `.venv-easyedit` is ready after two pin fixes: `PyYAML==6.0` and
+`sentencepiece==0.2.0` have no cp313 wheels and fail to build, replaced with
+`PyYAML>=6.0.2` and `sentencepiece>=0.2.2` (requirements otherwise installed as
+pinned: transformers 5.5.4, torch 2.9.1). EasyEdit has no pyproject/setup - it is
+used via `PYTHONPATH=.deps/EasyEdit`, not installed. Dataset schemas read from the
+clone: **zsRE uses `alt` as target_new** (our zsRE runs used answers[0]), so the
+comparable set is **CounterFact** (its loader reads the ROME dump fields we used:
+requested_rewrite prompt/target_new, paraphrase_prompts). GRACE and WISE have
+official qwen2.5-7b hparams (adapt layers to 28 for 1.5B; GRACE ~6 GB, WISE ~7 GB).
+Next (GPU after zsRE N=1000): run GRACE then WISE on the CounterFact N=200 subset
+with PYTHONPATH=.deps/EasyEdit; evaluate efficacy/paraphrase/locality with our
+metric definitions; MEMIT/AlphaEdit only if VRAM allows; MELO has no Qwen support.

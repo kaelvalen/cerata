@@ -114,3 +114,7 @@ results/
 graphify-out/cache/
 graphify-out/.graphify_python
 graphify-out/.graphify_root
+
+# EasyEdit baseline workspace (cloned deps + separate venv)
+.deps/
+.venv-easyedit/
