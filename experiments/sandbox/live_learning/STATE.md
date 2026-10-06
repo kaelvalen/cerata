@@ -102,17 +102,16 @@ All eight checks pass: same UCB trace, experts 4 (KLDs 0.011/0.021/0.011/0.005),
 4/4, canary clean - plus no leak: every expert answers "Bilmiyorum." on its negative
 panels, so the stack is image-conditioned end to end.
 
-## Next (2026-10-04, review round; no runs started)
+## Next (2026-10-06, review round)
 
-The 2026-10-04 review is accepted in full; findings and corrections are recorded in
-`docs/LIVING_MODEL_REVIEW_2026-10-04.md` and Appendix B.4. **Pinned order, each pinning
-before its run:** (1) strong-RAG arms - the gating experiment: if the gap closes, stop
-and narrow the thesis to the guaranteed expert bank (no runs started); (2) router
-stress: aliases/typos/pronouns (CPU); (3) official EasyEdit baselines (GRACE/WISE/MELO,
-MEMIT/AlphaEdit); (4) prereg metric completion (revoke n >= 100, the pinned thresholds);
-(5) multi-fact delta capacity k in {1, 4, 16, 64}, then group-by-subject experts;
-(6) zsRE N=1000 (checkpoint at 100/1000 resumable). The N=1000 CounterFact result
-(0.999 vs 0.834) stands only as "delta > plain-prompt RAG" until (1) reports.
+Review items: (1) **strong-RAG gate PASSED** - instruct 0.837 [0.815, 0.86] at N=1000
+vs ours 0.999 [0.997, 1.0], CI-separated; Q/A 0.71 and few-shot 0.52 at N=200; the
+editing claim stands. (2) router stress done (entity gate is a dictionary; semantic
+keys recover 88-100%; fix pinned: embedding/fuzzy entity match). (3) official
+EasyEdit baselines (GRACE/WISE/MELO, MEMIT/AlphaEdit). (4) metric completion pinned
+(revoke n >= 100; thresholds owed at the next full ours run; provenance separate).
+(5) multi-fact delta capacity k in {1, 4, 16, 64}. (6) zsRE N=1000 (checkpoint at
+100/1000 resumable). No runs started beyond the completed gate.
 
 ## Files
 

@@ -267,10 +267,10 @@ delta>memory existence proof. Rows below are annotated; the confirmatory study
 
 ### B.4 Review round (2026-10-04): what the N=1000 table does not yet prove
 
-- The delta > RAG gap (0.999 vs 0.834) is measured against a **plain-prompt RAG only**;
-  strong-RAG arms (explicit instruction, few-shot, Q/A formatting) are pinned as the
-  first gating experiment - if the gap closes, the editing claim is dropped and the
-  thesis narrows to the guaranteed expert bank.
+- The delta > RAG gap is measured against plain-prompt RAG (0.834 at N=1000) and now
+  also against strong-RAG arms: the explicit-instruction arm reaches 0.837 at N=1000
+  (plain 0.834; ours 0.999, CI-separated), Q/A formatting and few-shot hurt (0.71 and
+  0.52 at N=200). The gate passed - the editing claim stands at N=1000.
 - The router is effectively a **subject-string dictionary** (substring gate + semantic
   pick); route 0.997 / abstention 1.00 are near-tautological, and aliases, typos and
   pronouns are untested. The CounterFact paraphrase score (~0.32) is a **router

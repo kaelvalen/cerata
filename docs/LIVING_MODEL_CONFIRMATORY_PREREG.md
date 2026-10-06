@@ -443,3 +443,11 @@ committed expert (mean/max, from the commit records - the cap keeps each <= 2.0)
 behavioural return (`return_match`), retain accuracy, router precision and
 abstention. Provenance (leave-one-out) at N=1000 is expensive and stays a separate
 pinned run; N=200 used the old metrics, so the final table is built on N=1000 only.
+
+## 37. Strong-RAG N=1000 results (review item 1 complete; 2026-10-06, wall 1280 s)
+
+rag_instruct at N = 1000: **eff 0.837 [0.815, 0.86]**, para 0.306, no_leak 1.00,
+route 0.997. Plain RAG: 0.834 [0.812, 0.858]. Ours: 0.999 [0.997, 1.0].
+**The gate passes at full scale**: the strongest external-evidence prompt does not
+close the gap (0.837 vs 0.834, statistically the same); ours stays CI-separated.
+The editing claim stands; the review's contingency (stop and narrow) does not fire.
