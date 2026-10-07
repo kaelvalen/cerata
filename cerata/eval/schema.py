@@ -1,5 +1,5 @@
 """
-The PAL-MoE measurement contract, in code (docs/MEASUREMENT_CONTRACT.md, S0).
+The PAL-MoE measurement contract, in code (archive/docs/MEASUREMENT_CONTRACT.md, S0).
 
 Every runner emits a *run record*; every analysis consumes run records and
 emits a *study record*. The contract exists so that no metric has to be added
@@ -120,7 +120,7 @@ _FACTOR_DEFAULTS: dict[str, Any] = {
     # `class_masking` and `routing_mode` say which information the model was
     # given at INFERENCE, and they are independent: an oracle-routed class-IL
     # run is not a Task-IL run. Mixing them is the mistake the schema prevents
-    # (docs/MEASUREMENT_CONTRACT.md R3).
+    # (archive/docs/MEASUREMENT_CONTRACT.md R3).
     "class_masking": None,
     "routing_mode": None,
     "increment_type": None,

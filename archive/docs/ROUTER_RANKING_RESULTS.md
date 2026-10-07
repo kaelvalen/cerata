@@ -1,7 +1,7 @@
 # Router Ranking Study - results
 
 Status: **run, hypothesis refuted in the opposite direction.** The
-pre-registration is `docs/ROUTER_RANKING_PREREG.md`; this document reports the
+pre-registration is `archive/docs/ROUTER_RANKING_PREREG.md`; this document reports the
 outcome and nothing in it may be read back into Stage 1, which is frozen at
 `STAGE1_RESULTS.md`.
 

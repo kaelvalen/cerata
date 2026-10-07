@@ -119,7 +119,7 @@ def test_loaders_on_the_real_releases(name):
 
     path, n = REAL[name]
     if not Path(path).exists():
-        pytest.skip(f"{path} not downloaded (see docs/V3_LLM_PREREG.md, amendment 1)")
+        pytest.skip(f"{path} not downloaded (see archive/docs/V3_LLM_PREREG.md, amendment 1)")
     loader = {
         "counterfact": load_counterfact,
         "zsre": load_zsre,

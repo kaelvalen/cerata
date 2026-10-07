@@ -130,7 +130,7 @@ class CerataLM(GuardedEditor):
     def consolidate(self, policy: str = "by_arrival", prereg: str | None = None):
         raise NotImplementedError(
             "the LM slow path (frozen LoRA experts over consolidated edits) is declared in "
-            "docs/V3_ARCHITECTURE.md but not built; phase 3 covers the fast and medium paths"
+            "archive/docs/V3_ARCHITECTURE.md but not built; phase 3 covers the fast and medium paths"
         )
 
     # -- read path -------------------------------------------------------------------

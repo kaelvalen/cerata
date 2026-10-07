@@ -129,7 +129,7 @@ no tuning               epochs 10, lr 1e-3, batch 128, rank 8, one prototype per
 ```
 
 Artifacts: `experiments/stage1/diagnostics/owner_side.py`, `results/owner_side/owner_side_study.json`,
-`docs/OWNER_SIDE_RESULTS.md`.
+`archive/docs/OWNER_SIDE_RESULTS.md`.
 
 ## 6. Feasibility
 

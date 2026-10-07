@@ -1,6 +1,6 @@
 # AC3: address-space ablation - fixed retrieval vs the learned evidence address - results
 
-Pre-registration: `docs/AC3_ADDRESS_SPACE_PREREG.md` (`e6879c2`), development smoke in
+Pre-registration: `archive/docs/AC3_ADDRESS_SPACE_PREREG.md` (`e6879c2`), development smoke in
 its section 5. Data: `results/ac3/ac3_address_space_study.json` - 6 re-scored cells
 plus 6 reference cells, harness `0e43673`, device `cuda`.
 

@@ -1555,7 +1555,7 @@ at fixed `m` (S10), the two realization ratios kept apart (S8), and the tax
 measured at a fixed budget rather than across budgets.
 
 A new router is a new hypothesis, so it belongs to a new pre-registration, not
-to Stage 1. That pre-registration now exists: `docs/ROUTER_RANKING_PREREG.md`
+to Stage 1. That pre-registration now exists: `archive/docs/ROUTER_RANKING_PREREG.md`
 (the Router Ranking Study), with the primary endpoint `Delta C@3` - coverage,
 not accuracy - and the control matrix that holds the expert bank, rank,
 prototypes and seeds fixed while only the ranking mechanism changes. Its R1 arm

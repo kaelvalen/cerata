@@ -1,5 +1,5 @@
 """
-The S1 architecture contract (docs/ARCHITECTURE_CONTRACT.md).
+The S1 architecture contract (archive/docs/ARCHITECTURE_CONTRACT.md).
 
     X --Backbone--> Z --Expert--> Z' --Readout--> Y
                           ^

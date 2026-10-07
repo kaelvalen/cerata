@@ -257,7 +257,7 @@ class Cerata(GuardedEditor):
 
         `by_arrival` groups by the batches' `task` (the Stage 1 L3 recipe, run through
         the moved ladder code, so a fresh consolidation of the E-TID2 tasks reproduces
-        its bank bitwise). `by_confusion` (gated behind `docs/P2_BOUND_PREREG.md`)
+        its bank bitwise). `by_confusion` (gated behind `archive/docs/P2_BOUND_PREREG.md`)
         clusters a `folds`-fold cross-fitted ridge confusion matrix of the pending
         training data. `by_partition` takes explicit `groups` (e.g. superclasses).
         Both regrouping policies need every pending batch's features at once and, for

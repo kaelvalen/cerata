@@ -1,6 +1,6 @@
 # AC1: address-freeze completion - the shared query in the routing path - results
 
-Pre-registration: `docs/AC1_ADDRESS_FREEZE_PREREG.md` (`74fc783`), with Amendment 1
+Pre-registration: `archive/docs/AC1_ADDRESS_FREEZE_PREREG.md` (`74fc783`), with Amendment 1
 (`8eb84bd`, the anchor band) registered before execution. Data:
 `results/ac1/ac1_address_freeze_study.json` - 12 fresh cells, harness revision
 `8d6e991`, device `cuda`.

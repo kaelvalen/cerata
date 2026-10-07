@@ -97,7 +97,7 @@ but a weight difference of 1e-3 is not what an "exact" closed-form edit should l
   the router's class is wrong but its task is right (it then decodes with the owner
   expert) - or break it where the class was right. How much mass sits in "class wrong,
   task right" is set by task geometry, and dispersed tasks leave almost none. This is
-  the mechanism `docs/P2_BOUND_PREREG.md` pre-registers.
+  the mechanism `archive/docs/P2_BOUND_PREREG.md` pre-registers.
 
 ## 5. What this does not say
 

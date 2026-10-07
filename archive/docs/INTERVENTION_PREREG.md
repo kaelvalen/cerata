@@ -178,7 +178,7 @@ path is the pinned one. The audit may use `autograd.grad` because it is a separa
 diagnostic run - never a study cell and never the training path.
 
 Artifacts: `experiments/stage1/diagnostics/intervention.py`, `results/intervention/intervention_study.json`,
-`docs/INTERVENTION_RESULTS.md`.
+`archive/docs/INTERVENTION_RESULTS.md`.
 
 ## 6. Feasibility
 

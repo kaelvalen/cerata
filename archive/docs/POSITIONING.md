@@ -102,7 +102,7 @@ Prerequisites, in order:
 **CERATA** (Closed-form, Exactly Reversible, Auditable learning after deployment) on
 2026-09-26, after checking for collisions: TABULA was rejected (TabuLa and TabuLa-8B
 are tabular-data LLM papers; `tabula`, `tabula-py`, `tabulaml` are taken on PyPI).
-The v1 design keeps its name, PAL-MoE, as a historical record (`docs/v1/`); the
+The v1 design keeps its name, PAL-MoE, as a historical record (`archive/docs/v1/`); the
 `pal_moe` package keeps old imports and checkpoints working. The GitHub repository
 itself is renamed in its settings by the owner (GitHub redirects the old URL).
 

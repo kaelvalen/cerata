@@ -1,6 +1,6 @@
 # Owner-side residual: the two-component decomposition of the E2 collapse - results
 
-Pre-registration: `docs/OWNER_SIDE_PREREG.md` (`67f38f9`, with the pre-run wording
+Pre-registration: `archive/docs/OWNER_SIDE_PREREG.md` (`67f38f9`, with the pre-run wording
 note `3c5ce6f`). Data: `results/owner_side/owner_side_study.json` - 18 cells, all
 re-run fresh; the earlier records serve only as anchors.
 

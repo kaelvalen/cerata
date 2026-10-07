@@ -4,7 +4,7 @@ Name -> implementation registries for the S1 contract.
 A registry is the only place that maps a config string ("vit_b_16", "ncm",
 "residual_adapter") to a class. Nothing else imports the implementations, so a
 new backbone/readout/expert is added by registering it and writing a config,
-without touching the training loop (docs/ARCHITECTURE_CONTRACT.md).
+without touching the training loop (archive/docs/ARCHITECTURE_CONTRACT.md).
 
 Kinds are kept separate on purpose: a readout and an expert have different
 signatures, and conflating them is the abstraction error S1 exists to fix.

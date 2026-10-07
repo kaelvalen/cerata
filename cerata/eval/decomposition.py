@@ -14,14 +14,14 @@ it, and a bank that is asked for a prediction under that routed task:
     rho'  = P(s | not r, not tau)  rescues under a wrong route (normally ~0)
     beta  = P(not s | r)           samples the readout had right and the bank breaks
 
-`p2_decomposition` is the P2-BOUND function (`docs/P2_BOUND_PREREG.md`), moved here
+`p2_decomposition` is the P2-BOUND function (`archive/docs/P2_BOUND_PREREG.md`), moved here
 unchanged from `experiments/p2_bound.py`, which re-exports it.
 
 Any bank can be decomposed, not only this repository's: `ExpertDump` is the exchange
 format for another method's bank (EASE, MOS, MoTE, ...): its prediction under every
 forced expert/task, per test sample. `decompose` joins it with a readout's logits.
 
-`decompose` also takes A3.1's routing rule (`docs/PTM_CIL_PREREG.md` amendment 3,
+`decompose` also takes A3.1's routing rule (`archive/docs/PTM_CIL_PREREG.md` amendment 3,
 adopted 2026-09-28): `owner_class` (the default, the P2-BOUND rule), `owner_task_sum` (the routed
 task maximizes the summed softmax mass over its classes, temperature pinned at 1.0) and
 `own_bank_top2` (our bank only: within 0.1 of mass the two candidate tasks are decided by
@@ -201,7 +201,7 @@ def decompose(
 ):
     """P2 of `dump`'s bank routed by a readout, plus the accuracies around it.
 
-    `rule` is A3.1's routing rule (`docs/PTM_CIL_PREREG.md` amendment 3, proposed):
+    `rule` is A3.1's routing rule (`archive/docs/PTM_CIL_PREREG.md` amendment 3, proposed):
     `owner_class` (default, the P2-BOUND rule), `owner_task_sum`, or `own_bank_top2`
     (our bank only; needs `dump.expert_score`).
     """

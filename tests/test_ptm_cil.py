@@ -114,7 +114,7 @@ def test_palmoe_with_random_features_passes_every_guard():
 
 
 def test_p2_bound_reexports_the_package_function():
-    sys.path.insert(0, str(ROOT / "experiments"))
+    sys.path.insert(0, str(ROOT / "archive" / "experiments"))
     try:
         import p2_bound
     finally:
@@ -167,7 +167,7 @@ def test_expert_dump_round_trips_and_validates(tmp_path):
         bad.validate()
 
 
-# -- A3.1 routing rules (docs/PTM_CIL_PREREG.md amendment 3, adopted) -------------------
+# -- A3.1 routing rules (archive/docs/PTM_CIL_PREREG.md amendment 3, adopted) -------------------
 
 
 def test_a3_1_task_sum_rules_by_mass_not_by_the_peak():
@@ -282,7 +282,7 @@ def test_split_tasks_remaps_labels_and_the_test_permutation_matches():
 
 
 def test_runner_synthetic_cell_passes_its_vetoes():
-    sys.path.insert(0, str(ROOT / "experiments"))
+    sys.path.insert(0, str(ROOT / "archive" / "experiments"))
     try:
         import ptm_cil
     finally:
@@ -315,7 +315,7 @@ def test_runner_synthetic_cell_passes_its_vetoes():
 
 
 def test_ptm_headroom_synthetic_cell_reports_a_labeled_gap():
-    sys.path.insert(0, str(ROOT / "experiments"))
+    sys.path.insert(0, str(ROOT / "archive" / "experiments"))
     try:
         import ptm_cil
         import ptm_headroom
@@ -358,7 +358,7 @@ def test_storage_counts_the_fixed_projection():
 
 
 def test_sanity_veto_needs_a_reference_and_a_close_match():
-    sys.path.insert(0, str(ROOT / "experiments"))
+    sys.path.insert(0, str(ROOT / "archive" / "experiments"))
     try:
         import ptm_cil
     finally:
@@ -380,7 +380,7 @@ def test_sanity_veto_needs_a_reference_and_a_close_match():
 def test_feasibility_veto_writes_a_veto_failed_record(tmp_path, monkeypatch):
     import json
 
-    sys.path.insert(0, str(ROOT / "experiments"))
+    sys.path.insert(0, str(ROOT / "archive" / "experiments"))
     try:
         import ptm_cil
     finally:
@@ -431,7 +431,7 @@ def test_prepare_ptm_data_reunpacks_a_replaced_archive(tmp_path):
         subprocess.run(
             [
                 sys.executable,
-                str(ROOT / "experiments" / "prepare_ptm_data.py"),
+                str(ROOT / "archive" / "experiments" / "prepare_ptm_data.py"),
                 f"--root={tmp_path / 'root'}",
                 "--only=vtab",
                 "--skip_published_md5",
@@ -476,7 +476,7 @@ def test_prepare_ptm_data_rejects_an_archive_with_a_wrong_published_md5(tmp_path
     res = subprocess.run(
         [
             sys.executable,
-            str(ROOT / "experiments" / "prepare_ptm_data.py"),
+            str(ROOT / "archive" / "experiments" / "prepare_ptm_data.py"),
             f"--root={tmp_path / 'root'}",
             "--only=vtab",
         ],
@@ -503,7 +503,7 @@ def test_load_raw_cache_accepts_a_torch_version_in_meta(tmp_path):
 
 
 def test_sanity_veto_covers_an_unreferenced_backbone_through_a_referenced_one():
-    sys.path.insert(0, str(ROOT / "experiments"))
+    sys.path.insert(0, str(ROOT / "archive" / "experiments"))
     try:
         import ptm_cil
     finally:

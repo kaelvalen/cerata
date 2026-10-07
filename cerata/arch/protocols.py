@@ -12,7 +12,7 @@ the training loop never has to know which implementation it is holding. The v1
 modules (`SharedEncoder`, `MLPExpert`, `DynamicRouter`, `DynamicMoE`) keep
 working untouched; the S1 classes wrap or re-expose them.
 
-Why the split is not cosmetic (measured, docs/v1/PALMOE_V2_SPEC.md and E0):
+Why the split is not cosmetic (measured, archive/docs/v1/PALMOE_V2_SPEC.md and E0):
 
     L2a  one shared expert, trained jointly   76.62   <- capacity is not the problem
     L2b  one shared expert, sequential        55.67   <- sharing under CL is

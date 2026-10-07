@@ -107,7 +107,7 @@ zero-parameter router - at 7B scale (`V3_LLM_PREREG.md`).
 
 Entries in sections 5 and 6 were located by a web search on 2026-09-26 (arXiv itself
 was not reachable from the review container); verify authors, venues and numbers
-against the papers before they enter a bibliography. `docs/POSITIONING.md` has the
+against the papers before they enter a bibliography. `archive/docs/POSITIONING.md` has the
 links.
 
 ## 7. What was claimed for v1 (and what is not)

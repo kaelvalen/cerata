@@ -2,7 +2,7 @@
 
 Status: **run. The comparative arm is worse than the pointwise arm in every seed
 and both regimes, but the family-wise corrected test does not reject at 0.05.**
-Pre-registration: `docs/DECISION_ROUTING_PREREG.md`; the frozen diagnosis it
+Pre-registration: `archive/docs/DECISION_ROUTING_PREREG.md`; the frozen diagnosis it
 follows: `DIAGNOSIS_SYNTHESIS.md`.
 
 ## 1. The three arms (six seeds)

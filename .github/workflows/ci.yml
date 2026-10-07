@@ -112,9 +112,9 @@ jobs:
         pip install torch torchvision --index-url "$TORCH_INDEX"
         pip install -e ".[dev]"
     - name: "v3 API smoke: write -> predict -> forget on synthetic data, every guard"
-      run: python experiments/v3/v3_api_smoke.py --synthetic
+      run: python archive/experiments/v3/v3_api_smoke.py --synthetic
     - name: "PTM-CIL study smoke: readouts, bank decomposition, API arm, vetoes"
-      run: python experiments/ptm/ptm_cil.py --synthetic --seeds 0,1 --api
+      run: python archive/experiments/ptm/ptm_cil.py --synthetic --seeds 0,1 --api
     - name: Download MNIST
       run: |
         python - <<'PY'
@@ -124,7 +124,7 @@ jobs:
         PY
     - name: CPU benchmark smoke (1 epoch, all methods)
       run: |
-        python experiments/stage1/infra/run_benchmark.py --epochs 1 --device cpu --output_dir /tmp/ci-bench
+        python archive/experiments/stage1/infra/run_benchmark.py --epochs 1 --device cpu --output_dir /tmp/ci-bench
     - name: Assert benchmark sanity bounds
       run: |
         python - <<'PY'
@@ -145,7 +145,7 @@ jobs:
         PY
     - name: "CPU smoke: feature-cache + frozen encoder + router-anchor distillation"
       run: |
-        python experiments/stage1/infra/run_benchmark.py --epochs 1 --device cpu --methods palmoe \
+        python archive/experiments/stage1/infra/run_benchmark.py --epochs 1 --device cpu --methods palmoe \
           --freeze_encoder --feature_cache --router_anchor_steps 50 \
           --proto_threshold auto --output_dir /tmp/ci-distill
     - name: Assert distillation smoke + run metadata

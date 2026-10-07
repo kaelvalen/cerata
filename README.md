@@ -18,9 +18,9 @@ is analytic - and the code, and now the name, follow what the measurements suppo
 > invariance, a zero-parameter router) run on every `write`, `forget` and
 > `consolidate`.
 
-Architecture: [`docs/V3_ARCHITECTURE.md`](docs/V3_ARCHITECTURE.md). Every document:
+Architecture: [`archive/docs/V3_ARCHITECTURE.md`](archive/docs/V3_ARCHITECTURE.md). Every document:
 [`docs/README.md`](docs/README.md). The v1 design and its benchmark tables:
-[`docs/v1/README.md`](docs/v1/README.md).
+[`archive/docs/v1/README.md`](archive/docs/v1/README.md).
 
 ## Where the evidence stands (2026-09-26)
 
@@ -28,13 +28,13 @@ On frozen ImageNet ViT-B/16 features, CIFAR-100 in 20 tasks, unless noted:
 
 | Finding | Number | Source |
 | :-- | :-- | :-- |
-| A training-free prototype readout (NCM) beats v1 | 70.34 vs 59.30, 0 parameters, 307 KB | [`STAGE1_RESULTS.md`](docs/STAGE1_RESULTS.md) |
-| A closed-form ridge readout is the strongest single model | wins on six backbones and four datasets | [`STAGE1_RESULTS.md`](docs/STAGE1_RESULTS.md) |
-| The binding constraint is selection, not expert capacity | oracle routing +27 pp over the routed bank | [`STAGE1_RESULTS.md`](docs/STAGE1_RESULTS.md) |
-| A learned routing address collapses when frozen; fixed retrieval does not | -28.7 pp (AC1); +0.048 pp, TOST-equivalent, 0 router parameters (AC3) | [AC1](docs/AC1_ADDRESS_FREEZE_RESULTS.md), [AC3](docs/AC3_ADDRESS_SPACE_RESULTS.md) |
-| A continual class-level ridge router fixes most of the routing tax | +4.10 / +6.08 pp (`coherent` / `dispersed`), 6/6 seeds | [`E_TID2_RESULTS.md`](docs/E_TID2_RESULTS.md) |
-| **Once routing is fixed, the expert bank is redundant** | +0.62 / -0.03 pp over ridge alone, inside the 1 pp SESOI | [`E_TID2_RESULTS.md`](docs/E_TID2_RESULTS.md) |
-| Why: experts convert little of what they own | they rescue ~30 % of rescuable samples and break ~3 % of correct ones; re-grouping moves mass, not conversion | [`P2_BOUND_RESULTS.md`](docs/P2_BOUND_RESULTS.md) |
+| A training-free prototype readout (NCM) beats v1 | 70.34 vs 59.30, 0 parameters, 307 KB | [`STAGE1_RESULTS.md`](archive/docs/STAGE1_RESULTS.md) |
+| A closed-form ridge readout is the strongest single model | wins on six backbones and four datasets | [`STAGE1_RESULTS.md`](archive/docs/STAGE1_RESULTS.md) |
+| The binding constraint is selection, not expert capacity | oracle routing +27 pp over the routed bank | [`STAGE1_RESULTS.md`](archive/docs/STAGE1_RESULTS.md) |
+| A learned routing address collapses when frozen; fixed retrieval does not | -28.7 pp (AC1); +0.048 pp, TOST-equivalent, 0 router parameters (AC3) | [AC1](archive/docs/AC1_ADDRESS_FREEZE_RESULTS.md), [AC3](archive/docs/AC3_ADDRESS_SPACE_RESULTS.md) |
+| A continual class-level ridge router fixes most of the routing tax | +4.10 / +6.08 pp (`coherent` / `dispersed`), 6/6 seeds | [`E_TID2_RESULTS.md`](archive/docs/E_TID2_RESULTS.md) |
+| **Once routing is fixed, the expert bank is redundant** | +0.62 / -0.03 pp over ridge alone, inside the 1 pp SESOI | [`E_TID2_RESULTS.md`](archive/docs/E_TID2_RESULTS.md) |
+| Why: experts convert little of what they own | they rescue ~30 % of rescuable samples and break ~3 % of correct ones; re-grouping moves mass, not conversion | [`P2_BOUND_RESULTS.md`](archive/docs/P2_BOUND_RESULTS.md) |
 
 All of these use torchvision's ImageNet-1K ViT-B/16; the pre-trained-model CIL
 literature uses ImageNet-21K weights and seven standard benchmarks, so none of the
@@ -42,13 +42,13 @@ numbers above is comparable to published tables yet.
 
 What does **not** exist yet: any LM result. The 7B backend and the editing harness are
 built and tested on a tiny random model only; the study is
-[`docs/V3_LLM_PREREG.md`](docs/V3_LLM_PREREG.md) (proposed, not run). The SLOW path
+[`archive/docs/V3_LLM_PREREG.md`](archive/docs/V3_LLM_PREREG.md) (proposed, not run). The SLOW path
 has no positive result behind it on the vision side (the last two rows).
 
-**Next.** [`docs/POSITIONING.md`](docs/POSITIONING.md) sets out what the literature
+**Next.** [`archive/docs/POSITIONING.md`](archive/docs/POSITIONING.md) sets out what the literature
 already owns, what is defensible, and the plan: first a pre-registered study of when
 any expert bank - ours, EASE, MOS, MoTE - adds anything over an analytic router on the
-standard benchmarks ([`docs/PTM_CIL_PREREG.md`](docs/PTM_CIL_PREREG.md); code built,
+standard benchmarks ([`archive/docs/PTM_CIL_PREREG.md`](archive/docs/PTM_CIL_PREREG.md); code built,
 not run), then the LM study.
 
 ## Quick start
@@ -76,9 +76,9 @@ that call. The LM facade (`cerata.api.lm.CerataLM`) has the same calls:
 
 ```bash
 export PYTHONPATH=.
-python experiments/v3/v3_api_smoke.py --synthetic   # write -> predict -> forget, every guard
+python archive/experiments/v3/v3_api_smoke.py --synthetic   # write -> predict -> forget, every guard
 python -m pytest                                 # the whole suite
-python experiments/stage1/infra/run_all.py --list             # Stage 1: what is done, what is left
+python archive/experiments/stage1/infra/run_all.py --list             # Stage 1: what is done, what is left
 ```
 
 Every runner, with its pre-registration: [`experiments/README.md`](experiments/README.md).
@@ -103,7 +103,8 @@ cerata/
 │   ├── legacy/      # v1, frozen bitwise (models, memory, trainer, baselines, builder, trigger)
 │   └── ...
 ├── pal_moe/         # compatibility only: the old name and the v1 import paths, same module objects
-├── experiments/     # thin runners by program: stage1/, v3/, ptm/, recipes/, sandbox/
+├── experiments/     # sandbox/live_learning/ (the living model)
+├── archive/         # the earlier programs (Stage 1, v3, PTM-CIL, v1) - frozen records
 ├── configs/         # validated JSON configs for the v1 benchmark
 ├── docs/            # architecture, pre-registrations, results, contracts; v1/ is the v1 record
 └── tests/           # v1, S0/S1 contracts, v3 API and guards, v1 checkpoint shims, LM backend

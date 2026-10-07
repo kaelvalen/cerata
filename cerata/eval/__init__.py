@@ -2,7 +2,7 @@
 
 `pal_moe.evaluation` moved here in the v3 restructure (the old name still resolves
 to the same module objects); `stats` holds the small-sample paired statistics moved
-from `experiments/stage1/ladder/s11_confirmatory.py`.
+from `archive/experiments/stage1/ladder/s11_confirmatory.py`.
 """
 
 from .diagnostics import print_router_diagnostics, router_diagnostics

@@ -3,7 +3,7 @@
 Status: **run. The shared projection leaves the candidate set untouched by
 construction, mildly and non-significantly hurts expert usability in `coherent`,
 and is neutral in `dispersed`.** Pre-registration:
-`docs/EXPERT_FORMULATION_PREREG.md`.
+`archive/docs/EXPERT_FORMULATION_PREREG.md`.
 
 ## 1. The four metrics, seed-paired
 

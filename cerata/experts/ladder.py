@@ -1,9 +1,9 @@
 """The Stage 1 ladder model: `(experts) -> readout` over a frozen cached backbone.
 
-Moved verbatim from `experiments/stage1/ladder/s2_ladder.py` (LevelSpec, LADDER, LadderModel,
-forward_transfer) and `experiments/stage1/ladder/s11_confirmatory.py` (train_model, evaluate)
+Moved verbatim from `archive/experiments/stage1/ladder/s2_ladder.py` (LevelSpec, LADDER, LadderModel,
+forward_transfer) and `archive/experiments/stage1/ladder/s11_confirmatory.py` (train_model, evaluate)
 in the v3 restructure, phase 1. Behaviour is frozen: the S11 E0 anchor must stay
-bitwise (see `experiments/v3_anchors.py`).
+bitwise (see `archive/experiments/v3_anchors.py`).
 """
 
 import argparse
@@ -452,7 +452,7 @@ class LadderModel:
         Class-IL. It is orthogonal to `oracle` (whether the task id is used for
         *routing*): knowing which task an input belongs to and knowing which
         classes are answerable are two different pieces of information, and S5
-        measures them separately (docs/STAGE1_RESULTS.md section 6).
+        measures them separately (archive/docs/STAGE1_RESULTS.md section 6).
         """
         feats, labels = task["splits"]["test"]
         feats, labels = feats.to(self.device), labels.to(self.device)
@@ -613,7 +613,7 @@ def forward_transfer(model, task, num_classes: int, dim: int) -> tuple[float, fl
 
 
 # ---------------------------------------------------------------------------
-# S11 train / evaluate (moved from experiments/stage1/ladder/s11_confirmatory.py)
+# S11 train / evaluate (moved from archive/experiments/stage1/ladder/s11_confirmatory.py)
 # ---------------------------------------------------------------------------
 
 

@@ -1,6 +1,6 @@
 # Intervention: cutting the non-owner evidence path to old projections - results
 
-Pre-registration: `docs/INTERVENTION_PREREG.md` (`cef6091`) with Amendment 1
+Pre-registration: `archive/docs/INTERVENTION_PREREG.md` (`cef6091`) with Amendment 1
 (definitional, pre-run; committed with the implementation, `70a4c16`). Data:
 `results/intervention/intervention_study.json` (18 cells; the six `owner_only`
 cells are the new data, C1 and C0 are re-runs of the coupling cells).

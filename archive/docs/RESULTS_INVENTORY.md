@@ -23,7 +23,7 @@ not cited).
 
 ## Stage 1 (2026-09-25, measurement programme)
 
-Status legend adds: STAGE1 (evidence for `docs/STAGE1_RESULTS.md`).
+Status legend adds: STAGE1 (evidence for `archive/docs/STAGE1_RESULTS.md`).
 
 | Directory / file | Contents | Status | Referenced by |
 | :-- | :-- | :-- | :-- |
@@ -111,7 +111,7 @@ to the history bundle.
 | `drift/` | E8 anchor-refresh + inference-anchoring cells | RUN-DAY | SUNUM §5.7 |
 | `capacity/` | E9 capacity sweep + parameter-matched baselines, 3 seeds | RUN-DAY | SUNUM §5.6 |
 | `mir/` | E12 MIR baseline, 3 seeds | RUN-DAY | BENCHMARK fact 21 |
-| `tinyimagenet_multiseed/` | E10 Tiny-ImageNet 20×10 class-IL, 3 seeds | RUN-DAY | docs/v1/gncl.md, BENCHMARK fact 23 |
+| `tinyimagenet_multiseed/` | E10 Tiny-ImageNet 20×10 class-IL, 3 seeds | RUN-DAY | archive/docs/v1/gncl.md, BENCHMARK fact 23 |
 | `final_mnist_multiseed/`, `final_c10r18_multiseed/` | E3 regenerations with byte accounting (5/3 seeds) | RUN-DAY | SUNUM §5.1 |
 | `final_c10conv_multiseed/`, `final_c100conv_multiseed/` | E3 conv regenerations with byte accounting, 3 seeds | RUN-DAY | SUNUM §5.1, BENCHMARK fact 22 |
 | `mnist_domainshift_multiseed/` | E11 domain-shift, 5 seeds | RUN-DAY | SUNUM §5.8 |
@@ -138,5 +138,5 @@ to be traced.
   `--track_routing`, `routing_retention`.
 - `benchmark_meta_seed*.json` records the seed, git hash, args and duration -
   the provenance anchor for every number.
-- A directory is only quoted in `docs/v1/README.md`/`docs/v1/SUNUM.md` after it contains
+- A directory is only quoted in `archive/docs/v1/README.md`/`archive/docs/v1/SUNUM.md` after it contains
   its full seed set; otherwise it is labelled single-seed or pending here.

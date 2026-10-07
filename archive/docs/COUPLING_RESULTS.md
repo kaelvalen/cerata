@@ -2,7 +2,7 @@
 
 Status: **run. The third pre-declared reading: continually re-aligning accumulated
 experts' evidence projections produces destructive interference.** All three
-vetoes passed. Pre-registration: `docs/COUPLING_PREREG.md`.
+vetoes passed. Pre-registration: `archive/docs/COUPLING_PREREG.md`.
 
 ## 1. The two arms, twelve cells
 

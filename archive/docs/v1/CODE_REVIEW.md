@@ -76,7 +76,7 @@ function docstrings, and simple linear code.
   prototype merging, cache invalidation). **Do not mass-trim.**
 - No `TODO/FIXME/HACK` debt anywhere.
 - What is missing is *orientation* documentation (how the layers fit), which
-  `docs/RESEARCH_MAP.md`, `experiments/README.md` and this file now provide.
+  `archive/docs/RESEARCH_MAP.md`, `experiments/README.md` and this file now provide.
 
 ## Tooling note
 

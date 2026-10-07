@@ -85,7 +85,7 @@ target-version = ["py39"]
 [tool.ruff]
 line-length = 88
 target-version = "py39"
-src = ["cerata", "pal_moe", "experiments", "tests"]
+src = ["cerata", "pal_moe", "experiments", "archive", "tests"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "W", "I", "B", "UP"]

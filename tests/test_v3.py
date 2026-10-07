@@ -180,7 +180,7 @@ def test_by_arrival_is_first_introduction():
 def test_by_confusion_is_gated_and_recovers_blocks():
     with pytest.raises(PolicyGateError):
         check_gate("by_confusion", None)
-    check_gate("by_confusion", "docs/P2_BOUND_PREREG.md")
+    check_gate("by_confusion", "archive/docs/P2_BOUND_PREREG.md")
     conf = torch.eye(6) * 50
     for block in ([0, 3], [1, 4], [2, 5]):
         conf[block[0], block[1]] = conf[block[1], block[0]] = 10

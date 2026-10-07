@@ -6,7 +6,7 @@ reports exactly.
 
 Cell re-runs (GPU, ~40 s per cell): opt in with `PAL_MOE_ANCHORS=1`. Each re-runs
 seed 42 of an anchor through the current code and compares against the stored cell.
-The full grid (all seeds) is `experiments/v3_anchors.py`.
+The full grid (all seeds) is `archive/experiments/v3_anchors.py`.
 """
 
 import argparse
@@ -19,7 +19,7 @@ import pytest
 import torch
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "experiments"))
+sys.path.insert(0, str(ROOT / "archive" / "experiments"))
 
 S11_JSON = ROOT / "results/s11/s11_confirmatory_study.json"
 AC3_JSON = ROOT / "results/ac3/ac3_address_space_study.json"
@@ -44,14 +44,15 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def test_moved_names_are_the_same_objects():
-    import cerata.core.constructions as cons
-    import cerata.core.features as feats
-    import cerata.eval.stats as stats
-    import cerata.experts.ladder as ladder
     import e_tid2_ridge_router  # noqa: F401  (imports cleanly through the shims)
     import s2_ladder
     import s6b_difficulty
     import s11_confirmatory as s11
+
+    import cerata.core.constructions as cons
+    import cerata.core.features as feats
+    import cerata.eval.stats as stats
+    import cerata.experts.ladder as ladder
 
     assert s2_ladder.LadderModel is ladder.LadderModel
     assert s2_ladder.LEVELS_BY_NAME is ladder.LEVELS_BY_NAME

@@ -1,6 +1,6 @@
 # P2-BOUND: why the expert bank adds < 1 pp over a ridge router - results
 
-Pre-registration: `docs/P2_BOUND_PREREG.md` (`2aea973`), amendment 1 (`4a30aad`),
+Pre-registration: `archive/docs/P2_BOUND_PREREG.md` (`2aea973`), amendment 1 (`4a30aad`),
 amendment 2 (`af52036`, the review condition for Part B). Runner
 `experiments/stage1/diagnostics/p2_bound.py` (`1b18147`), committed before the run. Data:
 `results/p2_bound/p2_bound_study.json` (untracked) - 12 Part A cells and 12 Part B

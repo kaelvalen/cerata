@@ -4,7 +4,7 @@
                  Stage 1 behaviour (L3_per_task) and the **control**.
 - `by_confusion` expert boundaries follow the router's confusion structure: spectral
                  clustering of the symmetrised class confusion matrix. **Experimental,
-                 gated**: it may only run under `docs/P2_BOUND_PREREG.md`, and
+                 gated**: it may only run under `archive/docs/P2_BOUND_PREREG.md`, and
                  `consolidate()` refuses it unless the caller names that document.
 """
 
@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-GATED = {"by_confusion": "docs/P2_BOUND_PREREG.md"}
+GATED = {"by_confusion": "archive/docs/P2_BOUND_PREREG.md"}
 
 
 class PolicyGateError(RuntimeError):

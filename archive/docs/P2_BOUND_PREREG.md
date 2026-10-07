@@ -159,7 +159,7 @@ ceiling   2 h
 a learned router            v3 forbids it (router purity); not a variable here
 more experts / more rank    capacity saturates at rank 8 (F3, F11); not the variable
 other backbones / datasets  a confirmatory replication is a separate document
-the LM path                 docs/V3_LLM_PREREG.md
+the LM path                 archive/docs/V3_LLM_PREREG.md
 ```
 
 ## 9. What this licenses, and what it does not

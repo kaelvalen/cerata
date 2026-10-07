@@ -1,5 +1,5 @@
 """
-Tests for the measurement contract (docs/MEASUREMENT_CONTRACT.md, S0).
+Tests for the measurement contract (archive/docs/MEASUREMENT_CONTRACT.md, S0).
 
 The contract is only useful if violations fail loudly: a record that declares a
 metric block without the block's fields, or that mixes a budget into the

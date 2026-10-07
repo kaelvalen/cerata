@@ -136,7 +136,7 @@ def test_lm_medium_is_order_invariant(lm):
         for r in recs:
             m.forget(r.id)
     # fp-close, not bitwise: the float64 accumulator sums in arrival order, so two
-    # orders differ by rounding only (docs/V3_ARCHITECTURE.md section 2, and the LM
+    # orders differ by rounding only (archive/docs/V3_ARCHITECTURE.md section 2, and the LM
     # prereg's amendment 1). The measured gap on this model is ~6e-17.
     d_delta = (digests[0][0] - digests[1][0]).abs().max().item()
     assert d_delta <= GuardConfig().tolerance

@@ -3,7 +3,7 @@
 Status: **not executed.** The pre-registered 24-cell confirmatory run was **not
 started**, because its first veto (a usable confirmatory operating point) failed
 and because the pre-registered protocol is computationally infeasible at this
-scale. The pre-registration is unchanged: `docs/E2_EVIDENCE_PREREG.md`.
+scale. The pre-registration is unchanged: `archive/docs/E2_EVIDENCE_PREREG.md`.
 
 ## 1. What was built and what passed
 

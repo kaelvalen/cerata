@@ -1,5 +1,5 @@
 """
-Tests for the S1 architecture contract (docs/ARCHITECTURE_CONTRACT.md).
+Tests for the S1 architecture contract (archive/docs/ARCHITECTURE_CONTRACT.md).
 
 The contract is enforced structurally: every registered implementation must
 satisfy its protocol, an expert must be the identity at initialization (that is

@@ -21,7 +21,7 @@ Protocol details mirrored from LAMDA-PILOT (`utils/data.py`, `utils/data_manager
   methods (SimpleCIL, RanPAC without PETL) extract train features with it as well.
 
 Task splits differ between papers; each spec carries the split
-`docs/PTM_CIL_PREREG.md` pins (ten tasks, five for VTAB), and the runner can override it.
+`archive/docs/PTM_CIL_PREREG.md` pins (ten tasks, five for VTAB), and the runner can override it.
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ class BenchmarkSpec:
     name: str
     num_classes: int
     subdir: str | None  # None: torchvision CIFAR-100
-    init_cls: int = 10  # the split pinned by docs/PTM_CIL_PREREG.md
+    init_cls: int = 10  # the split pinned by archive/docs/PTM_CIL_PREREG.md
     increment: int = 10
     shuffle: bool = True
 

@@ -2,7 +2,7 @@
 
 Status: **run. The uniform top-3 mixture is significantly worse than
 winner-take-all in both regimes, on all six seeds, with every identity guard
-passing exactly.** Pre-registration: `docs/AGGREGATION_PREREG.md`.
+passing exactly.** Pre-registration: `archive/docs/AGGREGATION_PREREG.md`.
 
 ## 1. The result
 

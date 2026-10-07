@@ -1,6 +1,6 @@
 """S6b task constructions (`coherent` / `dispersed`) over a cached CIFAR-100 source.
 
-Moved verbatim from `experiments/stage1/ladder/s6b_difficulty.py` (v3 restructure, phase 1).
+Moved verbatim from `archive/experiments/stage1/ladder/s6b_difficulty.py` (v3 restructure, phase 1).
 """
 
 import os
