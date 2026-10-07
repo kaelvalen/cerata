@@ -118,5 +118,5 @@ graphify-out/.graphify_root
 # EasyEdit baseline workspace (cloned deps + separate venv)
 .deps/
 .venv-easyedit/
-graphify-out/2026-10-06/
+graphify-out/20*/
 graphify-out/.graphify_labels.json.sig
