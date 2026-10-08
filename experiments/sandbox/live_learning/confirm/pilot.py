@@ -100,9 +100,67 @@ def serve_expert(store, fid, q):
     return resp
 
 
+def _norm(s: str) -> str:
+    return s.lower().replace("-", " ").replace("_", " ").strip()
+
+
+def _osa(a: str, b: str) -> int:
+    """Optimal string alignment (adjacent transposition counts as 1)."""
+    la, lb = len(a), len(b)
+    d = [[0] * (lb + 1) for _ in range(la + 1)]
+    for i in range(la + 1):
+        d[i][0] = i
+    for j in range(lb + 1):
+        d[0][j] = j
+    for i in range(1, la + 1):
+        for j in range(1, lb + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+            if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
+                d[i][j] = min(d[i][j], d[i - 2][j - 2] + 1)
+    return d[la][lb]
+
+
 class Router:
-    """Entity-aware: a known subject must appear in the question, then the semantic key
-    picks among that subject's facts; unseen subjects abstain (the pilot A failure)."""
+    """Entity-aware v3: a normalized substring match (longest wins, prefix safety) or
+    a fuzzy token match (edit distance <=1, <=2 for tokens of length >=6) selects the
+    candidate facts; the semantic key picks among them; no candidate -> abstain."""
+
+    def __init__(self, enc, facts, tau=TAU):
+        self.tau = tau
+        self.keys = enc.encode([f["probe"] for f in facts], normalize_embeddings=True)
+        self.subjects = [_norm(f["subject"]) for f in facts]
+        self.tokens = [s.split() for s in self.subjects]
+
+    def _entity_candidates(self, q: str) -> list:
+        qn = _norm(q)
+        qtok = qn.split()
+        exact = [i for i, sn in enumerate(self.subjects) if sn and sn in qn]
+        if exact:
+            return [max(exact, key=lambda i: len(self.subjects[i]))]
+        cand = []
+        for i, toks in enumerate(self.tokens):
+            for st in toks:
+                if len(st) < 4:
+                    continue
+                thresh = 2 if len(st) >= 6 else 1
+                if any(st == qt or _osa(st, qt) <= thresh for qt in qtok):
+                    cand.append(i)
+                    break
+        return cand
+
+    def route(self, q, enc):
+        cand = self._entity_candidates(q)
+        if not cand:
+            return None, 0.0
+        v = enc.encode([q], normalize_embeddings=True)[0]
+        sims = {i: float(self.keys[i] @ v) for i in cand}
+        j = max(sims, key=sims.get)
+        return (j if sims[j] >= self.tau else None), sims[j]
+
+
+class RouterV2:
+    """Pilot's substring gate (reference): exact lowercased subject substring."""
 
     def __init__(self, enc, facts, tau=TAU):
         self.tau = tau

@@ -105,14 +105,18 @@ panels, so the stack is image-conditioned end to end.
 ## Next (2026-10-06, review round)
 
 Review items: (1) **strong-RAG gate PASSED** (instruct 0.837 vs ours 0.999 at N=1000).
-(2) router stress done - entity gate is a dictionary; semantic keys recover 88-100%;
-fix pinned (embedding/fuzzy entity match). (3) official EasyEdit baselines
+(2) **router v3 DONE** (fuzzy entity match, CPU-validated): typos/lower/space
+0->1.00, partial 0->0.80, pronoun still abstains (1.00); no regression on the
+normal path (probe/paraphrase 1.00, distractor abstention 1.00). Pilot re-validation
+with v3 owed at the next GPU run. (3) official EasyEdit baselines
 (GRACE/WISE/MELO, MEMIT/AlphaEdit) - pending. (4) metric completion pinned (revoke
 n >= 100; thresholds owed at the next full ours run). (5) **capacity DONE - one
-jointly-trained delta carries 64 facts at full efficacy (nonce and CounterFact),
-leakage 0, tiny KLD; the summed collapse is an additivity artifact, not a capacity
-limit**; follow-up pinned: grouped experts (~64 facts/delta, ~64x storage cut, coarse
-router) + seeds/CIs. (6) zsRE N=1000 - stopped on request at the 100/1000 checkpoint (resumable with the
+jointly-trained delta carries 256 facts at full efficacy (seeded: k=64 0.984 /
+128 1.00 / 256 1.00; KLD <=0.007)**; the summed collapse is an additivity artifact,
+not a capacity limit; leakage 0.30/1.00 recorded with a suspected artifact (not
+base-referenced + language-target collisions) - re-check pinned. LoRA+ adopted
+per-fact only (grouped unstable at 8x B-lr, §48); follow-up pinned: grouped experts
+(~256 facts/delta, coarse router) + seeds/CIs. (6) zsRE N=1000 - stopped on request at the 100/1000 checkpoint (resumable with the
 same chunked wrapper).
 
 ## Files

@@ -1,8 +1,8 @@
 """Router-only evaluation (CPU, MiniLM only; pinned): entity-aware abstention.
 
-Compares router v1 (pure semantic, pilot A) with v2 (entity-aware, pinned in the
-prereg) on the nonce set: probe route accuracy, paraphrase route accuracy, distractor
-abstention. No model, no GPU.
+Compares router v1 (pure semantic, pilot A), v2 (substring gate) and v3 (fuzzy
+entity match, the pinned fix) on the nonce set: probe route accuracy, paraphrase
+route accuracy, distractor abstention. No model, no GPU.
 
     python router_eval.py --n 50
 """
@@ -19,7 +19,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from facts import generate  # noqa: E402
-from pilot import TAU, Router  # noqa: E402
+from pilot import TAU, Router, RouterV2  # noqa: E402
 
 
 class RouterV1:
@@ -62,9 +62,10 @@ def main() -> None:
         "n": args.n,
         "tau": TAU,
         "v1_semantic": evaluate(RouterV1(enc, facts), facts, enc),
-        "v2_entity": evaluate(Router(enc, facts), facts, enc),
+        "v2_entity": evaluate(RouterV2(enc, facts), facts, enc),
+        "v3_fuzzy": evaluate(Router(enc, facts), facts, enc),
     }
-    path = Path(args.out or f"results/live_learning/confirm/router_eval_n{args.n}.json")
+    path = Path(args.out or f"results/live_learning/confirm/router_eval_v3_n{args.n}.json")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, ensure_ascii=False, indent=1))
     print(json.dumps(out, ensure_ascii=False))

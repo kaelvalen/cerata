@@ -2,9 +2,9 @@
 
 Nonce N=50 set. For every probe, perturbations of the subject: typo swap, typo drop,
 lowercase, hyphen->space, partial (first token), and a pronoun form with the subject
-removed. Metrics per perturbation: entity-gated route accuracy and abstain rate (the
-current router), plus the semantic-only argmax accuracy (what an embedding-based
-entity match would see).
+removed. Metrics per perturbation: entity-gated route accuracy and abstain rate for
+the substring gate (v2) and the fuzzy entity match (v3), plus the router-independent
+semantic-only argmax accuracy.
 
     python router_stress.py --n 50
 """
@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "text"))
 
 from facts import generate  # noqa: E402
-from pilot import TAU, Router  # noqa: E402
+from pilot import TAU, Router, RouterV2  # noqa: E402
 
 KINDS = ["typo_swap", "typo_drop", "lower", "space", "partial", "pronoun"]
 
@@ -42,6 +42,12 @@ def perturb_subject(subject: str, kind: str) -> str:
     raise ValueError(kind)
 
 
+def perturbed_probe(f, kind: str) -> str:
+    if kind == "pronoun":
+        return f["probe"].replace(f["subject"], "it")
+    return f["probe"].replace(f["subject"], perturb_subject(f["subject"], kind))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=50)
@@ -54,30 +60,29 @@ def main() -> None:
     enc = SentenceTransformer(
         "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", device="cpu"
     )
-    router = Router(enc, facts)
-
+    routers = {"v2_substring": RouterV2(enc, facts), "v3_fuzzy": Router(enc, facts)}
     keys = enc.encode([f["probe"] for f in facts], normalize_embeddings=True)
+
     report = {}
     for kind in KINDS:
-        routed, abstained, semantic_ok = [], [], []
-        for i, f in enumerate(facts):
-            if kind == "pronoun":
-                q = f["probe"].replace(f["subject"], "it")
-            else:
-                q = f["probe"].replace(f["subject"], perturb_subject(f["subject"], kind))
-            j, _ = router.route(q, enc)
-            routed.append(j == i)
-            abstained.append(j is None)
-            v = enc.encode([q], normalize_embeddings=True)[0]
-            semantic_ok.append(int((keys @ v).argmax()) == i)
-        report[kind] = {
-            "route_accuracy": round(float(np.mean(routed)), 4),
-            "abstain_rate": round(float(np.mean(abstained)), 4),
-            "semantic_only_accuracy": round(float(np.mean(semantic_ok)), 4),
-        }
-        print(kind, json.dumps(report[kind]), flush=True)
+        queries = [perturbed_probe(f, kind) for f in facts]
+        emb = enc.encode(queries, normalize_embeddings=True)
+        semantic_ok = [(keys @ v).argmax() == i for i, v in enumerate(emb)]
+        sem = round(float(np.mean(semantic_ok)), 4)
+        for name, router in routers.items():
+            routed, abstained = [], []
+            for i, q in enumerate(queries):
+                j, _ = router.route(q, enc)
+                routed.append(j == i)
+                abstained.append(j is None)
+            report.setdefault(name, {})[kind] = {
+                "route_accuracy": round(float(np.mean(routed)), 4),
+                "abstain_rate": round(float(np.mean(abstained)), 4),
+                "semantic_only_accuracy": sem,
+            }
+            print(name, kind, json.dumps(report[name][kind]), flush=True)
 
-    out = Path(args.out or f"results/live_learning/confirm/router_stress_n{args.n}.json")
+    out = Path(args.out or f"results/live_learning/confirm/router_stress_v2v3_n{args.n}.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
         json.dumps({"n": args.n, "tau": TAU, "kinds": report}, ensure_ascii=False, indent=1)

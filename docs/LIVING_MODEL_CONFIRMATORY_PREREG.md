@@ -643,3 +643,28 @@ held-out probes) before any leakage claim.
 
 **Decision:** the adopted grouped recipe (baseline, lr 3e-4) is stable, seeded and
 scales to 256 facts/delta; LoRA+ stays per-fact-only.
+
+## 51. Router v3: fuzzy entity match - built and CPU-validated (2026-10-08)
+
+Pinned fix from review item 2: replace the substring dictionary gate with a fuzzy
+entity match. v3: normalize (lower, -/_ -> space); exact normalized substring (longest
+wins, prefix safety) else token-level match (edit distance <=1, <=2 for tokens of
+length >=6, adjacent transposition = 1); candidates -> semantic key with tau; no
+candidate -> abstain.
+
+CPU validation (N=50, same set as the stress; results/router_stress_v2v3_n50.json,
+router_eval_v3_n50.json):
+
+| kind | v2 route | v3 route | v3 abstain | semantic-only |
+| :-- | :-- | :-- | :-- | :-- |
+| typo_swap | 0.00 | 1.00 | 0.00 | 0.88 |
+| typo_drop | 0.00 | 1.00 | 0.00 | 1.00 |
+| lower | 1.00 | 1.00 | 0.00 | 1.00 |
+| space | 0.00 | 1.00 | 0.00 | 1.00 |
+| partial | 0.00 | 0.80 | 0.20 | 1.00 |
+| pronoun | 0.00 | 0.00 | 1.00 | 0.10 |
+
+Normal path (router_eval): probe 1.00, paraphrase 1.00, distractor abstention 1.00 -
+identical to v2 (no regression). Pronoun abstention is correct behaviour (no entity
+signal). Owed: pilot re-validation with v3 (route + efficacy unchanged) at the next
+GPU run; confirmatory route readings will be reported with the v3 label.
