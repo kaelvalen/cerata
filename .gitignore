@@ -120,3 +120,6 @@ graphify-out/.graphify_root
 .venv-easyedit/
 graphify-out/20*/
 graphify-out/.graphify_labels.json.sig
+
+# personal scratch (untracked)
+last_results_personal/
