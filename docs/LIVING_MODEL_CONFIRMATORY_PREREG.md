@@ -733,3 +733,15 @@ Honest findings (all in the logs/JSON quirks):
 Review item 3 is closed with these caveats. Pinned follow-ups (optional): WISE with
 merge_freq <= 200 (its intended lifecycle) and a format-matched GRACE-vs-ours
 comparison.
+
+## 55. Metric completion at N=1000 on the existing ckpt (pinned 2026-10-09, before the run)
+
+Review item 4: eval-only rerun of the complete CounterFact N=1000 store
+(cf_n1000.ckpt) with the v3 router and the fixed revoke arm (sample 100). No
+retraining: the deltas are the ones measured in the strong-RAG gate run, so the
+readings are directly comparable except for the router version. Readings: the
+standard ours block (efficacy/paraphrase/no-leak/route/abstention) plus revoke
+(token gone, return match, retain) and canary KLD. Predictions: efficacy ~0.999
+replicates; distractor abstention stays 1.00 under v3 (watch for false candidates
+from fuzzy token matches on real names); revoke gone 1.00, return match 1.00,
+retain >=0.98; canary KLD <=0.05.
