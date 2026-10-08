@@ -580,3 +580,32 @@ incompatible with the KL-anchored few-step recipe as-is (would be refused by the
 ledger). MLP targets stay under the cap but cost 2-3x and hurt paraphrase. Adopt
 LoRA+; keep the baseline otherwise; OLoRA/DoRA rejected (retuning possible but not
 worth it at this scale). The paraphrase-vs-routing finding from §45 stands.
+
+## 47. Capacity with the adopted LoRA+ recipe (pinned 2026-10-08, before the run)
+
+CounterFact k in {64, 128, 256}: one grouped delta trained with the adopted LoRA+
+recipe (B lr x8, 16 steps, KL anchor vs the true base); readings per k: in-group
+efficacy and paraphrase (delta active), leakage on 10 held-out facts, KLD mean/max
+(cap 2.0 - the guarantee), train seconds. Baseline k=64 reference: 1.00 / 0.656 /
+leak 0 / KLD 0.007. Predictions: LoRA+ holds k=64 and extends to 128; if capacity
+binds it shows at 256; KLD stays under the cap throughout; leakage ~0.
+
+## 48. Capacity with LoRA+ results - instability (2026-10-08)
+
+| k | efficacy | paraphrase | KLD | leakage | train s |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| 64 | **0.031** | 0.047 | 0.24 | 0.00 | 292 |
+| 128 | 0.875 | 0.445 | 0.026 | 0.30 | 571 |
+| 256 | **0.035** | 0.039 | 0.025 | 0.00 | 1138 |
+
+The curve is non-monotonic and the k=64/256 cells collapse: **LoRA+ at 8x B-lr is
+unstable for grouped training**. Diagnosis: the grouped recipe performs 16 x 2k
+individual optimizer steps (the per-pair step structure of _pair_step), so k=64 is
+2048 steps at B-lr 2.4e-3 - a 64x amplification vs the per-fact case (32 steps) where
+LoRA+ was adopted. The k=128 cell (4096 steps) succeeded by luck (no seed was set).
+Baseline grouped (lr 3e-4) was stable (k=64: 1.00). Pinned fix for the next run:
+a fixed seed, and either B-lr scaled by 1/sqrt(k) or the step budget normalised
+(16 total passes instead of 16 per pair). Until then, **LoRA+ is adopted for
+per-fact deltas only; grouped training keeps the baseline recipe**. Leakage 0.30 at
+k=128 (template generalisation to held-out subjects) is recorded as a secondary
+reading.

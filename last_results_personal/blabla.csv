@@ -1,0 +1,6 @@
+varyant	efficacy	paraphrase	KLD (ort/maks)	boyut	karar
+baseline	1.00	0.86	0.036 / 0.062	8.7 MB	ok
+olora	0.08	0.00	22.35 / 28.16	8.7 MB	❌ cap + kalite
+lora_plus	1.00	0.90	0.014 / 0.021	8.7 MB	✅ benimsendi
+mlp	1.00	0.78	0.017 / 0.041	~2-3×	❌ kazanç yok
+dora	0.98	0.70	26.75 / 27.84	~aynı	❌ cap (13×)
