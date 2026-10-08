@@ -529,3 +529,37 @@ metric definitions; MEMIT/AlphaEdit only if VRAM allows; MELO has no Qwen suppor
 Training stopped at the 100/1000 checkpoint (the chunk 100:200 in progress was
 abandoned; the checkpoint holds the first 100 facts). Resumable with the same chunked
 wrapper; the CounterFact N=1000 result is unaffected.
+
+## 44. LoRA delta improvement ablation (pinned 2026-10-08, before the run)
+
+CounterFact N=50, per-fact deltas, 16 steps, KL anchor (against the true zeroed
+base for every variant); variants: baseline (q/v, AdamW 3e-4), olora (orthogonal
+init - PiSSA was rejected because it mutates the base weights in place, which is
+incompatible with the shared frozen base + independent deltas), lora_plus (B lr x8),
+mlp (q/v + gate/up/down at r=16), dora. Readings per variant: efficacy, paraphrase
+(delta active alone), mean canary KLD (10-delta sample, cap 2.0), training seconds.
+Predictions: OLoRA and LoRA+ improve at equal size (few-step regime); MLP targets
+improve paraphrase at 2-3x size; DoRA neutral-to-better; all KLDs stay under the cap
+(the guarantee must survive any recipe change).
+
+## 45. LoRA ablation partial results + findings (2026-10-08; mlp/dora running)
+
+| variant | efficacy | paraphrase | KLD mean/max | train s |
+| :-- | :-- | :-- | :-- | :-- |
+| baseline | 1.00 | 0.86 | 0.036 / 0.062 | 358 |
+| olora | 0.08 | 0.00 | 22.35 / 28.16 | 358 |
+| lora_plus | 1.00 | 0.90 | 0.014 / 0.021 | 343 |
+
+Findings:
+1. **LoRA+ is a free win**: equal size, paraphrase 0.86 -> 0.90, KLD even lower
+   (0.014 vs 0.036).
+2. **OLoRA fails catastrophically** (efficacy 0.08, KLD 22.4 = 11x the cap): an init
+   far from the base is incompatible with the KL-anchored few-step recipe - the same
+   family as PiSSA, which was rejected for mutating the shared base.
+3. **The pilot's paraphrase ~0.30 was routing, not the delta**: with each fact's own
+   delta activated directly (no routing), the baseline delta scores 0.86 on
+   paraphrases - confirming the review's item-2 diagnosis. The delta generalises;
+   the router did not.
+
+mlp and dora run with a variant-aware evaluation path (the store-based materialisation
+cannot host MLP-target deltas); their results append below.
