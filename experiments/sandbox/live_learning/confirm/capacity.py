@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "text"))
 
+import torch  # noqa: E402
 from facts import generate  # noqa: E402
 from facts import pairs as fact_pairs  # noqa: E402
 from pilot import SYSTEM, PilotStore, hit  # noqa: E402
@@ -27,9 +28,11 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--facts", default=None, help="external facts JSON (else nonce)")
+    ap.add_argument("--ks", default="1,4,16,64", help="group sizes")
     ap.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
     ap.add_argument("--out", default="results/live_learning/confirm/capacity_n100.json")
     args = ap.parse_args()
+    torch.manual_seed(0)
     if args.facts:
         data = json.loads(Path(args.facts).read_text())
         facts = data["facts"] if isinstance(data, dict) else data
@@ -40,7 +43,7 @@ def main() -> None:
     store.kl_prompts = ["What is the capital of France?", "What is 7 times 8?"]
 
     report = {}
-    for k in (1, 4, 16, 64):
+    for k in [int(x) for x in args.ks.split(",")]:
         group = facts[:k]
         pairs = [p for f in group for p in fact_pairs(f)]
         t0 = time.time()

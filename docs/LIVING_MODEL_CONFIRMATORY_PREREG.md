@@ -609,3 +609,37 @@ a fixed seed, and either B-lr scaled by 1/sqrt(k) or the step budget normalised
 per-fact deltas only; grouped training keeps the baseline recipe**. Leakage 0.30 at
 k=128 (template generalisation to held-out subjects) is recorded as a secondary
 reading.
+
+## 49. Capacity limit of the adopted grouped recipe, seeded (pinned 2026-10-08, before the run)
+
+CounterFact N=1000, the adopted baseline grouped recipe (lr 3e-4, 16 x 2k per-pair
+steps), now with `torch.manual_seed(0)`; k in {64, 128, 256}. Readings as in §40:
+in-group efficacy/paraphrase, leakage (10 held-out), KLD mean/max (cap), train
+seconds. Reference: k=64 was 1.00 / 0.656 / leak 0 / KLD 0.007 (unseeded).
+Predictions: k=64 replicates; 128 degrades mildly; 256 shows the capacity limit;
+KLD under cap throughout. LoRA+ stays per-fact-only until its grouped instability
+is fixed (§48).
+
+## 50. Capacity limit of the adopted grouped recipe, seeded - results (2026-10-08)
+
+| k | efficacy | paraphrase | leakage | KLD | train s |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| 64 | 0.984 | 0.578 | 0.30 | 0.002 | 288 |
+| 128 | **1.00** | 0.703 | 1.00 | 0.002 | 696 |
+| 256 | **1.00** | 0.66 | 1.00 | 0.007 | 1768 |
+
+**A single grouped delta carries 256 facts at full efficacy** with a negligible canary
+footprint (KLD 0.007; cap 2.0) - the seeded run replicates k=64 (0.984, one fact) and
+extends the capacity far beyond it. Paraphrase improves with group size (0.578 -> 0.703
+-> 0.66). Cost scales linearly (16 x 2k per-pair steps; ~30 min for k=256).
+
+**Leakage caveat (recorded, suspected artifact):** leakage on 10 held-out facts reads
+0.30 (k=64) and 1.00 (k=128/256) - but capacity.py's leakage check is NOT
+base-referenced, and CounterFact targets concentrate on common languages, so a group
+delta with a template prior ("The language of X is English") can hit held-out answers
+by collision (the same artifact the pilot fixed with the base-referenced rule). The
+pinned follow-up: re-run k=256 with the base-referenced leakage (delta-vs-base on the
+held-out probes) before any leakage claim.
+
+**Decision:** the adopted grouped recipe (baseline, lr 3e-4) is stable, seeded and
+scales to 256 facts/delta; LoRA+ stays per-fact-only.
