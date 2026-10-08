@@ -684,3 +684,19 @@ route 1.00, distractor abstention 1.00, no-leak 1.00 - identical to the v2 recor
 nothing on the normal path and fixes the perturbation cases (SS51). Revoke (sample 25,
 the pinned rule): token gone 1.00 [1.00, 1.00], return match 1.00, retain 0.92
 [0.80, 1.00]. The revoke n=100 metric now runs at the next N=1000 ours run.
+
+## 53. Official EasyEdit baselines: GRACE and WISE on CounterFact N=200 (pinned 2026-10-08, before the runs)
+
+Purpose: review item 3 - close the "strawman baselines" gap with the official
+implementations. Model: Qwen2.5-1.5B-Instruct (same as ours). Data: the same
+CounterFact N=200 subset (external_counterfact_n200.json; aligned to
+raw/counterfact.json). Hparams: EasyEdit GRACE/WISE defaults adapted to the 1.5B
+(28 layers, hidden 1536): GRACE layer 18 / n_iter 50 / lr 1.0; WISE layer 23 /
+n_iter 70 / retrieve / chat template. Sequential editing of all 200 facts (the
+setting our protocol uses). Metrics: (a) EasyEdit's own post/rephrase/locality;
+(b) our protocol where the edited model is evaluable (greedy + contains on
+probe/paraphrase/locality; canary KLD if the edited model is directly usable).
+Predictions: strong first-edit efficacy with decay over 200 sequential edits for
+both; KLD not protected (no anchor) and likely above our cap (2.0) for at least one
+method; locality gaps reported as-is. Runs are detached; failures recorded, not
+patched silently.
