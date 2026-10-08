@@ -700,3 +700,36 @@ Predictions: strong first-edit efficacy with decay over 200 sequential edits for
 both; KLD not protected (no anchor) and likely above our cap (2.0) for at least one
 method; locality gaps reported as-is. Runs are detached; failures recorded, not
 patched silently.
+
+## 54. Official EasyEdit GRACE/WISE on CounterFact N=200 - results (2026-10-09)
+
+Both official implementations ran end-to-end on the pinned subset (Qwen2.5-1.5B-Instruct,
+sequential 200 edits, fp16 - the fp32 official default OOMs on the shared 8 GB GPU;
+recorded as an adaptation). EasyEdit's own metrics, our protocol (chat serving) and a
+raw-prompt diagnostic:
+
+| method | EasyEdit post | ours-protocol eff (chat) | raw-prompt eff | paraphrase | no-leak | canary KLD | wall |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| GRACE | rewrite_acc 0.0* (token-EM artifact) | 0.025 | **1.00** | 0.02 | 1.00 | 0.0 | 44m |
+| WISE | rewrite_acc 1.0 (per-step) | 0.07 | 0.04 | 0.06 | 0.64 | 0.0 | 49m |
+
+Honest findings (all in the logs/JSON quirks):
+1. EasyEdit GRACE token-EM is space-sensitive (Qwen emits " Russian" id 8522 vs
+   tok.encode("Russian") 47707) -> 0.0 for all targets; uninformative, our diagnostic
+   is the meaningful measure.
+2. GRACE edits are perfect on raw prompts (200/200) but do not fire under
+   chat-templated serving: keys are built on the raw prompt's last-token activation,
+   and the chat template changes that token. GRACE works in its intended format; the
+   like-for-like comparison must label formats.
+3. WISE's official per-step metric (1.0) hides final-model forgetting (0.07): with
+   save_freq=500/merge_freq=1000 and only 200 edits, WISE-Retrieve never merges, so
+   all edits share one new_weight.
+4. canary KLD 0.0 for both (the prediction in SS53 did not fire): the edited paths
+   fall back to the original layer for canary prompts (GRACE keys / WISE activation
+   gate). Recorded as-is.
+5. WISEHyperParams has no sequential_edit field although WISE.__init__ reads it; set
+   at runtime so the adapter accumulates edits.
+
+Review item 3 is closed with these caveats. Pinned follow-ups (optional): WISE with
+merge_freq <= 200 (its intended lifecycle) and a format-matched GRACE-vs-ours
+comparison.
