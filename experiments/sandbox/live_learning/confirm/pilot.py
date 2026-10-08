@@ -659,8 +659,14 @@ def main() -> None:
         raise SystemExit(f"ckpt incomplete: {len(store.deltas)}/{len(facts)}")
     print("base distractor references", flush=True)
     BASE_DIST.update({f["id"]: base_answer(store, f["distractor"]) for f in facts})
-    sample_n = min(10, max(1, len(facts) // 2))
-    pre = {f["id"]: base_answer(store, f["probe"]) for f in facts[:sample_n]}
+    # Pre-revoke references must cover the whole revoke sample (run_revoke's rule:
+    # min(100, n//2)); the arm is only reachable when "ours" runs.
+    revoke_n = min(100, max(1, len(facts) // 2))
+    pre = (
+        {f["id"]: base_answer(store, f["probe"]) for f in facts[:revoke_n]}
+        if "ours" in arms
+        else {}
+    )
     if "rag" in arms:
         print("rag: evaluating", flush=True)
         out["results"]["rag"] = run_rag(store, facts, enc, router, words)

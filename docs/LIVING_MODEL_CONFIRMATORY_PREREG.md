@@ -668,3 +668,19 @@ Normal path (router_eval): probe 1.00, paraphrase 1.00, distractor abstention 1.
 identical to v2 (no regression). Pronoun abstention is correct behaviour (no entity
 signal). Owed: pilot re-validation with v3 (route + efficacy unchanged) at the next
 GPU run; confirmatory route readings will be reported with the v3 label.
+
+## 52. Router v3 pilot re-validation + revoke-arm bug fix (2026-10-08)
+
+The revoke arm crashed on f0010: pre-revoke references covered only 10 facts while
+run_revoke samples min(100, n//2); the mismatch appeared when the revoke sample was
+raised to 100 for the pinned metric completion. Fixed: pre covers exactly the revoke
+sample and is only built when the ours arm runs. Recorded as a bug fix, not patched
+silently.
+
+N=50 nonce re-run with router v3 (seeded, --arms ours; results/pilot_v3_n50.json):
+efficacy 0.82 [0.70, 0.92], paraphrase 0.76 [0.64, 0.88], route 1.00, paraphrase
+route 1.00, distractor abstention 1.00, no-leak 1.00 - identical to the v2 record
+(pilot_n50_v2.json, same seed: the N=50 harness value is 0.82, not 1.00). v3 changes
+nothing on the normal path and fixes the perturbation cases (SS51). Revoke (sample 25,
+the pinned rule): token gone 1.00 [1.00, 1.00], return match 1.00, retain 0.92
+[0.80, 1.00]. The revoke n=100 metric now runs at the next N=1000 ours run.
