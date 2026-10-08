@@ -563,3 +563,20 @@ Findings:
 
 mlp and dora run with a variant-aware evaluation path (the store-based materialisation
 cannot host MLP-target deltas); their results append below.
+
+## 46. LoRA ablation complete (2026-10-08)
+
+| variant | efficacy | paraphrase | KLD mean/max | size | verdict |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| baseline | 1.00 | 0.86 | 0.036 / 0.062 | 8.7 MB | ok |
+| olora | 0.08 | 0.00 | 22.35 / 28.16 | 8.7 MB | **fails cap + quality** |
+| **lora_plus** | **1.00** | **0.90** | **0.014 / 0.021** | 8.7 MB | **adopted** |
+| mlp | 1.00 | 0.78 | 0.017 / 0.041 | ~2-3x | no gain, worse paraphrase |
+| dora | 0.98 | 0.70 | 26.75 / 27.84 | ~same | **fails cap** |
+
+Readings: LoRA+ is the free win (equal size, best paraphrase, lowest KLD). The
+base-distant init/form changes (OLoRA, DoRA) break the KLD cap by 11-13x - they are
+incompatible with the KL-anchored few-step recipe as-is (would be refused by the
+ledger). MLP targets stay under the cap but cost 2-3x and hurt paraphrase. Adopt
+LoRA+; keep the baseline otherwise; OLoRA/DoRA rejected (retuning possible but not
+worth it at this scale). The paraphrase-vs-routing finding from §45 stands.

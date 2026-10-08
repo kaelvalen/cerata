@@ -91,11 +91,17 @@ def train_variant(store, variant: str, pairs):
 def set_lora_params(model, delta=None):
     with torch.no_grad():
         for n, p in model.named_parameters():
-            if "lora_" in n:
+            if "lora_A" in n:
                 if delta is None or n not in delta:
                     p.zero_()
                 else:
-                    p.copy_(delta[n].to(p.device, p.dtype))
+                    p.copy_(delta[n]["A"].to(p.device, p.dtype))
+            elif "lora_B" in n:
+                key = n.replace("lora_B", "lora_A")
+                if delta is None or key not in delta:
+                    p.zero_()
+                else:
+                    p.copy_(delta[key]["B"].to(p.device, p.dtype))
 
 
 def eval_variant(store, variant: str, deltas, facts) -> dict:
