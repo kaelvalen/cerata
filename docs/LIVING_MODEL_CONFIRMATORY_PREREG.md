@@ -845,3 +845,19 @@ SS50 sequence --ks 64,128,256 (same seed; greedy generations consume no RNG, so
 the training sequence matches SS50). Predictions: k=64 replicates (~0.3 leakage,
 which is genuine); k=128/256 leakage drops far below 1.00 (real leakage only);
 efficacy/KLD replicate SS50 (1.00 / 0.66 / 0.007) if training is deterministic.
+
+Results (sequence 64,128,256; deterministic replication of SS50's eff/para/KLD to
+the digit):
+
+| k | efficacy | paraphrase | leakage (corrected) | base hit | KLD | SS50 leakage |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| 64 | 0.984 | 0.578 | 0.3 | 0.0 | 0.002 | 0.30 (valid) |
+| 128 | 1.00 | 0.703 | 0.1 | 0.0 | 0.002 | 1.00 (slice bug) |
+| 256 | 1.00 | 0.66 | 0.3 | 0.0 | 0.007 | 1.00 (slice bug) |
+
+Verdict: the grouped delta's genuine leakage (base-referenced; base hit rate 0.0
+throughout) is 0.1-0.3, not 1.00 - the SS50 1.00 readings were the in-group slice
+bug. Template generalisation to held-out subjects is real but modest (10-30% of
+held-out answers produced). Efficacy/paraphrase/KLD replicate SS50 exactly,
+confirming the training is deterministic given the RNG sequence (the k=256-only
+0.707 in the SS60 addendum was RNG-position sensitivity, not a capacity effect).
