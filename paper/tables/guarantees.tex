@@ -4,6 +4,7 @@
 \caption{Measured guarantees at $N{=}1000$ (greedy + contains; bootstrap 95\% CIs).}
 \label{tab:guarantees}
 \scriptsize
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcc}
 \toprule
  & CounterFact & zsRE \\
@@ -24,7 +25,7 @@ Provenance ($100$ samples) & $1.00$ & --- \\
 Storage & $8.7$\,MB/fact & $8.7$\,MB/fact \\
 Latency add / serve / revoke & $8.45$\,s / $.04$\,s / $1.4$\,ms & --- \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \\[2pt]
 {\scriptsize $^{*}$base-confounded: zsRE answers are often known by the base;
 \texttt{return\_match} is the base-referenced reading.}
