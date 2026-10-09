@@ -885,3 +885,16 @@ merge_freq=2 validates the merge path first. Readings: EasyEdit metrics + our
 protocol + canary KLD, same as SS54. Prediction: the final model improves
 substantially over 0.07 (the merge consolidates the edits), but per-edit decay is
 still expected; report as-is.
+
+Results (N=200, save_freq=100, merge_freq=200; the merge triggered at edit 200):
+- EasyEdit: post rewrite_acc 0.66 (per-step 1.00 in SS54), rephrase 0.615, locality 1.00.
+- Our protocol: efficacy 0.125 [0.08, 0.17] (SS54: 0.07), paraphrase 0.105,
+  distractor_no_leak 0.27 [0.21, 0.335] (SS54: 0.64), raw diagnostic 0.05,
+  canary KLD 0.0.
+
+The intended lifecycle improves the final model over the never-merged run
+(0.07 -> 0.125) but per-edit decay persists and locality collapses: no-leak 0.27
+means the merged weights fire on unrelated prompts (73% leak). Even with merge,
+WISE stays far from ours (eff 0.999 / no-leak 0.992 at N=1000; SS56/58). Caveat as
+in SS54: chat-templated serving vs EasyEdit's raw protocol; the raw diagnostic is
+0.05, so the gap is not a serving-format artifact alone.
