@@ -745,3 +745,23 @@ standard ours block (efficacy/paraphrase/no-leak/route/abstention) plus revoke
 replicates; distractor abstention stays 1.00 under v3 (watch for false candidates
 from fuzzy token matches on real names); revoke gone 1.00, return match 1.00,
 retain >=0.98; canary KLD <=0.05.
+
+## 56. Metric completion at N=1000 - results (2026-10-09)
+
+Eval-only rerun of cf_n1000.ckpt with router v3 and the fixed revoke arm (wall 1211 s):
+
+| metric | value | CI | threshold | verdict |
+| :-- | :-- | :-- | :-- | :-- |
+| efficacy | 0.999 | [0.997, 1.0] | - | replicates the gate run |
+| paraphrase (routed) | 0.323 | [0.295, 0.352] | - | known router-bound limitation (para route 0.362) |
+| distractor no-leak | 0.992 | [0.986, 0.997] | >=0.95 | pass |
+| route accuracy | 0.997 | - | >=0.95 (precision proxy) | pass |
+| distractor abstention | 0.992 | - | >=0.95 | pass (prediction 1.00; 8 false candidates - the v3 watch item fired slightly) |
+| revoke gone (n=100) | 0.96 | [0.92, 0.99] | - | prediction 1.00 missed: token collisions (coinciding language targets), 4/100 |
+| return match | 0.96 | [0.92, 0.99] | - | follows gone |
+| retain | 0.9989 | [0.9967, 1.0] | >=0.98 | pass |
+| revoke latency | 1.4 ms | - | - | exact-revoke speed |
+| storage | 8.7 GB | - | - | 8.7 MB/fact |
+
+Owed from the review list: canary KLD at N=1000 (not in the eval-only JSON; measured
+from a sampled pass over the ckpt - pinned follow-up) and provenance (separate run).
