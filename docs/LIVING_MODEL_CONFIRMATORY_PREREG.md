@@ -808,3 +808,12 @@ Review item 4 residual: canary KLD at N=1000 was not in the eval-only JSON. Meas
 _expert_kld (the commit-gate measure) on the first 50 deltas of cf_n1000.ckpt and
 zsre_n1000.ckpt. Threshold: mean <= 0.05 (cap 2.0). Prediction: <= 0.05 (the commit
 gate enforces <= 2.0; the N=50 variants measured 0.014-0.036).
+
+Results (first 50 deltas of each ckpt):
+- cf_n1000: mean 0.0215, max 0.0498, p95 0.0447 - pass (mean <= 0.05; max just under).
+- zsre_n1000: mean 0.0171, max 0.0529, p95 0.0376 - mean pass; one delta marginally
+  above 0.05 at max (0.0529), well under the 2.0 cap.
+
+Verdict: the review threshold holds as a mean over sampled deltas; recorded with the
+single marginal max at zsRE. The commit gate (2.0) was enforced during training by
+construction; the sample confirms the realized footprint.
