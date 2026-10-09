@@ -765,3 +765,11 @@ Eval-only rerun of cf_n1000.ckpt with router v3 and the fixed revoke arm (wall 1
 
 Owed from the review list: canary KLD at N=1000 (not in the eval-only JSON; measured
 from a sampled pass over the ckpt - pinned follow-up) and provenance (separate run).
+
+## 57. zsRE N=1000 resume (pinned 2026-10-09, before the run)
+
+The zsRE ckpt is at 300/1000 (earlier note said 100; verified by loading). Resume the
+same chunked wrapper over chunks 300:400 ... 900:1000, then the standard eval-only
+block with router v3 and revoke n=100 (same readings as SS56). Predictions: chunk
+completion without failures; final efficacy in the range of the N=200 zsRE run,
+revoke/retain per SS56. Failures recorded, not patched silently.
