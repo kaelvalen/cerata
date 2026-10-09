@@ -801,3 +801,10 @@ Reading notes (harness semantics, verified in code):
    base-referenced return_match (0.80) is the meaningful reading. The 20% mismatch is
    sibling-routing interference (router_keep routes to remaining siblings whose deltas
    change the response), a zsRE-specific caveat.
+
+## 59. Canary KLD sample over the N=1000 ckpts (pinned 2026-10-09, before the run)
+
+Review item 4 residual: canary KLD at N=1000 was not in the eval-only JSON. Measure
+_expert_kld (the commit-gate measure) on the first 50 deltas of cf_n1000.ckpt and
+zsre_n1000.ckpt. Threshold: mean <= 0.05 (cap 2.0). Prediction: <= 0.05 (the commit
+gate enforces <= 2.0; the N=50 variants measured 0.014-0.036).
