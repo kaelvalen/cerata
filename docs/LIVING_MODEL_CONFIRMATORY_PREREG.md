@@ -869,3 +869,9 @@ First 100 facts of the cf_n1000 store: serve with the fact's expert, suspend it
 with the expert and absent without it; the store state hash must return to its
 value. Threshold from the review list: provenance >= 0.95. Prediction: ~1.00 (the
 N=50 c6-v2 check measured 1.00; each fact's expert is independent).
+
+Results: attribution 1.00 (100/100), state hash stable (true), mean 0.434 s/fact -
+the threshold (>=0.95) passes with margin; the N=50 c6-v2 reading scaled to N=1000.
+With this, all review item 4 readings exist at N=1000: canary KLD mean <=0.05 (SS59),
+retain 0.9989, provenance 1.00, router precision 0.997 / abstention 0.992, revoke
+n=100 (gone 0.96 / return 0.96 / retain 0.9989, SS56).
