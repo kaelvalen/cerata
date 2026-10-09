@@ -1,6 +1,7 @@
-% F1 - architecture. Compile-check with the paper toolchain.
+% F1 - architecture (scaled to the IEEE column width).
 \begin{figure}[t]
 \centering
+\resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}[
   font=\small,
   box/.style={draw, rounded corners=2pt, align=center, inner sep=3pt, minimum height=8mm},
@@ -23,7 +24,7 @@
 \draw[arr] (api) -- (store);
 \draw[arr] (api.west) -- node[lbl, near end, below]{materialize} (router.south east);
 \draw[arr] (base.south) -- (router.north);
-\end{tikzpicture}
+\end{tikzpicture}}
 \caption{Cerata: a frozen base, a slot store of per-fact deltas, an entity-gated
 router, and a transaction API (write/forget/audit). The base weights are never
 trained; every change lives in a revocable slot.}

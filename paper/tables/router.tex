@@ -1,0 +1,19 @@
+% T5 - router stress (prereg SS51).
+\begin{table}[t]
+\centering
+\caption{Router stress (nonce $N{=}50$): route accuracy under entity
+perturbations; v2 substring gate vs v3 fuzzy match.}
+\label{tab:router}
+\footnotesize
+\begin{tabular}{lcc}
+\toprule
+Perturbation & v2 & v3 \\
+\midrule
+Typo (swap / drop) & $0.00$ / $0.00$ & $1.00$ / $1.00$ \\
+Lowercase & $1.00$ & $1.00$ \\
+Hyphen $\to$ space & $0.00$ & $1.00$ \\
+Partial subject & $0.00$ & $0.80$ \\
+Pronoun (abstain rate) & $1.00$ & $1.00$ \\
+\bottomrule
+\end{tabular}
+\end{table}

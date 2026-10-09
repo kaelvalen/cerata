@@ -1,22 +1,19 @@
-% Cerata - Paper 1 (draft v0)
-% Build (verified on this machine): mkdir -p build && nix run nixpkgs#tectonic -- main.tex -o build
-\documentclass[11pt]{article}
+% Cerata - Paper 1 (draft v0, IEEEtran 2-column)
+% Build (verified): mkdir -p build && nix run nixpkgs#tectonic -- main.tex -o build
+\documentclass[journal,10pt]{IEEEtran}
 
-\usepackage[margin=1in]{geometry}
 \usepackage{booktabs}
 \usepackage{amsmath,amssymb}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
 \usepackage{graphicx}
-\usepackage[hidelinks]{hyperref}
 \usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
 
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 
-\title{\textbf{Cerata: Transactional Memory for Frozen Language Models}\\
-\large Exact Revoke, Audit, and Capability Safety at Scale}
-\author{\todo{authors}}
-\date{Draft v0 - October 2026}
+\title{Cerata: Transactional Memory for\\ Frozen Language Models}
+\author{Draft --- \today}
 
 \begin{document}
 \maketitle
@@ -29,61 +26,281 @@ router, committed through a capability gate --- and measure each guarantee at
 $N{=}1000$ on CounterFact and zsRE: efficacy $0.999/0.996$, distractor no-leak
 $0.992/0.975$, exact revoke (retain $0.9989/0.9944$), leave-one-out provenance
 $1.00$, and a canary footprint of $0.02$ KLD. Strong RAG reaches $0.837$ where we
-reach $0.999$; the official GRACE/WISE implementations offer no forget or audit
-and degrade or leak under the same protocol. We report failures and format
+reach $0.999$; the official GRACE/WISE implementations offer no forget or audit and
+degrade or leak under the same protocol. We report failures and format
 sensitivities in full.
 \end{abstract}
 
+\begin{IEEEkeywords}
+model editing, machine unlearning, retrieval-augmented generation,
+personalization, transactional memory
+\end{IEEEkeywords}
+
 \section{Introduction}
-\todo{the gap: editing is write-only; RAG is not durable; transactions are the
-missing abstraction. Contributions C1--C4; evidence discipline (pre-registered,
-pinned before runs). Source: PAPER1 outline \S1.}
+
+Post-deployment learning is currently done by \emph{editing}: methods such as
+ROME~\cite{meng2022rome}, MEMIT~\cite{meng2023memit},
+GRACE~\cite{hartvigsen2023grace}, WISE~\cite{wang2024wise} and
+AlphaEdit~\cite{fang2025alphaedit} write new facts into a model's weights. Editing
+optimizes the \emph{write} --- how well a fact is learned --- but offers no way to
+take a fact back, no way to attribute a served answer to a stored fact, and no
+guarantee that the base's capabilities survive the write. Retrieval-augmented
+generation~\cite{lewis2020rag} keeps the model frozen but puts knowledge in the
+context window: personalization does not persist in the model and serving cost
+grows with the store.
+
+We argue that personalization of a frozen base should be a \emph{transaction}. A
+store that holds facts must support three operations with operational guarantees:
+\textbf{write} (a commit that is gated so the base's capabilities are preserved),
+\textbf{forget} (an exact revoke that leaves the rest of the store untouched), and
+\textbf{audit} (attribution of every served answer to the stored fact that caused
+it). We build such a store --- Cerata --- and measure each guarantee at
+$N{=}1000$ on two external benchmarks.
+
+\noindent\textbf{Contributions.}
+\begin{itemize}
+\item \textbf{C1: Architecture and API.} A frozen base with a slot store of
+per-fact LoRA deltas behind an entity-gated router; a transaction API
+(\textsf{write}, \textsf{forget}, \textsf{audit}) with atomic commits, exact
+revoke, and hash-based state audit.
+\item \textbf{C2: Measured guarantees.} Operational definitions of efficacy,
+no-leak, abstention, revoke (gone/return/retain), provenance, and canary KLD ---
+each measured at $N{=}1000$ with bootstrap CIs: efficacy $0.999/0.996$, retain
+$0.9989/0.9944$, provenance $1.00$, canary KLD mean $0.02$.
+\item \textbf{C3: Scale and capacity.} One grouped delta carries 256 facts at
+full efficacy with a canary footprint of $0.007$ KLD; per-fact cost is
+$8.7$\,MB, revoke latency is $1.4$\,ms.
+\item \textbf{C4: Honest baseline analysis.} Strong RAG reaches $0.837$ where we
+reach $0.999$ at $N{=}1000$; the official GRACE/WISE implementations are
+write-only and their numbers are serving-format dependent (GRACE: raw $1.00$,
+chat $0.025$; WISE: per-step $1.00$, final $0.07$; with its merge lifecycle
+$0.125$ and no-leak $0.27$).
+\end{itemize}
+
+\noindent\textbf{Evidence discipline.} Every run reported here was pre-registered
+and pinned before execution; failures are reported, not patched silently
+(Section~\ref{sec:results} lists an optimization instability, a data-slice bug
+and its correction, and an RNG-position sensitivity). We consider this discipline
+part of the contribution.
 
 \section{Related Work and Positioning}
-\todo{editing (ROME/MEMIT/GRACE/WISE/AlphaEdit), unlearning, RAG, adapters/MoE;
-positioning table: revoke? audit? capability cap? sequential $N$? Source: outline \S2.}
+
+\noindent\textbf{Model editing.} Locate-then-edit methods modify MLP weights
+(ROME~\cite{meng2022rome}, MEMIT~\cite{meng2023memit}); lifelong methods add
+adaptors or side memories (GRACE~\cite{hartvigsen2023grace},
+WISE~\cite{wang2024wise}); null-space constraints reduce collateral damage
+(AlphaEdit~\cite{fang2025alphaedit}). The evaluation target is the write: edit
+success, paraphrase generalization, locality. None of these systems exposes a
+revoke operation, an attribution record, or a capability gate; sequential decay
+over long edit streams is a known open problem.
+
+\noindent\textbf{Unlearning.} Machine unlearning removes influence from trained
+weights approximately and at coarse granularity. In our setting the unit is a
+single fact and removal is exact at the store level: freeing a slot provably
+removes the fact's parameters, and retention is measured on the rest.
+
+\noindent\textbf{Retrieval.} RAG~\cite{lewis2020rag} keeps knowledge outside the
+model. Its forgetting story is index deletion, but the knowledge never becomes
+parametric: efficacy depends on prompting and context budget. Our strong-RAG gate
+(Section~\ref{sec:results}) measures this gap at $N{=}1000$.
+
+\noindent\textbf{Adapters and mixture-of-experts serving.} Per-task adapters and
+MoE routing share our storage concerns; we add a per-fact lifecycle with
+transactions on top of a frozen base. Table~\ref{tab:positioning} summarizes the
+positioning.
+
+\input{tables/positioning}
 
 \section{Architecture}
-\todo{frozen base; slot store; router (entity gate v3 + semantic keys, $\tau$,
-abstain); transaction API (write: propose $\to$ KL gate $\to$ commit; forget: slot
-free + materialize; audit: state hash + leave-one-out). See
-Figure~\ref{fig:arch}. Source: outline \S3.}
+
+\noindent\textbf{Frozen base and slot store.} The base language model is never
+trained. Facts live in \emph{slots}: each fact $i$ owns a rank-$r$ LoRA delta
+$\delta_i$ trained on a fresh copy of the base. \textsf{materialize} writes the
+slots into a shared LoRA bank; $\textsf{forget}(i)$ frees slot $i$ and
+re-materializes, so the fact's parameters are exactly removed while every other
+slot is bit-identical.
+
+\noindent\textbf{Router.} A query is routed by an entity gate (normalized
+substring match, longest wins; else fuzzy token match with edit distance $\le 1$,
+$\le 2$ for tokens of length $\ge 6$) followed by a semantic key (a MiniLM
+embedding of the probe, cosine similarity, threshold $\tau$). No candidate, or
+similarity below $\tau$, yields \emph{abstain}: the base answers and the store is
+not consulted.
+
+\noindent\textbf{Serving.} If the gate fires, the probe is served by its own
+expert; paraphrases are served by the routed fact's expert. Distractors that do
+not match any entity abstain.
+
+\noindent\textbf{Transactions.} \textsf{write} proposes a delta, computes the
+canary KLD against the base, and commits only if it is below a cap ($2.0$);
+a failed proposal leaves the store bit-identical (atomicity).
+\textsf{forget} is exact revoke. \textsf{audit} exposes a SHA-256 state hash over
+all deltas, per-commit records (fact id, KLD, seconds), and leave-one-out
+attribution (Section~\ref{sec:guarantees}). Figure~\ref{fig:arch} shows the
+system.
 
 \input{figures/architecture}
 
 \section{Guarantee Definitions}
-\todo{operational definitions: efficacy/paraphrase/no-leak/abstention/route;
-revoke gone/return/retain (+confounds); provenance; canary KLD (cap $2.0$);
-atomicity; reproducibility. Source: outline \S4.}
+\label{sec:guarantees}
+
+All guarantees are operational and falsifiable. Let $y_i$ be the greedy response
+to a prompt for fact $i$ and $a_i$ its answer; \emph{contains} is token
+membership.
+
+\noindent\textbf{Serving.} \emph{Efficacy} $E$ is the fraction of probes with
+$\text{contains}(y_i,a_i)$; \emph{paraphrase} $P$ the same on rephrased probes;
+\emph{abstention} $A$ the fraction of distractor prompts that do not route;
+\emph{no-leak} $L$ the fraction of distractors where the store introduces no
+canary token that the base's own response did not contain (base-referenced).
+
+\noindent\textbf{Revoke.} After revoking a sample of facts:
+\emph{gone} $G$ is the fraction whose answer token is absent;
+\emph{return-match} $R$ is the fraction whose post-revoke hit status equals the
+pre-training base status (the base-referenced reading when the base already knows
+answers); \emph{retain} $T$ is the fraction of kept facts still answered.
+Token-collision and base-knowledge confounds are reported with the numbers.
+
+\noindent\textbf{Audit.} \emph{Provenance} is leave-one-out attribution: an
+answer is attributed to fact $i$ if it is present with $\delta_i$ active and
+absent with $\delta_i$ suspended; the store state hash must return to its value
+after the sweep.
+
+\noindent\textbf{Capability.} \emph{Canary KLD} is the KL divergence between
+base and store logits on canary prompts; the commit gate enforces a cap of $2.0$;
+we report mean and maximum over sampled deltas.
 
 \section{Experimental Setup}
-\todo{base Qwen2.5-1.5B-Instruct; nonce/CounterFact/zsRE; $N{=}1000$; chat
-serving, greedy + contains, bootstrap CIs; baselines: strong RAG, official
-GRACE/WISE (EasyEdit, fp16, both formats); pins: prereg SS33--SS63. Source:
-outline \S5.}
+
+\noindent\textbf{Base and data.} Qwen2.5-1.5B-Instruct (28 layers, frozen).
+Facts: a synthetic nonce set (seed $=n$) and the external CounterFact and zsRE
+sets, first $N{=}1000$ facts each. Serving uses the chat template, greedy
+decoding, and the contains rule; CIs are bootstrap ($2000$ resamples).
+
+\noindent\textbf{Baselines.} Strong RAG: the fact's context is placed in the
+system prompt with an instruction to follow it, at the same $N$. Official GRACE
+and WISE: the EasyEdit implementations with hparams adapted to the 1.5B model
+(28 layers; GRACE layer 18, $n_{\text{iter}}{=}50$; WISE layer 23,
+$n_{\text{iter}}{=}70$, retrieve; fp16 for the shared 8\,GB GPU), sequential
+edits, $N{=}200$; both the native (raw) and our chat protocol are reported.
+
+\noindent\textbf{Pins.} All runs are pre-registered; the internal pre-registration
+record (pinned before each run, SS33--SS63), raw logs and result JSONs accompany
+the artifact.
 
 \section{Results}
-\todo{T1 (\ref{tab:guarantees}); gates; capacity (256 facts/delta); router stress;
-ablations; honest failures. Source: outline \S6.}
+\label{sec:results}
+
+Table~\ref{tab:guarantees} is the frozen summary. \emph{Serving}: efficacy
+$0.999$ (CounterFact) and $0.996$ (zsRE); routed paraphrase $0.323$ and $0.973$;
+no-leak $0.992$ and $0.975$; abstention $0.992$ and $0.967$. The CounterFact
+paraphrase gap is router-bound, not a delta limitation: with the delta served
+directly, paraphrase reaches $0.86$--$0.90$ (Section~\ref{sec:limitations}).
+zsRE paraphrases keep the subject, so routing holds and paraphrase reaches
+$0.973$.
+
+\emph{Revoke} ($n{=}100$): CounterFact gone $0.96$, return-match $0.96$, retain
+$0.9989$; zsRE gone $0.36$ (base-confounded: the base often knows the answer, so
+the token is present after revoke regardless), return-match $0.80$, retain
+$0.9944$. Revoke latency is $1.4$\,ms; the store hash is stable across the
+provenance sweep and provenance attribution is $1.00$ ($100/100$).
+
+\emph{Capability}: canary KLD mean $0.0215$ (CounterFact) and $0.0171$ (zsRE),
+maximum $0.0498/0.0529$ over $50$ sampled deltas --- two orders of magnitude
+below the commit cap.
 
 \input{tables/guarantees}
 
+\noindent\textbf{Strong-RAG gate.} With an instruction-tuned context prompt at
+$N{=}1000$, RAG reaches $0.837$ $[0.815,0.86]$ where the store reaches $0.999$
+$[0.997,1.0]$: the store's advantage is durable parametric memory, not prompting.
+
+\noindent\textbf{Capacity.} One grouped delta carries 256 facts at full efficacy
+with KLD $0.007$ (Table~\ref{tab:capacity}). Genuine leakage onto held-out facts
+is $0.1$--$0.3$ (base hit rate $0.0$), i.e.\ grouped deltas trade some exactness
+for a $256\times$ storage cut; per-fact deltas are the exact configuration.
+
+\input{tables/capacity}
+
+\noindent\textbf{Router.} Router v3 fixes entity perturbations that the substring
+gate missed (Table~\ref{tab:router}); pronouns correctly abstain. On zsRE, many
+facts share a subject: the gate fires but the semantic pick among siblings is
+$0.784$ --- probe serving is unaffected (the fact's own expert is served), but
+this is the weakest component.
+
+\input{tables/router}
+
+\noindent\textbf{Delta recipes.} On the nonce set, the baseline recipe scores
+efficacy $1.00$, paraphrase $0.86$, KLD $0.036$; LoRA+ (B learning rate
+$\times 8$) scores $1.00$, $0.90$, $0.014$ at equal size and is adopted for
+per-fact deltas. OLoRA and DoRA break the capability cap (KLD $22$--$28$); MLP
+targets give no gain at $2$--$3\times$ size; PiSSA mutates the shared frozen base
+and is rejected. For grouped training, LoRA+ is unstable (see below) and the
+baseline recipe is used.
+
+\noindent\textbf{Failures (reported, not patched silently).} (i)~LoRA+ at
+$8\times$ B-lr is unstable for grouped deltas: non-monotonic efficacy over
+$k\in\{64,128,256\}$ because the grouped recipe performs $16\times 2k$ individual
+optimizer steps --- a $64\times$ amplification of the per-fact case; it is
+therefore per-fact-only. (ii)~The first capacity leakage check sliced held-out
+facts inside the training group for $k>64$, reading leakage $1.00$; after the
+fix (per-$k$ outside slice, base-referenced), genuine leakage is $0.1$--$0.3$.
+(iii)~Training is deterministic given the RNG sequence; a $k{=}256$-only run
+consumed a different draw position and scored efficacy $0.707$ --- recorded as
+RNG-position sensitivity, not a capacity effect.
+
 \section{Baselines: Format Matters}
-\todo{GRACE raw $1.00$ / chat $0.025$; WISE per-step $1.00$ / final $0.07$;
-merge $0.125$, no-leak $0.27$; RAG $0.837$. Source: outline \S7.}
+
+Table~\ref{tab:baselines} places the baselines next to ours. \emph{GRACE}
+(official) reaches $1.00$ raw-prompt efficacy ($200/200$ edits) --- in its
+intended format --- but $0.025$ under chat-templated serving, because its keys
+are built on the raw prompt's last-token activation; EasyEdit's own token-EM
+metric reads $0.0$ for all targets due to a leading-space token mismatch (an
+artifact we diagnosed). \emph{WISE} reports per-step rewrite accuracy $1.00$,
+but the final model answers only $0.07$ of edits and leaks on $36\%$ of
+distractors; with its intended merge lifecycle triggered within 200 edits, the
+final model improves to $0.125$ while no-leak collapses to $0.27$ ---
+consolidation trades per-edit accuracy for locality. \emph{RAG} reaches $0.837$.
+No baseline offers forget or audit; the transaction gap is the contribution.
 
 \input{tables/baselines}
 
 \section{Limitations}
-\todo{router-bound paraphrase $0.323$ (direct delta $0.86$--$0.90$); zsRE sibling
-pick; single model/env; grouped leakage $0.1$--$0.3$; VLM/controller small scale;
-format sensitivity. Source: outline \S8.}
+\label{sec:limitations}
+
+\noindent\textbf{Router-bound paraphrase.} CounterFact paraphrase (routed) is
+$0.323$: rephrasings that drop the subject do not pass the entity gate. The
+delta itself generalizes ($0.86$--$0.90$ direct), so this is an engineering gap
+with a pinned fix (paraphrase-aware keys), not an architectural limit.
+
+\noindent\textbf{Multi-fact subjects.} On zsRE the semantic pick among sibling
+facts of the same subject is $0.784$, and revoke return-match is $0.80$ (sibling
+interference). \noindent\textbf{Grouped exactness.} Grouped deltas leak
+$0.1$--$0.3$ onto held-out subjects; exactness is a per-fact property.
+\noindent\textbf{Scope.} One base model, one environment, no external
+replication; the VLM mirror and the repair controller are validated at small
+scale only (a $2$B VLM, an $18$-fact controller). \noindent\textbf{Formats.}
+Baseline comparisons are serving-format sensitive; we report both formats and
+treat the transaction guarantees --- not the editing numbers --- as the claim.
 
 \section{Conclusion and Future Work}
-\todo{paper 2 preview: learned router, format-matched baselines, grouped experts +
-coarse router, scale. Source: outline \S9.}
 
-\bibliographystyle{plain}
+Cerata makes personalization of a frozen base transactional: gated writes,
+exact revoke, and auditable attribution, measured at $N{=}1000$ with tight
+confidence intervals on two external sets. Editing baselines optimize the write;
+none of them can forget or audit, and their numbers depend on the serving
+format. Future work (paper~2): a learned router to close the paraphrase and
+sibling gaps, format-matched baseline comparisons at equal $N$, grouped experts
+with a coarse router for storage, and confirmatory-scale VLM and controller
+evidence.
+
+\section*{Availability}
+
+The artifact includes the pre-registration record (pinned before each run),
+raw logs and result JSONs for every number, and the harness; it will accompany
+the paper.
+
+\bibliographystyle{IEEEtran}
 \bibliography{refs}
 
 \end{document}

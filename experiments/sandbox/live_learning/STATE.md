@@ -160,3 +160,7 @@ docs/LIVING_MODEL_CONFIRMATORY_SUMMARY.md. Nothing pushed; latest commits on mai
 Open: paper identity decision (editing vs systems/guarantee). Optional leftovers:
 positioning appendix refresh with the corrected numbers; WISE raw-format alignment;
 grouped experts + coarse router build.
+
+Paper 1 (draft v0): full IEEEtran two-column draft in paper/ (main.tex + tables/
+T1-T5 + figures/F1). Build: cd paper && mkdir -p build && nix run nixpkgs#tectonic
+-- main.tex -o build. All sections written; only author/title TODO.

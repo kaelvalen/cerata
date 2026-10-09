@@ -1,24 +1,23 @@
-% T2 - baselines under both serving formats. Sources: prereg SS54, SS63, SS33-47.
-\begin{table}[t]
+% T2 - baselines under both serving formats (prereg SS54/63, SS33-47).
+\begin{table*}[t]
 \centering
-\caption{Baselines under both serving formats (CounterFact, same base model).
-``Own metric'' is each method's native evaluation; ``final efficacy'' is greedy
-generation in our protocol. Sources: prereg \S54, \S63; RAG gate \S33--\S47.}
+\caption{Baselines under both serving formats (CounterFact; same base model).
+``Own'' is each method's native metric; ``final efficacy'' is greedy generation in
+our protocol (chat serving). GRACE/WISE at $N{=}200$; RAG and ours at $N{=}1000$.}
 \label{tab:baselines}
 \begin{tabular}{llccc}
 \toprule
 Method & Format & Own metric & Final efficacy & No-leak \\
 \midrule
-Strong RAG (instruct) & chat & --- & $0.837$ @ $N{=}1000$ & --- \\
-GRACE (official) & raw & $1.00$ raw eff. & $1.00$ raw / $0.025$ chat & $1.00$ \\
+Strong RAG (instruct) & chat & --- & $0.837$ & --- \\
+GRACE (official) & raw & $1.00$ raw & $1.00$ raw / $0.025$ chat & $1.00$ \\
 WISE (official) & per-step & $1.00$ rewrite & $0.07$ & $0.64$ \\
-WISE + merge & per-step & $0.66$ rewrite & $0.125$ & $0.27$ \\
+WISE + merge ($\le 200$) & per-step & $0.66$ rewrite & $0.125$ & $0.27$ \\
 \midrule
-Ours & chat & --- & $\mathbf{0.999}$ @ $N{=}1000$ & $\mathbf{0.992}$ \\
+Ours & chat & --- & $\mathbf{0.999}$ & $\mathbf{0.992}$ \\
 \bottomrule
 \end{tabular}
 \\[2pt]
 {\footnotesize EasyEdit's GRACE token-EM reads $0.0$ (leading-space token
-mismatch, artifact); WISE's per-step metric hides sequential decay. GRACE/WISE at
-$N{=}200$; ours at $N{=}1000$.}
-\end{table}
+mismatch, artifact); WISE's per-step metric hides sequential decay.}
+\end{table*}
