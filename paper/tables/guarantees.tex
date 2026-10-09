@@ -1,0 +1,32 @@
+% T1 - measured guarantees at N=1000. Sources: prereg SS56, SS58, SS59, SS62.
+\begin{table}[t]
+\centering
+\caption{Measured guarantees at $N{=}1000$ (greedy + contains, chat serving;
+bootstrap 95\% CIs). Sources: prereg \S56--\S62.}
+\label{tab:guarantees}
+\begin{tabular}{lcc}
+\toprule
+ & CounterFact & zsRE \\
+\midrule
+Efficacy & $0.999\,[0.997, 1.0]$ & $0.996\,[0.992, 0.999]$ \\
+Paraphrase (routed) & $0.323\,[0.295, 0.352]$ & $0.973\,[0.962, 0.982]$ \\
+Distractor no-leak & $0.992\,[0.986, 0.997]$ & $0.975\,[0.965, 0.984]$ \\
+Route accuracy & $0.997$ & $0.784$ \\
+Distractor abstention & $0.992$ & $0.967$ \\
+\midrule
+Revoke gone ($n{=}100$) & $0.96\,[0.92, 0.99]$ & $0.36^{*}\,[0.26, 0.45]$ \\
+Return match & $0.96\,[0.92, 0.99]$ & $0.80\,[0.72, 0.88]$ \\
+Retain & $0.9989\,[0.9967, 1.0]$ & $0.9944\,[0.9889, 0.9989]$ \\
+\midrule
+Canary KLD (mean, 50-sample) & $0.0215$ & $0.0171$ \\
+Canary KLD (max) & $0.0498$ & $0.0529$ \\
+Provenance (100-sample) & $1.00$ & --- \\
+\midrule
+Storage & $8.7$\,MB/fact & $8.7$\,MB/fact \\
+Add / serve / revoke latency & $8.45$\,s / $0.04$\,s / $1.4$\,ms & --- \\
+\bottomrule
+\end{tabular}
+\\[2pt]
+{\footnotesize $^{*}$base-confounded: zsRE answers are often known by the base;
+\texttt{return\_match} is the base-referenced reading (\S58).}
+\end{table}

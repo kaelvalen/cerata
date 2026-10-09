@@ -1,0 +1,89 @@
+% Cerata - Paper 1 (draft v0)
+% Build: latexmk -pdf -outdir=build main.tex   (needs a TeX Live or tectonic toolchain)
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+\title{\textbf{Cerata: Transactional Memory for Frozen Language Models}\\
+\large Exact Revoke, Audit, and Capability Safety at Scale}
+\author{\todo{authors}}
+\date{Draft v0 - October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Personalizing a frozen base model should be a \emph{transaction}, not an edit:
+every write gated, every fact attributable, every fact exactly revocable, with the
+base untouched. We build such a store --- per-fact deltas behind an entity-gated
+router, committed through a capability gate --- and measure each guarantee at
+$N{=}1000$ on CounterFact and zsRE: efficacy $0.999/0.996$, distractor no-leak
+$0.992/0.975$, exact revoke (retain $0.9989/0.9944$), leave-one-out provenance
+$1.00$, and a canary footprint of $0.02$ KLD. Strong RAG reaches $0.837$ where we
+reach $0.999$; the official GRACE/WISE implementations offer no forget or audit
+and degrade or leak under the same protocol. We report failures and format
+sensitivities in full.
+\end{abstract}
+
+\section{Introduction}
+\todo{the gap: editing is write-only; RAG is not durable; transactions are the
+missing abstraction. Contributions C1--C4; evidence discipline (pre-registered,
+pinned before runs). Source: PAPER1_OUTLINE \S1.}
+
+\section{Related Work and Positioning}
+\todo{editing (ROME/MEMIT/GRACE/WISE/AlphaEdit), unlearning, RAG, adapters/MoE;
+positioning table: revoke? audit? capability cap? sequential $N$? Source: outline \S2.}
+
+\section{Architecture}
+\todo{frozen base; slot store; router (entity gate v3 + semantic keys, $\tau$,
+abstain); transaction API (write: propose $\to$ KL gate $\to$ commit; forget: slot
+free + materialize; audit: state hash + leave-one-out). See
+Figure~\ref{fig:arch}. Source: outline \S3.}
+
+\input{figures/architecture}
+
+\section{Guarantee Definitions}
+\todo{operational definitions: efficacy/paraphrase/no-leak/abstention/route;
+revoke gone/return/retain (+confounds); provenance; canary KLD (cap $2.0$);
+atomicity; reproducibility. Source: outline \S4.}
+
+\section{Experimental Setup}
+\todo{base Qwen2.5-1.5B-Instruct; nonce/CounterFact/zsRE; $N{=}1000$; chat
+serving, greedy + contains, bootstrap CIs; baselines: strong RAG, official
+GRACE/WISE (EasyEdit, fp16, both formats); pins: prereg SS33--SS63. Source:
+outline \S5.}
+
+\section{Results}
+\todo{T1 (\ref{tab:guarantees}); gates; capacity (256 facts/delta); router stress;
+ablations; honest failures. Source: outline \S6.}
+
+\input{tables/guarantees}
+
+\section{Baselines: Format Matters}
+\todo{GRACE raw $1.00$ / chat $0.025$; WISE per-step $1.00$ / final $0.07$;
+merge $0.125$, no-leak $0.27$; RAG $0.837$. Source: outline \S7.}
+
+\input{tables/baselines}
+
+\section{Limitations}
+\todo{router-bound paraphrase $0.323$ (direct delta $0.86$--$0.90$); zsRE sibling
+pick; single model/env; grouped leakage $0.1$--$0.3$; VLM/controller small scale;
+format sensitivity. Source: outline \S8.}
+
+\section{Conclusion and Future Work}
+\todo{paper 2 preview: learned router, format-matched baselines, grouped experts +
+coarse router, scale. Source: outline \S9.}
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}

@@ -1,0 +1,31 @@
+% F1 - architecture. Compile-check with the paper toolchain.
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=3pt, minimum height=8mm},
+  arr/.style={-{Latex[length=2mm]}, thick},
+  lbl/.style={font=\footnotesize},
+]
+\node[box, fill=black!8] (base) {Frozen base LM\\{\footnotesize weights untouched}};
+\node[box, below=12mm of base, xshift=-28mm] (router)
+  {Router\\{\footnotesize entity gate (v3) + semantic key}\\{\footnotesize $\tau$; no candidate $\to$ abstain}};
+\node[box, fill=black!4, right=24mm of router] (store)
+  {Delta store (slots)\\{\footnotesize per-fact LoRA $\delta_i$}\\{\footnotesize CAP slots; $8.7$\,MB/fact}};
+\node[box, below=12mm of router, xshift=28mm] (api)
+  {Transactions\\{\footnotesize write: propose $\to$ KL gate $\to$ commit}\\{\footnotesize forget: exact revoke \quad audit: hash + LOO}};
+\node[lbl, left=6mm of router] (q) {query};
+\node[lbl, right=6mm of api] (a) {answer};
+\draw[arr] (q) -- (router);
+\draw[arr] (router) -- node[lbl, above]{route} (store);
+\draw[arr] (store) -- node[lbl, above]{serve} (a);
+\draw[arr] (router.south) |- node[lbl, near start, left]{abstain $\to$ base} (a.south west);
+\draw[arr] (api) -- (store);
+\draw[arr] (api.west) -- node[lbl, near end, below]{materialize} (router.south east);
+\draw[arr] (base.south) -- (router.north);
+\end{tikzpicture}
+\caption{Cerata: a frozen base, a slot store of per-fact deltas, an entity-gated
+router, and a transaction API (write/forget/audit). The base weights are never
+trained; every change lives in a revocable slot.}
+\label{fig:arch}
+\end{figure}
