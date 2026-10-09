@@ -1,5 +1,5 @@
 % Cerata - Paper 1 (draft v0)
-% Build: latexmk -pdf -outdir=build main.tex   (needs a TeX Live or tectonic toolchain)
+% Build (verified on this machine): mkdir -p build && nix run nixpkgs#tectonic -- main.tex -o build
 \documentclass[11pt]{article}
 
 \usepackage[margin=1in]{geometry}
@@ -37,7 +37,7 @@ sensitivities in full.
 \section{Introduction}
 \todo{the gap: editing is write-only; RAG is not durable; transactions are the
 missing abstraction. Contributions C1--C4; evidence discipline (pre-registered,
-pinned before runs). Source: PAPER1_OUTLINE \S1.}
+pinned before runs). Source: PAPER1 outline \S1.}
 
 \section{Related Work and Positioning}
 \todo{editing (ROME/MEMIT/GRACE/WISE/AlphaEdit), unlearning, RAG, adapters/MoE;
