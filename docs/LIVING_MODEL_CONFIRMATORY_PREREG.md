@@ -773,3 +773,31 @@ same chunked wrapper over chunks 300:400 ... 900:1000, then the standard eval-on
 block with router v3 and revoke n=100 (same readings as SS56). Predictions: chunk
 completion without failures; final efficacy in the range of the N=200 zsRE run,
 revoke/retain per SS56. Failures recorded, not patched silently.
+
+## 58. zsRE N=1000 - final results (2026-10-09)
+
+Resumed 300->1000 (7 chunks, ~23 min each; final eval wall 1558 s) with the standard
+eval-only block (router v3, revoke n=100):
+
+| metric | value | CI | threshold | verdict |
+| :-- | :-- | :-- | :-- | :-- |
+| efficacy | 0.996 | [0.992, 0.999] | - | replicates the N=200 level |
+| paraphrase | 0.973 | [0.962, 0.982] | - | zsRE paraphrases keep the subject -> routing works (para route 0.776) |
+| distractor no-leak | 0.975 | [0.965, 0.984] | >=0.95 | pass |
+| distractor abstention | 0.967 | - | >=0.95 | pass |
+| route accuracy | 0.784 | - | - | many facts per subject: the gate fires but the semantic pick among siblings is 78.4% |
+| revoke gone (n=100) | 0.36 | [0.26, 0.45] | - | base-confounded: zsRE answers are often known by the base, so the token is present after revoke anyway |
+| return match | 0.80 | [0.72, 0.88] | - | base-referenced reading; the 20% gap is sibling-routing interference |
+| retain | 0.9944 | [0.9889, 0.9989] | >=0.98 | pass |
+| storage | 8.7 GB | - | - | same recipe |
+
+Reading notes (harness semantics, verified in code):
+1. Probe serving: when the entity gate fires (any route), the fact's OWN expert is
+   served (eval_ours line 282), so probe efficacy is robust to sibling misroutes;
+   route_accuracy measures the semantic pick among candidates.
+2. Paraphrase serving uses the ROUTED fact's expert (line 289) - with sibling subjects
+   the misroutes would hurt, but paraphrases keep the subject and 0.973 holds.
+3. Revoke: gone is absolute (token absent) and confounded by base knowledge; the
+   base-referenced return_match (0.80) is the meaningful reading. The 20% mismatch is
+   sibling-routing interference (router_keep routes to remaining siblings whose deltas
+   change the response), a zsRE-specific caveat.
