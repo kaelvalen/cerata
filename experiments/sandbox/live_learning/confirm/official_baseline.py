@@ -26,8 +26,8 @@ ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT / ".deps" / "EasyEdit"))
 
 import torch  # noqa: E402
-from transformers import AutoTokenizer  # noqa: E402
 from easyeditor import BaseEditor, GraceHyperParams, WISEHyperParams  # noqa: E402
+from transformers import AutoTokenizer  # noqa: E402
 
 SYSTEM = "Answer briefly."
 CANARIES = ["What is the capital of France?", "What is 7 times 8?"]
@@ -221,7 +221,7 @@ def main() -> None:
     # Memory adaptation for the shared ~8 GB GPU: the official 7B yamls use the
     # fp32 default (BaseEditor torch_dtype=float32), which OOMs for WISE here.
     hparams.fp16 = True
-    log(f"hparams={HP_REL[method]} model={hparams.model_name} device={hparams.device} "
+    log(f"hparams={args.hparams or HP_REL[method]} model={hparams.model_name} device={hparams.device} "
         f"n_iter={hparams.n_iter} lr={hparams.edit_lr} inner={hparams.inner_params} "
         f"fp16={hparams.fp16}", log_path)
 
