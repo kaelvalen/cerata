@@ -38,21 +38,21 @@ def main() -> None:
         facts = data["facts"] if isinstance(data, dict) else data
     else:
         facts = generate(args.n, args.n)
-    outside = facts[64:74]
     store = PilotStore(args.model, steps=16)
     store.kl_prompts = ["What is the capital of France?", "What is 7 times 8?"]
-    # Base-referenced leakage needs the base model's own hits on the held-out facts
-    # (SS50 follow-up: absolute leakage is inflated when the base already answers).
-    store.deltas = {}
-    store.materialize()
-    base_outside = {
-        f["id"]: hit(store.answer(f["probe"], system=SYSTEM), f["answer"])
-        for f in outside
-    }
 
     report = {}
     for k in [int(x) for x in args.ks.split(",")]:
         group = facts[:k]
+        # Leakage slice must be OUTSIDE the group (SS60 bug: facts[64:74] is inside
+        # the group for k>64). Base-referenced hits come from the untouched base.
+        outside = facts[k : k + 10]
+        store.deltas = {}
+        store.materialize()
+        base_outside = {
+            f["id"]: hit(store.answer(f["probe"], system=SYSTEM), f["answer"])
+            for f in outside
+        }
         pairs = [p for f in group for p in fact_pairs(f)]
         t0 = time.time()
         store.add("grp", pairs, key=group[0]["probe"])
@@ -80,6 +80,7 @@ def main() -> None:
             "base_outside_hit_rate": round(
                 sum(base_outside.values()) / len(base_outside), 3
             ),
+            "outside_ids": [f["id"] for f in outside],
             "kld": round(kld, 3),
             "train_seconds": round(secs, 1),
         }

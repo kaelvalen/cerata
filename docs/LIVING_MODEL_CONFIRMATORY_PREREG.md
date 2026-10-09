@@ -826,3 +826,22 @@ leakage_base_ref (delta hit AND base miss on the 10 held-out facts) and the base
 rate; the k=256 run is repeated with the same seed. Predictions: base hit rate > 0
 (the collision mechanism), leakage_base_ref much lower than 1.00 - likely 0-0.3;
 efficacy/KLD replicate SS50.
+
+### SS60 addendum (2026-10-09): the first re-check exposed a bug
+
+The first k=256-only re-run gave efficacy 0.707 (SS50: 1.00), leakage 0.7,
+leakage_base_ref 0.7, base_outside_hit_rate 0.0, KLD 0.032. Two findings:
+1. The leakage slice is broken: outside = facts[64:74] lies INSIDE the group for
+   k > 64 - the SS50 leakage 1.00 at k=128/256 was in-group memorization, not
+   leakage (and not a base-collision artifact either; base hit rate is 0.0).
+2. The k=256-only run consumed different RNG draws for the delta init (the SS50
+   sequence trains k=64 and k=128 first) - efficacy 0.707 vs 1.00 shows the
+   baseline grouped training at k=256 is RNG-position sensitive. Recorded.
+
+## 61. Capacity leakage, corrected (pinned 2026-10-09, before the run)
+
+outside = facts[k:k+10] per k (genuinely outside), base-referenced leakage, the
+SS50 sequence --ks 64,128,256 (same seed; greedy generations consume no RNG, so
+the training sequence matches SS50). Predictions: k=64 replicates (~0.3 leakage,
+which is genuine); k=128/256 leakage drops far below 1.00 (real leakage only);
+efficacy/KLD replicate SS50 (1.00 / 0.66 / 0.007) if training is deterministic.
