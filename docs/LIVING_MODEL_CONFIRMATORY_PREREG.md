@@ -817,3 +817,12 @@ Results (first 50 deltas of each ckpt):
 Verdict: the review threshold holds as a mean over sampled deltas; recorded with the
 single marginal max at zsRE. The commit gate (2.0) was enforced during training by
 construction; the sample confirms the realized footprint.
+
+## 60. Base-referenced leakage re-check at k=256 (pinned 2026-10-09, before the run)
+
+SS50 follow-up: the absolute leakage at k=256 (1.00) is suspected to be an artifact
+(not base-referenced + coinciding language targets). capacity.py now also reports
+leakage_base_ref (delta hit AND base miss on the 10 held-out facts) and the base hit
+rate; the k=256 run is repeated with the same seed. Predictions: base hit rate > 0
+(the collision mechanism), leakage_base_ref much lower than 1.00 - likely 0-0.3;
+efficacy/KLD replicate SS50.

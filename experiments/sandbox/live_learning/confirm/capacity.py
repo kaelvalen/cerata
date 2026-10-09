@@ -41,6 +41,14 @@ def main() -> None:
     outside = facts[64:74]
     store = PilotStore(args.model, steps=16)
     store.kl_prompts = ["What is the capital of France?", "What is 7 times 8?"]
+    # Base-referenced leakage needs the base model's own hits on the held-out facts
+    # (SS50 follow-up: absolute leakage is inflated when the base already answers).
+    store.deltas = {}
+    store.materialize()
+    base_outside = {
+        f["id"]: hit(store.answer(f["probe"], system=SYSTEM), f["answer"])
+        for f in outside
+    }
 
     report = {}
     for k in [int(x) for x in args.ks.split(",")]:
@@ -58,15 +66,20 @@ def main() -> None:
         for f in group:
             eff.append(hit(store.answer(f["probe"], system=SYSTEM), f["answer"]))
             para.append(hit(store.answer(f["paraphrase"], system=SYSTEM), f["answer"]))
-        leak = [
+        hits = [
             hit(store.answer(f["probe"], system=SYSTEM), f["answer"]) for f in outside
         ]
+        leak_bref = [h and not base_outside[f["id"]] for h, f in zip(hits, outside)]
         store.deltas = full
         store.materialize()
         report[k] = {
             "efficacy": round(sum(eff) / len(eff), 3),
             "paraphrase": round(sum(para) / len(para), 3),
-            "leakage": round(sum(leak) / len(leak), 3),
+            "leakage": round(sum(hits) / len(hits), 3),
+            "leakage_base_ref": round(sum(leak_bref) / len(leak_bref), 3),
+            "base_outside_hit_rate": round(
+                sum(base_outside.values()) / len(base_outside), 3
+            ),
             "kld": round(kld, 3),
             "train_seconds": round(secs, 1),
         }
