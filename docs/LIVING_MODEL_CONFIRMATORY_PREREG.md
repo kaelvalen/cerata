@@ -861,3 +861,11 @@ bug. Template generalisation to held-out subjects is real but modest (10-30% of
 held-out answers produced). Efficacy/paraphrase/KLD replicate SS50 exactly,
 confirming the training is deterministic given the RNG sequence (the k=256-only
 0.707 in the SS60 addendum was RNG-position sensitivity, not a capacity effect).
+
+## 62. Provenance (G5 leave-one-out) at N=1000 (pinned 2026-10-09, before the run)
+
+First 100 facts of the cf_n1000 store: serve with the fact's expert, suspend it
+(remove + materialize), serve again, restore; attribution = the answer is present
+with the expert and absent without it; the store state hash must return to its
+value. Threshold from the review list: provenance >= 0.95. Prediction: ~1.00 (the
+N=50 c6-v2 check measured 1.00; each fact's expert is independent).
