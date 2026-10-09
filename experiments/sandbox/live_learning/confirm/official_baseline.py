@@ -193,6 +193,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--method", choices=["grace", "wise"], required=True)
     ap.add_argument("--limit", type=int, default=None, help="smoke: first N facts")
+    ap.add_argument("--hparams", default=None, help="override the default hparams path")
     ap.add_argument("--facts", default=str(ROOT / "results/live_learning/confirm/external_counterfact_n200.json"))
     ap.add_argument("--raw", default=str(ROOT / "results/live_learning/confirm/raw/counterfact.json"))
     ap.add_argument("--out", default=None)
@@ -212,7 +213,7 @@ def main() -> None:
     if missing:
         log(f"WARNING raw alignment missing for {len(missing)} facts: {missing[:5]}", log_path)
 
-    hp_path = ROOT / ".deps" / "EasyEdit" / HP_REL[method]
+    hp_path = ROOT / ".deps" / "EasyEdit" / (args.hparams or HP_REL[method])
     hparams = HP_CLS[method].from_hparams(str(hp_path))
     # WISE's sequential-edit guard reads config.sequential_edit (absent from the
     # text dataclass); set it so the adapter accumulates edits instead of resetting.

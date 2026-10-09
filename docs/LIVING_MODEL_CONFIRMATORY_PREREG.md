@@ -875,3 +875,13 @@ the threshold (>=0.95) passes with margin; the N=50 c6-v2 reading scaled to N=10
 With this, all review item 4 readings exist at N=1000: canary KLD mean <=0.05 (SS59),
 retain 0.9989, provenance 1.00, router precision 0.997 / abstention 0.992, revoke
 n=100 (gone 0.96 / return 0.96 / retain 0.9989, SS56).
+
+## 63. WISE with its intended lifecycle (merge within 200 edits) - pinned 2026-10-09, before the run
+
+SS54 caveat: with the official save_freq=500/merge_freq=1000, 200 edits never
+merge, so the final model forgets (0.07). Variant: save_freq=100, merge_freq=200
+(everything else official), same N=200 subset and runner; a 2-edit smoke with
+merge_freq=2 validates the merge path first. Readings: EasyEdit metrics + our
+protocol + canary KLD, same as SS54. Prediction: the final model improves
+substantially over 0.07 (the merge consolidates the edits), but per-edit decay is
+still expected; report as-is.
