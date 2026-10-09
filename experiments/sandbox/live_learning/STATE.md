@@ -148,3 +148,15 @@ GPU is an 8 GB RTX 5060 shared with the Counterpart project (check `nvidia-smi`
 before 1.5B runs; 0.5B fits always). Models cached: Qwen2.5-0.5B/1.5B-Instruct,
 Qwen3-VL-2B-Instruct, DINOv2-base, CLIP ViT-B/32 (laion); `sentence-transformers`
 installed (MiniLM multilingual cached).
+
+## Frozen (2026-10-09) - confirmatory phase closed
+
+All review items are measured at N=1000 and recorded: strong-RAG gate PASSED
+(0.837 vs 0.999); official GRACE/WISE baselines (SS54/63, including the WISE
+merge-lifecycle follow-up); metric completion (SS56: revoke n=100/return/retain),
+canary KLD (SS59), provenance (SS62, 1.00); zsRE N=1000 (SS58); capacity corrected
+(SS60/61); router v3 (SS51/52). Consolidated one-pager:
+docs/LIVING_MODEL_CONFIRMATORY_SUMMARY.md. Nothing pushed; latest commits on main.
+Open: paper identity decision (editing vs systems/guarantee). Optional leftovers:
+positioning appendix refresh with the corrected numbers; WISE raw-format alignment;
+grouped experts + coarse router build.
