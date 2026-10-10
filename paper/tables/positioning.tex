@@ -1,18 +1,30 @@
-% T3 - positioning: lifecycle operations and reported sequential scale.
+% T1 - operations each family exposes by design.
 \begin{table}[t]
 \centering
-\caption{Positioning: lifecycle operations and reported sequential scale.}
+\caption{Operations supported by each approach. \checkmark: supported and evaluated
+by the authors; $\circ$: possible with the architecture but not provided or not
+evaluated; $\times$: not supported; n/a: not applicable. Removal: deleting one fact
+restores the previous state. Check: a bound on collateral change at write time.
+Fallback: out-of-scope queries are answered by the unmodified base model.}
 \label{tab:positioning}
 \footnotesize
-\begin{tabular}{lcccc}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lccccc}
 \toprule
-Method & Forget & Audit & Cap. & Seq.\ $N$ \\
+Approach & Param. & Removal & Check & Attrib. & Fallback \\
 \midrule
-ROME / MEMIT & no & no & no & $10^0$--$10^1$ \\
-GRACE & no & no & no & $10^2$--$10^3$ \\
-WISE & no & no & no & $10^2$ \\
-RAG & index & partial & n/a & $10^3$+ \\
-Ours & exact & yes & yes & $10^3$ \\
+RAG, IKE~\cite{lewis2020rag,zheng2023ike} & $\times$ & \checkmark & n/a & $\circ$ & $\circ$ \\
+ROME, MEMIT, AlphaEdit & \checkmark & $\times$ & $\times$ & $\times$ & $\times$ \\
+MEND~\cite{mitchell2022mend} & \checkmark & $\times$ & $\times$ & $\times$ & $\times$ \\
+SERAC~\cite{mitchell2022serac} & $\times$ & $\circ$ & $\times$ & $\circ$ & \checkmark \\
+T-Patcher~\cite{huang2023tpatcher} & \checkmark & $\circ$ & $\times$ & $\circ$ & $\circ$ \\
+GRACE~\cite{hartvigsen2023grace} & \checkmark & $\circ$ & $\times$ & $\circ$ & \checkmark \\
+WISE~\cite{wang2024wise} & \checkmark & $\times$ & $\times$ & $\times$ & $\circ$ \\
+MELO, LEMoE, ELDER & \checkmark & $\circ$ & $\times$ & $\circ$ & $\circ$ \\
+Approx.\ unlearning~\cite{eldan2023harrypotter} & \checkmark & $\times$ & n/a & $\times$ & $\times$ \\
+Separable proxies~\cite{schneider2026separable} & \checkmark & \checkmark & $\times$ & $\times$ & n/a \\
+\midrule
+Cerata & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
 \bottomrule
 \end{tabular}
 \end{table}

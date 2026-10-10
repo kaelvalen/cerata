@@ -14,8 +14,10 @@ from __future__ import annotations
 import argparse
 import ctypes
 import json
+import math
 import sys
 import time
+from numbers import Integral, Real
 from pathlib import Path
 
 import numpy as np
@@ -98,6 +100,40 @@ def serve_expert(store, fid, q):
     store.deltas = full
     store.materialize()
     return resp
+
+
+def _route_index(router, q, enc, candidate_count):
+    """Validate Router.route's (candidate index or None, similarity) contract."""
+    result = router.route(q, enc)
+    if not isinstance(result, tuple) or len(result) != 2:
+        raise TypeError("router.route must return (index_or_None, similarity)")
+    j, similarity = result
+    if isinstance(similarity, bool) or not isinstance(similarity, Real):
+        raise TypeError("router.route similarity must be a real number")
+    similarity = float(similarity)
+    if not math.isfinite(similarity):
+        raise ValueError("router.route similarity must be finite")
+    if j is None:
+        return None, similarity
+    if isinstance(j, bool) or not isinstance(j, Integral):
+        raise TypeError("router.route index must be an integer or None")
+    j = int(j)
+    if j < 0 or j >= candidate_count:
+        raise IndexError(
+            f"router.route index {j} outside candidate range [0, {candidate_count})"
+        )
+    return j, similarity
+
+
+def routed_answer(store, router, candidates, q, enc):
+    """Serve the selected candidate expert, or the base model on router abstention."""
+    j, similarity = _route_index(router, q, enc, len(candidates))
+    resp = (
+        serve_expert(store, candidates[j]["id"], q)
+        if j is not None
+        else base_answer(store, q)
+    )
+    return j, similarity, resp
 
 
 def _norm(s: str) -> str:
@@ -276,26 +312,11 @@ def eval_ours(store, facts, enc, router, words, train_seconds, adds):
     rows = []
     serve_times = []
     for i, f in enumerate(facts):
-        j, _ = router.route(f["probe"], enc)
         t = time.time()
-        resp = (
-            serve_expert(store, f["id"], f["probe"])
-            if j is not None
-            else base_answer(store, f["probe"])
-        )
+        j, _, resp = routed_answer(store, router, facts, f["probe"], enc)
         serve_times.append(time.time() - t)
-        pj, _ = router.route(f["paraphrase"], enc)
-        resp_para = (
-            serve_expert(store, facts[pj]["id"], f["paraphrase"])
-            if pj is not None
-            else base_answer(store, f["paraphrase"])
-        )
-        dj, _ = router.route(f["distractor"], enc)
-        d_resp = (
-            base_answer(store, f["distractor"])
-            if dj is None
-            else serve_expert(store, facts[dj]["id"], f["distractor"])
-        )
+        pj, _, resp_para = routed_answer(store, router, facts, f["paraphrase"], enc)
+        dj, _, d_resp = routed_answer(store, router, facts, f["distractor"], enc)
         rows.append(
             {
                 "fid": f["id"],
@@ -562,30 +583,15 @@ def run_revoke(store, facts, enc, router, pre, sample=100):
     router_keep = Router(enc, keep)
     gone = []
     for f in sample_facts:
-        j, _ = router_keep.route(f["probe"], enc)
-        resp = (
-            serve_expert(store, keep[j]["id"], f["probe"])
-            if j is not None
-            else base_answer(store, f["probe"])
-        )
+        _, _, resp = routed_answer(store, router_keep, keep, f["probe"], enc)
         gone.append(not hit(resp, f["answer"]))
     returned = []
     for f in sample_facts:
-        j, _ = router_keep.route(f["probe"], enc)
-        resp = (
-            serve_expert(store, keep[j]["id"], f["probe"])
-            if j is not None
-            else base_answer(store, f["probe"])
-        )
+        _, _, resp = routed_answer(store, router_keep, keep, f["probe"], enc)
         returned.append(hit(resp, f["answer"]) == hit(pre[f["id"]], f["answer"]))
     retain = []
     for f in keep:
-        j, _ = router_keep.route(f["probe"], enc)
-        resp = (
-            serve_expert(store, f["id"], f["probe"])
-            if j is not None
-            else base_answer(store, f["probe"])
-        )
+        _, _, resp = routed_answer(store, router_keep, keep, f["probe"], enc)
         retain.append(hit(resp, f["answer"]))
     return {
         "sample": len(sample_facts),

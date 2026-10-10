@@ -1,17 +1,20 @@
-% T4 - grouped capacity (prereg SS50/61).
+% T5 - grouped capacity (CounterFact; prereg SS50/61).
 \begin{table}[t]
 \centering
-\caption{Grouped capacity: one delta carrying $k$ facts (seeded; base-referenced
-leakage; base hit rate $0.0$).}
+\caption{One adapter trained jointly on $k$ CounterFact facts. Leakage is the
+fraction of 10 held-out facts, none answered by the base model, whose answer the
+adapter produces. KL is the divergence $D$.}
 \label{tab:capacity}
 \footnotesize
-\begin{tabular}{lccc}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccccc}
 \toprule
-$k$ & Efficacy & KLD & Leakage \\
+$k$ & Eff. & Para. & Leak & KL & Train (s) & MB/fact \\
 \midrule
-$64$ & $0.984$ & $0.002$ & $0.3$ \\
-$128$ & $1.00$ & $0.002$ & $0.1$ \\
-$256$ & $1.00$ & $0.007$ & $0.3$ \\
+1 (per fact) & $0.999$ & n/a & n/a & $0.02$ & $8.5$ & $8.7$ \\
+$64$ & $0.984$ & $0.578$ & $0.3$ & $0.002$ & $288$ & $0.14$ \\
+$128$ & $1.00$ & $0.703$ & $0.1$ & $0.002$ & $696$ & $0.068$ \\
+$256$ & $1.00$ & $0.660$ & $0.3$ & $0.007$ & $1768$ & $0.034$ \\
 \bottomrule
 \end{tabular}
 \end{table}

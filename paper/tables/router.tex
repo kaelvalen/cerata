@@ -1,19 +1,24 @@
-% T5 - router stress (prereg SS51).
+% T6 - router stress (nonce N=50, CPU; prereg SS35/51).
 \begin{table}[t]
 \centering
-\caption{Router stress (nonce $N{=}50$): route accuracy under entity
-perturbations; v2 substring gate vs v3 fuzzy match.}
+\caption{Route accuracy under perturbations of the subject (50 synthetic facts) for
+exact substring matching, approximate matching and sentence embeddings without an entity
+filter. The last two rows report the fraction of queries not routed.}
 \label{tab:router}
 \footnotesize
-\begin{tabular}{lcc}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
 \toprule
-Perturbation & v2 & v3 \\
+Perturbation & Exact & Approximate & Embedding only \\
 \midrule
-Typo (swap / drop) & $0.00$ / $0.00$ & $1.00$ / $1.00$ \\
-Lowercase & $1.00$ & $1.00$ \\
-Hyphen $\to$ space & $0.00$ & $1.00$ \\
-Partial subject & $0.00$ & $0.80$ \\
-Pronoun (abstain rate) & $1.00$ & $1.00$ \\
+Transposed characters & $0.00$ & $1.00$ & $0.88$ \\
+Dropped character & $0.00$ & $1.00$ & $1.00$ \\
+Lower case & $1.00$ & $1.00$ & $1.00$ \\
+Hyphen replaced by space & $0.00$ & $1.00$ & $1.00$ \\
+First token only & $0.00$ & $0.80$ & $1.00$ \\
+Pronoun (not routed) & $1.00$ & $1.00$ & n/a \\
+\midrule
+Distractor (not routed) & $1.00$ & $1.00$ & $0.00$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}

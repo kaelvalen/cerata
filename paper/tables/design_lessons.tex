@@ -1,0 +1,28 @@
+% Exploratory measurements behind each design choice (slice record).
+\begin{table}[t]
+\centering
+\caption{Exploratory measurements that determined the design
+(Qwen2.5-1.5B-Instruct, 18 facts unless stated otherwise).}
+\label{tab:lessons}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}p{3.9cm}>{\raggedright\arraybackslash}p{1.8cm}}
+\toprule
+Design question & Measurement & Choice \\
+\midrule
+Combine adapters by summation & Summed: 0/18 facts; routed: 18/18. With 50 facts: summed 0.00 (synthetic), 0.00 (CF), 0.02 (zsRE); one sequentially trained adapter 0.08, 0.34, 0.80 & One adapter per query \\
+\addlinespace
+Capacity of one adapter & Jointly trained: 64 synthetic facts, 1.00; 256 CF facts, 1.00 & Grouping possible \\
+\addlinespace
+Training strength & lr $10^{-4}$, 8 steps: attribution 0.06, KL 0.18. lr $3{\cdot}10^{-4}$, 16 steps: attribution 1.00, KL 10.96 (max 22.1). With KL term: attribution 0.94, KL 0.93 & KL term, $\lambda=1$ \\
+\addlinespace
+Routing key & Held-out paraphrases routed: TF-IDF 1/6, base-model hidden state 3/6, MiniLM 5/6 (6/6 with one paraphrase in training) & Sentence encoder \\
+\addlinespace
+Distractor rejection & Same question with unseen subject (50 synthetic facts): embeddings only 0.00; with entity filter 1.00 & Entity filter \\
+\addlinespace
+Routing after updates & Removing and adding a fact changed 0 other routing decisions & Fixed keys \\
+\addlinespace
+Failed additions & Over-threshold candidate ($D=21.6$), training exception, empty input: store and hash unchanged & Check before insert \\
+\bottomrule
+\end{tabular}
+\end{table}

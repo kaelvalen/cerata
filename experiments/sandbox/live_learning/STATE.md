@@ -164,3 +164,12 @@ grouped experts + coarse router build.
 Paper 1 (draft v0): full IEEEtran two-column draft in paper/ (main.tex + tables/
 T1-T5 + figures/F1). Build: cd paper && mkdir -p build && nix run nixpkgs#tectonic
 -- main.tex -o build. All sections written; only author/title TODO.
+
+## 2026-10-10: routed re-evaluation (SS64) and paper rewrite
+
+The aggregate efficacy of eval_ours was gold-expert conditioned (probe served by its own
+expert whenever the gate fired). `confirm/routed_eval.py` re-evaluated both N=1000 stores
+end to end (SS64): cf 0.997 / zsRE 0.994 routed efficacy; retain 0.9967 / 0.9922. Paper 1
+rewritten around the transactional framing (paper/main.tex; numbers from
+paper/make_numbers.py). Open, pinned as next runs: tau relaxation for exact-entity
+queries (CF paraphrase), revoke-by-content for duplicate entries, held-out canary set.

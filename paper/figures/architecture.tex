@@ -1,32 +1,58 @@
-% F1 - architecture (scaled to the IEEE column width).
-\begin{figure}[t]
+% F1 - the transactional store: serve path (left), write path (right), ledger (bottom).
+\begin{figure*}[t]
 \centering
-\resizebox{\columnwidth}{!}{%
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
   font=\small,
-  box/.style={draw, rounded corners=2pt, align=center, inner sep=3pt, minimum height=8mm},
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=4pt, minimum height=9mm},
+  base/.style={box, fill=black!10},
+  store/.style={box, fill=blue!6},
+  gate/.style={draw, diamond, aspect=2.2, align=center, inner sep=1pt, fill=orange!10, font=\footnotesize},
   arr/.style={-{Latex[length=2mm]}, thick},
-  lbl/.style={font=\footnotesize},
+  darr/.style={-{Latex[length=2mm]}, thick, dashed},
+  lbl/.style={font=\footnotesize, inner sep=1pt},
+  title/.style={font=\bfseries\small},
 ]
-\node[box, fill=black!8] (base) {Frozen base LM\\{\footnotesize weights untouched}};
-\node[box, below=12mm of base, xshift=-28mm] (router)
-  {Router\\{\footnotesize entity gate (v3) + semantic key}\\{\footnotesize $\tau$; no candidate $\to$ abstain}};
-\node[box, fill=black!4, right=24mm of router] (store)
-  {Delta store (slots)\\{\footnotesize per-fact LoRA $\delta_i$}\\{\footnotesize CAP slots; $8.7$\,MB/fact}};
-\node[box, below=12mm of router, xshift=28mm] (api)
-  {Transactions\\{\footnotesize write: propose $\to$ KL gate $\to$ commit}\\{\footnotesize forget: exact revoke \quad audit: hash + LOO}};
-\node[lbl, left=6mm of router] (q) {query};
-\node[lbl, right=6mm of api] (a) {answer};
-\draw[arr] (q) -- (router);
-\draw[arr] (router) -- node[lbl, above]{route} (store);
-\draw[arr] (store) -- node[lbl, above]{serve} (a);
-\draw[arr] (router.south) |- node[lbl, near start, left]{abstain $\to$ base} (a.south west);
-\draw[arr] (api) -- (store);
-\draw[arr] (api.west) -- node[lbl, near end, below]{materialize} (router.south east);
-\draw[arr] (base.south) -- (router.north);
+% ---------------- serve path
+\node[title] (st) at (0,3.2) {Serving};
+\node[box] (q) at (-2.2,2.1) {query $q$};
+\node[box, text width=3.9cm] (r) at (1.5,2.1)
+  {router $\rho_S$\\{\footnotesize entity filter $C_S(q)$, then $\cos(E(q),k_i)\ge\tau$}};
+\node[store, text width=3.1cm] (ex) at (0.2,0.3) {frozen $\theta_0$ $\oplus$ adapter $\delta_i$};
+\node[base, text width=2.4cm] (bs) at (3.3,0.3) {frozen $\theta_0$\\{\footnotesize (no adapter, $\bot$)}};
+\node[box, text width=3.4cm] (y) at (1.6,-1.4) {answer $y$ and adapter id $\rho_S(q)$};
+\draw[arr] (q) -- (r);
+\draw[arr] (r.south) ++(-0.8,0) -- node[lbl, left]{$i$} (ex.north);
+\draw[arr] (r.south) ++(1.2,0) -- node[lbl, right]{$\bot$} (bs.north);
+\draw[arr] (ex.south) -- (y.north -| ex.south);
+\draw[arr] (bs.south) -- (y.north -| bs.south);
+
+% ---------------- write path
+\node[title] (wt) at (9.6,3.2) {Adding and removing facts};
+\node[box, text width=2.2cm] (f) at (6.4,2.1) {fact $e$\\{\footnotesize pairs $P(e)$, subject $s$}};
+\node[box, text width=3.6cm] (tr) at (9.6,2.1)
+  {train candidate $\delta$ on a copy of $\theta_0$\\{\footnotesize LoRA, CE $+\ \lambda\,$KL}};
+\node[gate] (g) at (13.3,2.1) {$D(\delta)\le\kappa$ ?};
+\node[box, text width=2.7cm, fill=red!6] (rej) at (13.3,0.3) {reject\\{\footnotesize store and $h$ unchanged}};
+\node[box, text width=3.2cm, fill=green!8] (com) at (9.6,0.3) {insert\\{\footnotesize $S\leftarrow S\cup\{(i,\delta,k_i,s)\}$}};
+\node[box, text width=3.0cm, fill=green!8] (rev) at (6.4,0.3) {remove$(i)$\\{\footnotesize $S\leftarrow S\setminus\{i\}$}};
+\draw[arr] (f) -- (tr);
+\draw[arr] (tr) -- (g);
+\draw[arr] (g) -- node[lbl, right]{no} (rej);
+\draw[arr] (g.south west) ++(0.1,0.25) -- node[lbl, pos=0.45, above left]{yes} (com.north east);
+
+% ---------------- ledger / store
+\node[store, text width=8.6cm, align=left] (led) at (10.0,-1.55)
+  {\textbf{Store $S$}: entries $(i,\delta_i,k_i,s_i)$, $i\in\mathcal{I}$.\\ \textbf{Log}: operation, identifier, $D$, time, state hash $h(S)$.};
+\draw[arr] (com.south) -- (com.south |- led.north);
+\draw[arr] (rev.south) -- (rev.south |- led.north);
+\draw[darr] (led.west) -- node[lbl, above]{adapters, keys} (y.east);
 \end{tikzpicture}}
-\caption{Cerata: a frozen base, a slot store of per-fact deltas, an entity-gated
-router, and a transaction API (write/forget/audit). The base weights are never
-trained; every change lives in a revocable slot.}
+\caption{Overview of Cerata. Left: a query is routed to at most one adapter, which is
+applied to the frozen base model; if no adapter is selected, the base model answers. The
+answer is returned with the identifier of the adapter used. Right: a candidate adapter is
+trained on a separate copy of the base model and inserted only if its divergence $D$ on
+the canary prompts is at most $\kappa$; removal deletes the entry. Bottom: the store and
+the log.}
 \label{fig:arch}
-\end{figure}
+\end{figure*}

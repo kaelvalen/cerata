@@ -1,0 +1,39 @@
+% F2 - CounterFact efficacy vs N: the parametric store vs retrieval (prereg SS16/19/31/34/37/64).
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\columnwidth, height=5.0cm,
+  xmode=log, log basis x=10,
+  xtick={50,200,1000}, xticklabels={50,200,1000},
+  xmin=38, xmax=1350,
+  ymin=0.4, ymax=1.03,
+  ytick={0.4,0.5,0.6,0.7,0.8,0.9,1.0},
+  xlabel={number of stored facts $N$},
+  ylabel={efficacy},
+  legend style={font=\scriptsize, at={(0.98,0.03)}, anchor=south east, draw=black!30},
+  legend cell align=left,
+  grid=major, grid style={black!8},
+  tick label style={font=\scriptsize}, label style={font=\footnotesize},
+  error bars/y dir=both, error bars/y explicit,
+]
+\addplot[thick, blue!70!black, mark=*, mark size=1.6pt]
+  coordinates {(50,1.00)+-(0,0) (200,0.995)+-(0,0.01) (1000,0.999)+-(0,0.002)};
+\addlegendentry{Cerata, own adapter}
+\addplot[thick, blue!50, dashed, mark=diamond*, mark size=2.2pt, only marks]
+  coordinates {(1000,\cfEff)+-(0,\cfEffErr)};
+\addlegendentry{Cerata, routed}
+\addplot[thick, red!70!black, mark=square*, mark size=1.5pt]
+  coordinates {(50,0.76)+-(0,0.12) (200,0.85)+-(0,0.05) (1000,0.834)+-(0,0.023)};
+\addlegendentry{Retrieval}
+\addplot[thick, orange!80!black, mark=triangle*, mark size=1.9pt]
+  coordinates {(200,0.865)+-(0,0.048) (1000,0.837)+-(0,0.023)};
+\addlegendentry{Retrieval, instructed}
+\end{axis}
+\end{tikzpicture}
+\caption{Efficacy on CounterFact for different numbers of stored facts, with 95\%
+bootstrap intervals. Retrieval and Cerata use the same router. ``Own adapter'' serves
+each edit prompt with its own adapter; ``routed'' uses the router's selection
+(Section~\ref{sec:serving}).}
+\label{fig:scaling}
+\end{figure}

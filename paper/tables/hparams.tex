@@ -1,0 +1,27 @@
+% Appendix - full configuration of the confirmatory runs.
+\begin{table}[h]
+\centering
+\caption{Configuration of the confirmatory runs.}
+\label{tab:hparams}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{ll}
+\toprule
+Base model & Qwen2.5-1.5B-Instruct, bf16, frozen \\
+Adapter & LoRA $r{=}16$, $\alpha{=}32$, no dropout, \texttt{q\_proj}, \texttt{v\_proj}, all 28 layers \\
+Adapter size & $2.18$M parameters; $8.7$\,MB stored in fp32 \\
+Training pairs & (statement $\to$ ``Noted: statement''), (edit prompt $\to$ answer) \\
+Optimizer & AdamW, lr $3{\cdot}10^{-4}$, 16 passes $\times$ 2 pairs $=$ 32 steps \\
+KL term & $\lambda{=}1$, forward KL to the base on $Q_c$ \\
+Canary prompts $Q_c$ & ``What is the capital of France?'', ``What is 7 times 8?'' \\
+Divergence check & mean Jeffreys divergence on $Q_c$, $\kappa{=}2.0$ \\
+Sentence encoder & paraphrase-multilingual-MiniLM-L12-v2, frozen \\
+Entity filter & approximate match; cosine threshold $\tau=0.656$ \\
+Approximate match & tokens of $\ge 4$ characters; OSA distance $\le 1$ ($\le 2$ for $\ge 6$ characters) \\
+Serving & chat template, system ``Answer briefly.'', greedy, 24 new tokens \\
+Scoring & case-insensitive substring of the target \\
+Intervals & 95\% percentile bootstrap over facts, 2000 resamples \\
+Removal sample & first 100 facts; retain on the remaining 900 \\
+\bottomrule
+\end{tabular}}
+\end{table}

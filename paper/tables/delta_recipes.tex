@@ -1,0 +1,20 @@
+% T8 - per-fact delta recipes (CounterFact N=50, each delta served directly; prereg SS44-46).
+\begin{table}[t]
+\centering
+\caption{Adapter variants on 50 CounterFact facts, each served by its own adapter.
+KL is the mean and maximum of $D$ over the first 10 adapters ($\kappa=2$).}
+\label{tab:recipes}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
+\toprule
+Variant & Eff. & Para. & KL mean / max & Size \\
+\midrule
+Baseline (q, v; lr $3{\cdot}10^{-4}$) & $1.00$ & $0.86$ & $0.036$ / $0.062$ & $1\times$ \\
+LoRA+~\cite{hayou2024loraplus} (B-lr $\times 8$) & $1.00$ & $0.90$ & $0.014$ / $0.021$ & $1\times$ \\
++ MLP projections & $1.00$ & $0.78$ & $0.017$ / $0.041$ & 2 to $3\times$ \\
+DoRA~\cite{liu2024dora} & $0.98$ & $0.70$ & $26.8$ / $27.8$ & $\approx 1\times$ \\
+OLoRA~\cite{buyukakyuz2024olora} & $0.08$ & $0.00$ & $22.4$ / $28.2$ & $1\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}

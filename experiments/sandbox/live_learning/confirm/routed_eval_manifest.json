@@ -1,0 +1,66 @@
+{
+  "schema": "confirm.routed_eval_manifest.v1",
+  "checkpoint_metadata_inspection": {
+    "format": "torch.save zip archive",
+    "top_level_fields": [
+      "deltas",
+      "keys",
+      "adds"
+    ],
+    "model_identity_fields_present": false,
+    "base_hash_field_present": false,
+    "model_revision_field_present": false,
+    "inspection": "The checkpoint data.pkl and pilot.py save/load code were inspected; neither checkpoint stores model/base identity metadata."
+  },
+  "models": {
+    "base": {
+      "id": "Qwen/Qwen2.5-1.5B-Instruct",
+      "id_binding": "pinned runtime target; training identity is not verifiable from these checkpoints",
+      "checkpoint_model_id_verified": false,
+      "revision": null,
+      "revision_verified": false,
+      "base_weight_sha256": null,
+      "base_weight_sha256_verified": false,
+      "loader": "AutoTokenizer.from_pretrained(name); AutoModelForCausalLM.from_pretrained(name, dtype=torch.bfloat16, device_map={'': 0})",
+      "limitation": "The saved checkpoint contains only deltas, keys, and adds; it has no model ID, base hash, base weight hash, or Hugging Face revision. DeltaStore.base_hash is computed from model name/rank/capacity but is not saved. The current loader resolves from_pretrained(name) without a revision, so the exact training base and weight revision cannot be proven."
+    },
+    "router_encoder": {
+      "id": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+      "revision": null,
+      "revision_verified": false,
+      "loader": "SentenceTransformer(model_id) without a revision argument"
+    }
+  },
+  "artifacts": [
+    {
+      "id": "counterfact_n1000",
+      "dataset": "counterfact",
+      "n": 1000,
+      "checkpoint": {
+        "path": "results/live_learning/confirm/cf_n1000.ckpt",
+        "sha256": "4fc80a49c6aabaab66e9fde8fe20ff64b77a1165cf99a1eb3bafa402ce5461ce",
+        "sha256_scope": "all checkpoint file bytes"
+      },
+      "facts": {
+        "path": "results/live_learning/confirm/external_counterfact_n1000.json",
+        "sha256": "5c7ee3102e58b36caef2bcb9df2aedfb9ca2515b8466dd9d486616cc7cc6de18",
+        "sha256_scope": "all ordered JSON file bytes, including every fact field"
+      }
+    },
+    {
+      "id": "zsre_n1000",
+      "dataset": "zsre",
+      "n": 1000,
+      "checkpoint": {
+        "path": "results/live_learning/confirm/zsre_n1000.ckpt",
+        "sha256": "852f6705d66b127c3c96b81021079766ca34fbb0dc7b28fd556c593d39aa0839",
+        "sha256_scope": "all checkpoint file bytes"
+      },
+      "facts": {
+        "path": "results/live_learning/confirm/external_zsre_n1000.json",
+        "sha256": "356d8257f92175c1fe071c2cff2bcd2316732d49c9b8f0c36d6f78fac095b546",
+        "sha256_scope": "all ordered JSON file bytes, including every fact field"
+      }
+    }
+  ]
+}

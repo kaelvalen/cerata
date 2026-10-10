@@ -1,0 +1,30 @@
+% Extensions (exploratory, slice record).
+\begin{table}[t]
+\centering
+\caption{Extension experiments. Top: policies for storing facts as adapters on a stream
+of 6 facts queried three times and 12 queried once, with retrieval as the default
+memory. Bottom: the store on Qwen3-VL-2B.}
+\label{tab:loop}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcc}
+\toprule
+Policy & Adapters & Facts answered \\
+\midrule
+Store after two queries & 6 & 16/18 \\
+$\epsilon$-greedy, decide before answering & 0 & 15/18 \\
+UCB1, decide before answering & 17 & 17/18 \\
+UCB1, decide after an incorrect answer & 3 & 18/18 \\
+\midrule
+Vision-language test & \multicolumn{2}{c}{Result} \\
+\midrule
+Two facts keyed by images (CLIP, $\tau=0.97$) & \multicolumn{2}{c}{2/2 answered; distractor images not routed} \\
+Adapter that changes a canary answer & \multicolumn{2}{c}{$D=23.9$, rejected; hash unchanged} \\
+Update, then removal & \multicolumn{2}{c}{new answer served; hash restored} \\
+Save and reload & \multicolumn{2}{c}{same hash; 2/2 answered} \\
+Adapter trained with negative images & \multicolumn{2}{c}{answers only for its scene and variants} \\
+Controller with such adapters & \multicolumn{2}{c}{4 adapters; 4/4 answered; no leakage} \\
+\bottomrule
+\end{tabular}}
+\end{table}

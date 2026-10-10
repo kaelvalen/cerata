@@ -1,23 +1,28 @@
-% T2 - baselines under both serving formats (prereg SS54/63, SS33-47).
+% T4 - baselines on CounterFact, same base model (prereg SS31/37/54/63/64).
 \begin{table*}[t]
 \centering
-\caption{Baselines under both serving formats (CounterFact; same base model).
-``Own'' is each method's native metric; ``final efficacy'' is greedy generation in
-our protocol (chat serving). GRACE/WISE at $N{=}200$; RAG and ours at $N{=}1000$.}
+\caption{Comparison on CounterFact with Qwen2.5-1.5B-Instruct. ``Chat'' uses the chat
+template; ``plain'' uses the edit prompt without a template, the format for which GRACE
+and WISE were designed. GRACE and WISE (EasyEdit) were run as 200 sequential edits,
+retrieval and Cerata with 1000 facts.}
 \label{tab:baselines}
-\begin{tabular}{llccc}
+\footnotesize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccc}
 \toprule
-Method & Format & Own metric & Final efficacy & No-leak \\
+Method & Storage & $N$ & Efficacy (chat) & Efficacy (plain) & Paraphrase & No leakage & Removal \\
 \midrule
-Strong RAG (instruct) & chat & --- & $0.837$ & --- \\
-GRACE (official) & raw & $1.00$ raw & $1.00$ raw / $0.025$ chat & $1.00$ \\
-WISE (official) & per-step & $1.00$ rewrite & $0.07$ & $0.64$ \\
-WISE + merge ($\le 200$) & per-step & $0.66$ rewrite & $0.125$ & $0.27$ \\
+Retrieval & context & $1000$ & $0.834\,[.812,.858]$ & n/a & $0.326$ & $1.00$ & index delete \\
+Retrieval, instructed & context & $1000$ & $0.837\,[.815,.860]$ & n/a & $0.306$ & $1.00$ & index delete \\
+GRACE~\cite{hartvigsen2023grace} & key-value codebook & $200$ & $0.025$ & $1.00$ & $0.02$ & $1.00$ & none \\
+WISE~\cite{wang2024wise} & side memory & $200$ & $0.07$ & $0.04$ & $0.06$ & $0.64$ & none \\
+WISE, merged at 200 & side memory & $200$ & $0.125\,[.08,.17]$ & $0.05$ & $0.105$ & $0.27\,[.21,.335]$ & none \\
 \midrule
-Ours & chat & --- & $\mathbf{0.999}$ & $\mathbf{0.992}$ \\
+Cerata & per-fact adapters & $1000$ & $\cfEff\,[\cfEffCI]$ & n/a & $0.323$ & $0.992$ & per fact \\
 \bottomrule
-\end{tabular}
-\\[2pt]
-{\footnotesize EasyEdit's GRACE token-EM reads $0.0$ (leading-space token
-mismatch, artifact); WISE's per-step metric hides sequential decay.}
+\end{tabular}}
+\\[3pt]
+{\scriptsize EasyEdit's own metrics: GRACE token accuracy is 0.0 because the target
+token differs when preceded by a space; WISE per-edit accuracy is 1.00 without and 0.66
+with merging.}
 \end{table*}

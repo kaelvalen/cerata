@@ -1,32 +1,46 @@
-% T1 - measured guarantees at N=1000 (prereg SS56/58/59/62).
+% T3 - confirmatory readings at N=1000 (prereg SS56/58/59/62/64). Routed rows are the
+% SS64 end-to-end re-evaluation; macros are generated into numbers.tex.
 \begin{table}[t]
 \centering
-\caption{Measured guarantees at $N{=}1000$ (greedy + contains; bootstrap 95\% CIs).}
+\caption{Results at $N=1000$ (Qwen2.5-1.5B-Instruct) with 95\% bootstrap intervals.
+Unless noted, every query is served with the adapter selected by the router, or by the
+base model if the router returns $\bot$.}
 \label{tab:guarantees}
-\scriptsize
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcc}
 \toprule
  & CounterFact & zsRE \\
 \midrule
-Efficacy & $0.999\,[.997,1]$ & $0.996\,[.992,.999]$ \\
-Paraphrase (routed) & $0.323\,[.295,.352]$ & $0.973\,[.962,.982]$ \\
-Distractor no-leak & $0.992\,[.986,.997]$ & $0.975\,[.965,.984]$ \\
-Route accuracy & $0.997$ & $0.784$ \\
-Distractor abstention & $0.992$ & $0.967$ \\
+\multicolumn{3}{l}{\emph{Serving}} \\
+Efficacy & $\cfEff\,[\cfEffCI]$ & $\zsEff\,[\zsEffCI]$ \\
+Paraphrase accuracy & $\cfPara\,[\cfParaCI]$ & $\zsPara\,[\zsParaCI]$ \\
+Route accuracy & $\cfRoute$ & $\zsRoute^{\dagger}$ \\
+Paraphrase route accuracy & $\cfParaRoute$ & $\zsParaRoute$ \\
+Abstention on distractors ($\ge 0.95$) & $\cfAbst$ & $\zsAbst$ \\
+No leakage on distractors & $\cfNoLeak\,[\cfNoLeakCI]$ & $\zsNoLeak\,[\zsNoLeakCI]$ \\
+\addlinespace
+Efficacy, own adapter served & $0.999\,[.997,1]$ & $0.996\,[.992,.999]$ \\
 \midrule
-Revoke gone ($n{=}100$) & $0.96\,[.92,.99]$ & $0.36^{*}$ \\
-Return match & $0.96\,[.92,.99]$ & $0.80\,[.72,.88]$ \\
-Retain & $0.9989$ & $0.9944$ \\
+\multicolumn{3}{l}{\emph{Removal of the first 100 facts}} \\
+Gone & $\cfGone\,[\cfGoneCI]$ & $\zsGone^{*}\,[\zsGoneCI]$ \\
+Return to base answer & $\cfReturn\,[\cfReturnCI]$ & $\zsReturn\,[\zsReturnCI]$ \\
+Retention, 900 facts ($\ge 0.98$) & $\cfRetain\,[\cfRetainCI]$ & $\zsRetain\,[\zsRetainCI]$ \\
+Removal time & $\cfRevMs$\,ms & $\zsRevMs$\,ms \\
 \midrule
-Canary KLD mean / max & $.0215\,/\,.0498$ & $.0171\,/\,.0529$ \\
-Provenance ($100$ samples) & $1.00$ & --- \\
+\multicolumn{3}{l}{\emph{Divergence and attribution}} \\
+Divergence $D$, mean / p95 / max & $.022\,/\,.052\,/\,.092$ & $.018\,/\,.043\,/\,.087$ \\
+Rejected additions ($\kappa=2$) & $0/1000$ & $0/1000$ \\
+Leave-one-out attribution ($\ge 0.95$) & $1.00$ ($100/100$) & not measured \\
 \midrule
-Storage & $8.7$\,MB/fact & $8.7$\,MB/fact \\
-Latency add / serve / revoke & $8.45$\,s / $.04$\,s / $1.4$\,ms & --- \\
+\multicolumn{3}{l}{\emph{Cost}} \\
+Storage per fact (fp32) & $8.7$\,MB & $8.7$\,MB \\
+Training time per fact & $8.5$\,s & $12.4$\,s \\
 \bottomrule
 \end{tabular}}
 \\[2pt]
-{\scriptsize $^{*}$base-confounded: zsRE answers are often known by the base;
-\texttt{return\_match} is the base-referenced reading.}
+{\scriptsize $^{\dagger}$All 210 routing errors select a fact with the same subject
+and answer; 208 are answered correctly. $^{*}$The base model answers 44 of these 100
+prompts correctly before training.}
 \end{table}
