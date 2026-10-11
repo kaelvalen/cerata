@@ -1337,3 +1337,39 @@ Predictions: s_type has the highest AUC (it tests the answer's type, which is wh
 leak emits); at (ii) E3 routed <= 0.10 and both-arm E3 leak <= 0.08 with CF paraphrase
 (both) >= 0.70. SS71's decision rule is applied to the selected operating point.
 
+### SS74 results (2026-10-11, `relevance_eval.json`)
+
+(a) Dev AUC over v4-routed queries (CF part / zsRE part / pooled): s_rel 0.790 / 0.949 /
+0.848; s_judge 0.775 / 0.938 / 0.827; s_type 0.649 / 0.632 / 0.646. Selected: s_rel
+[prediction s_type highest: **missed**; s_type is the weakest]. The MiniLM relation
+similarity is already the best of the three relevance scores; the base-model judge adds
+nothing and the answer-type score is close to chance on CounterFact.
+
+(b) Operating points for s_rel: (i) Youden theta = 0.6603 (dev TPR 0.835, FPR 0.110; J is
+flat between 0.631 and 0.660); (ii) CF dev FPR <= 0.05: theta = 0.757 (dev TPR 0.677).
+
+| reading (test) | v4 (tau 0.631) | (i) 0.660 | (ii) 0.757 | prediction for (ii) |
+| :-- | :-- | :-- | :-- | :-- |
+| CF edit prompt, both | 0.996 | 0.996 | 0.996 | - |
+| CF paraphrase route-correct | 0.814 | 0.776 | 0.595 | - |
+| CF paraphrase adapter / note / both / tiered | 0.669 / 0.629 / 0.803 / 0.664 | 0.643 / 0.607 / 0.768 / 0.642 | 0.513 / 0.488 / 0.589 [0.559, 0.618] / 0.512 | both >= 0.70: **missed** |
+| zsRE paraphrase adapter / both | 0.959 / 0.979 | 0.955 / 0.975 | 0.938 / 0.956 | - |
+| E3 routed | 0.290 | 0.207 | 0.064 | <= 0.10: met |
+| E3 leak adapter / note / both / tiered | 0.186 / 0.140 / 0.237 / 0.155 | 0.140 / 0.109 / 0.171 / 0.121 | 0.058 / 0.045 / 0.063 [0.048, 0.078] / 0.053 | both <= 0.08: met |
+| E2 routed / both leak | 0.018 / 0.016 | 0.017 / 0.015 | 0.012 / 0.011 | - |
+
+Trade-off curve (test, CF): leak and paraphrase accuracy fall together along the
+threshold, e.g. theta 0.699: paraphrase (both) 0.705, E3 leak (both) 0.116; 0.719: 0.661 /
+0.092; 0.757: 0.589 / 0.063; 0.806: 0.506 / 0.036. Above theta ~0.72 nearly every routed
+E3 prompt leaks: the survivors ask a near-identical question. Post-hoc reading (labelled
+as such): 1.3% of the E3 prompts use a template that CounterFact also uses for the stored
+fact's own relation (e.g. "X is located in" for continent and country); all 13 leak, and
+they are 11 of the 63 leaks at (ii); other survivors are near-synonymous templates ("The
+location of X is" / "X is located in", "produced by" / "a product developed by").
+166 of the 186 adapter-arm leaks under v4 contain the routed fact's own answer.
+
+SS71 decision rule at the selected operating point (ii): every policy has E3 leak <= 0.10;
+the highest CF paraphrase accuracy is adapter and note (0.589). Default configuration for
+the paper: router v4 with theta 0.757, adapter and note served together; the Youden point
+and the curve are reported as the recall-oriented alternative.
+
