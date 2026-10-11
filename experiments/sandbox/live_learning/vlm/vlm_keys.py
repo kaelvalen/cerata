@@ -46,7 +46,12 @@ def main() -> None:
         c = emb_clip(clip_proc, clip, img)
         concat = torch.cat([cls, c])
         concat = concat / concat.norm()
-        vecs[key] = {"dinov2_cls": cls, "dinov2_mean": mean, "clip": c, "concat": concat}
+        vecs[key] = {
+            "dinov2_cls": cls,
+            "dinov2_mean": mean,
+            "clip": c,
+            "concat": concat,
+        }
 
     report = {}
     for mod in ("dinov2_cls", "dinov2_mean", "clip", "concat"):

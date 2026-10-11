@@ -303,7 +303,9 @@ def train_part(store, part, adds, offset=0):
         )
         trim()
         if (i + 1) % 50 == 0:
-            print(f"ours: trained {i + 1} ({time.time() - t0:.0f}s elapsed)", flush=True)
+            print(
+                f"ours: trained {i + 1} ({time.time() - t0:.0f}s elapsed)", flush=True
+            )
     return time.time() - t0
 
 
@@ -483,7 +485,7 @@ def grace_answer(store, q, token_id):
         pad_token_id=store.tok.eos_token_id,
         logits_processor=LogitsProcessorList([ForceToken(token_id)]),
     )
-    return store.tok.decode(out[0, ids.shape[1]:], skip_special_tokens=True).strip()
+    return store.tok.decode(out[0, ids.shape[1] :], skip_special_tokens=True).strip()
 
 
 def run_grace(store, facts, enc, router, words):
@@ -491,7 +493,9 @@ def run_grace(store, facts, enc, router, words):
     saved = dict(store.deltas)
     store.deltas = {}
     store.materialize()
-    token_ids = [store.tok.encode(f["answer"], add_special_tokens=False)[0] for f in facts]
+    token_ids = [
+        store.tok.encode(f["answer"], add_special_tokens=False)[0] for f in facts
+    ]
     rows = []
     for i, f in enumerate(facts):
         j, _ = router.route(f["probe"], enc)
@@ -610,11 +614,15 @@ def main() -> None:
     ap.add_argument("--n", type=int, default=50)
     ap.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
     ap.add_argument("--arms", default="rag,ours,summed,sequential")
-    ap.add_argument("--facts", default=None, help="external facts JSON (else nonce generator)")
+    ap.add_argument(
+        "--facts", default=None, help="external facts JSON (else nonce generator)"
+    )
     ap.add_argument("--out", default=None)
     ap.add_argument("--ckpt", default=None, help="checkpoint path for chunked runs")
     ap.add_argument("--train-range", default=None, help="train facts[lo:hi] and exit")
-    ap.add_argument("--eval-only", action="store_true", help="load ckpt and evaluate only")
+    ap.add_argument(
+        "--eval-only", action="store_true", help="load ckpt and evaluate only"
+    )
     args = ap.parse_args()
     torch.manual_seed(0)
     if args.facts:
@@ -658,7 +666,9 @@ def main() -> None:
     if args.train_range:
         lo, hi = [int(x) for x in args.train_range.split(":")]
         t = train_part(store, facts[lo:hi], adds, offset=lo)
-        torch.save({"deltas": store.deltas, "keys": store.keys, "adds": adds}, ckpt_path)
+        torch.save(
+            {"deltas": store.deltas, "keys": store.keys, "adds": adds}, ckpt_path
+        )
         print(f"ckpt saved: {len(store.deltas)}/{len(facts)} ({t:.0f}s)", flush=True)
         return
     if args.eval_only and len(store.deltas) != len(facts):
@@ -715,8 +725,10 @@ def main() -> None:
     print(f"n={args.n} wall={out['wall_seconds']}s -> {path}")
     for arm, m in out["results"].items():
         if arm == "revoke":
-            print(f"revoke: gone {m['token_gone_rate']} {m['token_gone_ci']} | "
-                  f"retain {m['retain_rate']} {m['retain_ci']}")
+            print(
+                f"revoke: gone {m['token_gone_rate']} {m['token_gone_ci']} | "
+                f"retain {m['retain_rate']} {m['retain_ci']}"
+            )
         else:
             print(
                 f"{arm}: eff {m['efficacy']} {m['efficacy_ci']} | "
@@ -725,9 +737,11 @@ def main() -> None:
             )
     if "ours" in out["results"]:
         o = out["results"]["ours"]
-        print(f"ours extras: add {o['mean_add_seconds']}s serve {o['mean_serve_seconds']}s "
-              f"storage {o['storage_mb']}MB abstention {o['router_abstention_on_distractors']} "
-              f"para_route {o['paraphrase_route_accuracy']}")
+        print(
+            f"ours extras: add {o['mean_add_seconds']}s serve {o['mean_serve_seconds']}s "
+            f"storage {o['storage_mb']}MB abstention {o['router_abstention_on_distractors']} "
+            f"para_route {o['paraphrase_route_accuracy']}"
+        )
 
 
 if __name__ == "__main__":

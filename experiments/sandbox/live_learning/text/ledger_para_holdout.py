@@ -41,11 +41,15 @@ HOLDOUT = {  # set B (never trained)
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
-    ap.add_argument("--out", default="results/live_learning/ledger_para_holdout_15b.json")
+    ap.add_argument(
+        "--out", default="results/live_learning/ledger_para_holdout_15b.json"
+    )
     args = ap.parse_args()
     from sentence_transformers import SentenceTransformer
 
-    enc = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+    enc = SentenceTransformer(
+        "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    )
     store = DeltaStore(args.model, steps=16)
     facts = {f.id: f for f in FACTS}
     for f in facts.values():

@@ -25,10 +25,15 @@ from pilot import PilotStore  # noqa: E402
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--facts", default="results/live_learning/confirm/external_counterfact_n1000.json")
+    ap.add_argument(
+        "--facts",
+        default="results/live_learning/confirm/external_counterfact_n1000.json",
+    )
     ap.add_argument("--ks", default="64,128,256")
     ap.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
-    ap.add_argument("--out", default="results/live_learning/confirm/capacity_loraplus_n1000.json")
+    ap.add_argument(
+        "--out", default="results/live_learning/confirm/capacity_loraplus_n1000.json"
+    )
     args = ap.parse_args()
     data = json.loads(Path(args.facts).read_text())
     facts = data["facts"] if isinstance(data, dict) else data
@@ -46,7 +51,9 @@ def main() -> None:
         delta = train_variant(store, "lora_plus", pairs)
         secs = time.time() - t0
         ing = eval_variant(store, "lora_plus", {f["id"]: delta for f in group}, group)
-        out = eval_variant(store, "lora_plus", {f["id"]: delta for f in outside}, outside)
+        out = eval_variant(
+            store, "lora_plus", {f["id"]: delta for f in outside}, outside
+        )
         report[k] = {
             "efficacy": ing["efficacy"],
             "paraphrase": ing["paraphrase"],
@@ -59,7 +66,11 @@ def main() -> None:
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps({"facts": args.facts, "groups": report}, ensure_ascii=False, indent=1))
+    out_path.write_text(
+        json.dumps(
+            {"facts": args.facts, "groups": report}, ensure_ascii=False, indent=1
+        )
+    )
     print("saved:", out_path)
 
 

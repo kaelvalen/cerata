@@ -22,7 +22,9 @@ from stream import FACTS, UPDATES  # noqa: E402
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
-    ap.add_argument("--out", default="results/live_learning/ledger_update_retrain_15b.json")
+    ap.add_argument(
+        "--out", default="results/live_learning/ledger_update_retrain_15b.json"
+    )
     args = ap.parse_args()
     store = DeltaStore(args.model, steps=16)
 
@@ -57,7 +59,8 @@ def main() -> None:
         "old_served": contains(served_old, "sütsüz"),
         "revoke_half_identity": h_between == h0,
         "update_committed": upd["committed"],
-        "update_served": contains(served_new, "sütlü") and not contains(served_new, "sütsüz"),
+        "update_served": contains(served_new, "sütlü")
+        and not contains(served_new, "sütsüz"),
         "update_revoke_identity": h_after == h0,
         "klds_under_cap": add["kld"] <= 2.0 and upd["kld"] <= 2.0,
     }

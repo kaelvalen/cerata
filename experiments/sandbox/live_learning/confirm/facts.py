@@ -146,15 +146,20 @@ def main() -> None:
     assert all(f["paraphrase"] != f["probe"] for f in facts), "paraphrase equals probe"
 
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({"n": args.n, "seed": seed, "facts": facts},
-                              ensure_ascii=False, indent=1))
+    out.write_text(
+        json.dumps(
+            {"n": args.n, "seed": seed, "facts": facts}, ensure_ascii=False, indent=1
+        )
+    )
     by_rel: dict[str, int] = {}
     for f in facts:
         by_rel[f["relation"]] = by_rel.get(f["relation"], 0) + 1
     print(f"n={args.n} seed={seed} -> {out}")
     print("relations:", by_rel)
     print("sample:", json.dumps(facts[0], ensure_ascii=False))
-    print("sample para:", facts[1]["paraphrase"], "| distractor:", facts[1]["distractor"])
+    print(
+        "sample para:", facts[1]["paraphrase"], "| distractor:", facts[1]["distractor"]
+    )
 
 
 if __name__ == "__main__":

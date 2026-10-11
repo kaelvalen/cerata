@@ -114,9 +114,9 @@ def test_pal_moe_compat_package_aliases_not_copies():
     for name, mod in list(sys.modules.items()):
         if name.startswith(("cerata", "pal_moe")) and getattr(mod, "__file__", None):
             files.setdefault(mod.__file__, set()).add(id(mod))
-    assert not [
-        f for f, ids in files.items() if len(ids) > 1
-    ], "a module was loaded twice"
+    assert not [f for f, ids in files.items() if len(ids) > 1], (
+        "a module was loaded twice"
+    )
 
 
 # -- statistics moved from s11 ----------------------------------------------------

@@ -87,11 +87,15 @@ def serve_arms(server, router, facts, q, enc):
         return j, sim, {"adapter": base, "retrieval": base, "both": base}
     note = rag_system("instruct", facts, j)
     fid = facts[j]["id"]
-    return j, sim, {
-        "adapter": server.adapter(fid, q),
-        "retrieval": server.base(q, system=note),
-        "both": server.adapter(fid, q, system=note),
-    }
+    return (
+        j,
+        sim,
+        {
+            "adapter": server.adapter(fid, q),
+            "retrieval": server.base(q, system=note),
+            "both": server.adapter(fid, q, system=note),
+        },
+    )
 
 
 def locality(server, router, facts, queries, enc, answers):
@@ -149,8 +153,17 @@ def removal(server, enc, facts, removed, tau, make_router=None):
     return rows, keep, router
 
 
-def evaluate(store, facts, enc, tau, dataset, raw, progress=100, make_router=None,
-             run_locality=True):
+def evaluate(
+    store,
+    facts,
+    enc,
+    tau,
+    dataset,
+    raw,
+    progress=100,
+    make_router=None,
+    run_locality=True,
+):
     server = Server(store)
     router = make_router(facts) if make_router else RouterV4(enc, facts, tau)
     answers = [f["answer"] for f in facts if f["answer"] not in NUMBERS]
@@ -186,7 +199,10 @@ def evaluate(store, facts, enc, tau, dataset, raw, progress=100, make_router=Non
         kind: {
             "route_correct": _metric(col(kind, "route_correct")),
             "routed": _metric([r[kind]["route_fact_id"] is not None for r in rows]),
-            **{arm: _metric(col(kind, f"{arm}_hit")) for arm in ("adapter", "retrieval", "both")},
+            **{
+                arm: _metric(col(kind, f"{arm}_hit"))
+                for arm in ("adapter", "retrieval", "both")
+            },
             "adapter_minus_retrieval": paired_diff_ci(
                 col(kind, "adapter_hit"), col(kind, "retrieval_hit")
             ),
@@ -207,10 +223,16 @@ def evaluate(store, facts, enc, tau, dataset, raw, progress=100, make_router=Non
     tiered = {
         "adapter_fraction": round(tier.count("adapter") / len(tier), 4),
         "probe": _metric(
-            [r["probe"][f"{'retrieval' if t == 'note' else 'adapter'}_hit"] for r, t in zip(rows, tier)]
+            [
+                r["probe"][f"{'retrieval' if t == 'note' else 'adapter'}_hit"]
+                for r, t in zip(rows, tier)
+            ]
         ),
         "paraphrase": _metric(
-            [r["paraphrase"][f"{'retrieval' if t == 'note' else 'adapter'}_hit"] for r, t in zip(rows, tier)]
+            [
+                r["paraphrase"][f"{'retrieval' if t == 'note' else 'adapter'}_hit"]
+                for r, t in zip(rows, tier)
+            ]
         ),
     }
     for r, t in zip(rows, tier):
@@ -222,18 +244,32 @@ def evaluate(store, facts, enc, tau, dataset, raw, progress=100, make_router=Non
     elif dataset == "counterfact":
         records = match_raw(facts, raw)
         loc["E2_neighborhood"] = locality(
-            server, router, facts, [r["neighborhood_prompts"][0] for r in records], enc, answers
+            server,
+            router,
+            facts,
+            [r["neighborhood_prompts"][0] for r in records],
+            enc,
+            answers,
         )
         print("E2 done", flush=True)
         loc["E3_other_relation"] = locality(
-            server, router, facts, [p["query"] for p in other_relation_prompts(records, raw)],
-            enc, answers,
+            server,
+            router,
+            facts,
+            [p["query"] for p in other_relation_prompts(records, raw)],
+            enc,
+            answers,
         )
         print("E3 done", flush=True)
     else:
         by_src = {item["src"].strip(): item for item in raw}
         loc["loc_questions"] = locality(
-            server, router, facts, [by_src[f["probe"]]["loc"] for f in facts], enc, answers
+            server,
+            router,
+            facts,
+            [by_src[f["probe"]]["loc"] for f in facts],
+            enc,
+            answers,
         )
         print("loc done", flush=True)
 
@@ -245,7 +281,11 @@ def evaluate(store, facts, enc, tau, dataset, raw, progress=100, make_router=Non
     store.deltas = {f["id"]: full[f["id"]] for f in keep}
     for f in keep:
         j, _ = keep_router.route(f["probe"], enc)
-        resp = server.base(f["probe"]) if j is None else server.adapter(keep[j]["id"], f["probe"])
+        resp = (
+            server.base(f["probe"])
+            if j is None
+            else server.adapter(keep[j]["id"], f["probe"])
+        )
         retention.append(hit(resp, f["answer"]))
     store.deltas = full
     removal_report = {
@@ -281,11 +321,15 @@ def evaluate(store, facts, enc, tau, dataset, raw, progress=100, make_router=Non
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--ckpt", required=True)
     ap.add_argument("--facts", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--calibration", default=str(CONFIRM / "router_v4_calibration.json"))
+    ap.add_argument(
+        "--calibration", default=str(CONFIRM / "router_v4_calibration.json")
+    )
     ap.add_argument("--progress-every", type=int, default=100)
     args = ap.parse_args(argv)
 
@@ -297,8 +341,11 @@ def main(argv=None):
     manifest = json.loads(MANIFEST_PATH.read_bytes())
     model_id = manifest["models"]["base"]["id"]
     verified = verify_manifest_inputs(
-        manifest, _repo_path(args.ckpt, REPO_ROOT), _repo_path(args.facts, REPO_ROOT),
-        model_id, repo_root=REPO_ROOT,
+        manifest,
+        _repo_path(args.ckpt, REPO_ROOT),
+        _repo_path(args.facts, REPO_ROOT),
+        model_id,
+        repo_root=REPO_ROOT,
     )
     facts, dataset = verified["facts"], verified["artifact"]["dataset"]
     raw = json.loads((CONFIRM / f"raw/{dataset}.json").read_text())
@@ -311,7 +358,8 @@ def main(argv=None):
     store = PilotStore(model_id, steps=16)
     store.kl_prompts = list(CANARIES)
     checkpoint, ckpt_sha = load_verified_checkpoint(
-        verified["checkpoint_path"], verified["checkpoint_sha256"],
+        verified["checkpoint_path"],
+        verified["checkpoint_sha256"],
         lambda source: torch.load(source, map_location="cpu", weights_only=False),
     )
     _validate_checkpoint(checkpoint, facts)
@@ -321,7 +369,9 @@ def main(argv=None):
     print(f"loaded {len(store.deltas)} adapters; router v4 tau={tau}", flush=True)
 
     started = time.time()
-    result = evaluate(store, facts, enc, tau, dataset, raw, progress=args.progress_every)
+    result = evaluate(
+        store, facts, enc, tau, dataset, raw, progress=args.progress_every
+    )
     result.update(
         {
             "schema": "confirm.v4_eval.v1",
@@ -335,7 +385,12 @@ def main(argv=None):
         }
     )
     out_path.write_text(json.dumps(result, ensure_ascii=False, indent=1))
-    print(json.dumps({k: result[k] for k in ("serving", "tiered", "locality", "removal")}, indent=1))
+    print(
+        json.dumps(
+            {k: result[k] for k in ("serving", "tiered", "locality", "removal")},
+            indent=1,
+        )
+    )
     print(f"saved: {out_path}", flush=True)
 
 

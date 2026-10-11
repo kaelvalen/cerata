@@ -63,7 +63,9 @@ def calibrate_margin(enc, dev, tau):
         else:
             neg.append(np.inf)
     pos, neg = np.asarray(pos), np.asarray(neg)
-    grid = np.unique(np.concatenate([[0.0], pos[np.isfinite(pos)], neg[np.isfinite(neg)]]))
+    grid = np.unique(
+        np.concatenate([[0.0], pos[np.isfinite(pos)], neg[np.isfinite(neg)]])
+    )
     best = None
     for m in grid:
         tpr, fpr = float((pos <= m).mean()), float((neg <= m).mean())
@@ -71,8 +73,16 @@ def calibrate_margin(enc, dev, tau):
             best = (tpr - fpr, float(m), tpr, fpr)
     v4_tpr, v4_fpr = float(np.isfinite(pos).mean()), float(np.isfinite(neg).mean())
     j, m, tpr, fpr = best
-    return {"margin": round(m, 4), "youden_j": round(j, 4), "tpr": tpr, "fpr": fpr,
-            "v4_tpr": v4_tpr, "v4_fpr": v4_fpr, "n_pos": len(pos), "n_neg": len(neg)}
+    return {
+        "margin": round(m, 4),
+        "youden_j": round(j, 4),
+        "tpr": tpr,
+        "fpr": fpr,
+        "v4_tpr": v4_tpr,
+        "v4_fpr": v4_fpr,
+        "n_pos": len(pos),
+        "n_neg": len(neg),
+    }
 
 
 def main(argv=None):
@@ -87,10 +97,17 @@ def main(argv=None):
     enc = SentenceTransformer(
         "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", device="cpu"
     )
-    tau = json.loads((CONFIRM / "router_v4_calibration.json").read_text())["calibration"]["tau"]
-    raw = {d: json.loads((CONFIRM / f"raw/{d}.json").read_text()) for d in ("counterfact", "zsre")}
+    tau = json.loads((CONFIRM / "router_v4_calibration.json").read_text())[
+        "calibration"
+    ]["tau"]
+    raw = {
+        d: json.loads((CONFIRM / f"raw/{d}.json").read_text())
+        for d in ("counterfact", "zsre")
+    }
     tests = {
-        "counterfact": json.loads((CONFIRM / "external_counterfact_n1000.json").read_text())["facts"],
+        "counterfact": json.loads(
+            (CONFIRM / "external_counterfact_n1000.json").read_text()
+        )["facts"],
         "zsre": json.loads((CONFIRM / "external_zsre_n1000.json").read_text())["facts"],
     }
     test_subjects = {f["subject"] for fs in tests.values() for f in fs}
@@ -103,7 +120,12 @@ def main(argv=None):
     need_base = {}  # dataset -> queries that v4 routed and v5 does not
     decisions = {}
     for name, facts in tests.items():
-        v4 = json.loads((CONFIRM / f"{'cf' if name == 'counterfact' else 'zsre'}_n1000_v4_eval.json").read_text())
+        v4 = json.loads(
+            (
+                CONFIRM
+                / f"{'cf' if name == 'counterfact' else 'zsre'}_n1000_v4_eval.json"
+            ).read_text()
+        )
         router = RouterV5(enc, facts, tau, margin)
         idx = {f["id"]: i for i, f in enumerate(facts)}
         rows = v4["examples"]["serving"]
@@ -132,8 +154,13 @@ def main(argv=None):
             facts = tests[name]
             for i, f in enumerate(facts):
                 for kind in ("probe", "paraphrase"):
-                    if dec[(i, kind)] is None and rows[i][kind]["route_fact_id"] is not None:
-                        base_hits[(name, i, kind)] = hit(base_answer(store, f[kind]), f["answer"])
+                    if (
+                        dec[(i, kind)] is None
+                        and rows[i][kind]["route_fact_id"] is not None
+                    ):
+                        base_hits[(name, i, kind)] = hit(
+                            base_answer(store, f[kind]), f["answer"]
+                        )
                         trim()
         print("base answers:", {k: len(v) for k, v in need_base.items()}, flush=True)
 
@@ -155,13 +182,20 @@ def main(argv=None):
                         vals.append(r[f"{arm}_hit"])
                 per_arm[arm] = vals
             tier = [rows[i]["tier"] for i in range(len(facts))]
-            tiered = [per_arm["retrieval" if t == "note" else "adapter"][i] for i, t in enumerate(tier)]
+            tiered = [
+                per_arm["retrieval" if t == "note" else "adapter"][i]
+                for i, t in enumerate(tier)
+            ]
             hits[kind] = per_arm
             out[kind] = {
-                "route_correct": rate(route_correct), "routed": rate(routed),
-                **{arm: rate(v) for arm, v in per_arm.items()}, "tiered": rate(tiered),
+                "route_correct": rate(route_correct),
+                "routed": rate(routed),
+                **{arm: rate(v) for arm, v in per_arm.items()},
+                "tiered": rate(tiered),
                 "v4": {arm: v4["serving"][kind][arm]["rate"] for arm in ARMS},
-                "adapter_minus_retrieval": paired_diff_ci(per_arm["adapter"], per_arm["retrieval"]),
+                "adapter_minus_retrieval": paired_diff_ci(
+                    per_arm["adapter"], per_arm["retrieval"]
+                ),
             }
         # removal: keep-store router
         removed = facts[:100]
@@ -172,7 +206,9 @@ def main(argv=None):
             j, _ = keep_router.route(f["probe"], enc)
             ret.append(True if j is None else row["return"])
         out["removal_return"] = rate(ret)
-        out["distractor_routed"] = rate(router.route(f["distractor"], enc)[0] is not None for f in facts)
+        out["distractor_routed"] = rate(
+            router.route(f["distractor"], enc)[0] is not None for f in facts
+        )
         report["test"][name] = out
         print(name, json.dumps({k: v for k, v in out.items()}), flush=True)
 
@@ -187,12 +223,18 @@ def main(argv=None):
     for name in ("E3_other_relation", "E2_neighborhood"):
         rows = ss71["examples"][name]
         v5_routed = [router.route(r["query"], enc)[0] is not None for r in rows]
-        loc[name] = {"routed": rate(v5_routed), "v4_routed": rate(r["routed"] for r in rows)}
+        loc[name] = {
+            "routed": rate(v5_routed),
+            "v4_routed": rate(r["routed"] for r in rows),
+        }
         for p in POLICIES:
             leak = [r[p]["leak"] and ok for r, ok in zip(rows, v5_routed)]
             same = [r[p]["same"] or not ok for r, ok in zip(rows, v5_routed)]
-            loc[name][p] = {"leak": rate(leak), "same": rate(same),
-                            "v4_leak": rate(r[p]["leak"] for r in rows)}
+            loc[name][p] = {
+                "leak": rate(leak),
+                "same": rate(same),
+                "v4_leak": rate(r[p]["leak"] for r in rows),
+            }
         if name == "E3_other_relation":
             in_store = [m["relation_id"] in stored_relations for m in e3_meta]
             loc[name]["relation_in_store_fraction"] = rate(in_store)
@@ -204,7 +246,8 @@ def main(argv=None):
     zs = tests["zsre"]
     zs_by_src = {item["src"].strip(): item for item in raw["zsre"]}
     loc["zsre_loc_routed"] = rate(
-        decisions["zsre"][0].route(zs_by_src[f["probe"]]["loc"], enc)[0] is not None for f in zs
+        decisions["zsre"][0].route(zs_by_src[f["probe"]]["loc"], enc)[0] is not None
+        for f in zs
     )
     report["locality"] = loc
     print("locality:", json.dumps(loc), flush=True)
@@ -213,16 +256,25 @@ def main(argv=None):
     rng = random.Random(SEED + 1)
     by_relation = _templates_by_relation(raw["counterfact"])
     siblings = [
-        {"subject": f["subject"],
-         "probe": _other_template(rng, by_relation, r["requested_rewrite"]["relation_id"]).replace("{}", f["subject"])}
+        {
+            "subject": f["subject"],
+            "probe": _other_template(
+                rng, by_relation, r["requested_rewrite"]["relation_id"]
+            ).replace("{}", f["subject"]),
+        }
         for f, r in zip(facts, records)
     ]
     both = facts + siblings
     sib_router = RouterV5(enc, both, tau, margin)
     n = len(facts)
     report["sibling_test"] = {
-        "original_probe": rate(sib_router.route(f["probe"], enc)[0] == i for i, f in enumerate(facts)),
-        "sibling_probe": rate(sib_router.route(s["probe"], enc)[0] == n + i for i, s in enumerate(siblings)),
+        "original_probe": rate(
+            sib_router.route(f["probe"], enc)[0] == i for i, f in enumerate(facts)
+        ),
+        "sibling_probe": rate(
+            sib_router.route(s["probe"], enc)[0] == n + i
+            for i, s in enumerate(siblings)
+        ),
     }
     print("siblings:", json.dumps(report["sibling_test"]), flush=True)
     Path(args.out).write_text(json.dumps(report, ensure_ascii=False, indent=1))

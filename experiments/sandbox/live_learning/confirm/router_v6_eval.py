@@ -63,11 +63,18 @@ class Judge:
         if key not in self.cache:
             msgs = [
                 {"role": "system", "content": JUDGE_SYSTEM},
-                {"role": "user", "content": f"Fact: {statement}\nQuestion: {question}\n"
-                 "Does the fact answer the question? Answer Yes or No."},
+                {
+                    "role": "user",
+                    "content": f"Fact: {statement}\nQuestion: {question}\n"
+                    "Does the fact answer the question? Answer Yes or No.",
+                },
             ]
-            enc = self.store.tok.apply_chat_template(msgs, add_generation_prompt=True, return_tensors="pt")
-            ids = (enc["input_ids"] if hasattr(enc, "keys") else enc).to(self.store.model.device)
+            enc = self.store.tok.apply_chat_template(
+                msgs, add_generation_prompt=True, return_tensors="pt"
+            )
+            ids = (enc["input_ids"] if hasattr(enc, "keys") else enc).to(
+                self.store.model.device
+            )
             with self.torch.no_grad():
                 logits = self.store.model(input_ids=ids).logits[0, -1].float()
             self.cache[key] = float(logits[self.yes] - logits[self.no])
@@ -94,10 +101,17 @@ def main(argv=None):
     enc = SentenceTransformer(
         "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", device="cpu"
     )
-    tau = json.loads((CONFIRM / "router_v4_calibration.json").read_text())["calibration"]["tau"]
-    raw = {d: json.loads((CONFIRM / f"raw/{d}.json").read_text()) for d in ("counterfact", "zsre")}
+    tau = json.loads((CONFIRM / "router_v4_calibration.json").read_text())[
+        "calibration"
+    ]["tau"]
+    raw = {
+        d: json.loads((CONFIRM / f"raw/{d}.json").read_text())
+        for d in ("counterfact", "zsre")
+    }
     tests = {
-        "counterfact": json.loads((CONFIRM / "external_counterfact_n1000.json").read_text())["facts"],
+        "counterfact": json.loads(
+            (CONFIRM / "external_counterfact_n1000.json").read_text()
+        )["facts"],
         "zsre": json.loads((CONFIRM / "external_zsre_n1000.json").read_text())["facts"],
     }
     test_subjects = {f["subject"] for fs in tests.values() for f in fs}
@@ -115,14 +129,25 @@ def main(argv=None):
     for i, f in enumerate(dev):
         for p in f["paraphrases"]:
             j, _ = dev_router.route(p, enc)
-            pos.append(judge(dev[i]["teach"], clause(dev_router, p)) if j == i else -np.inf)
+            pos.append(
+                judge(dev[i]["teach"], clause(dev_router, p)) if j == i else -np.inf
+            )
         j, _ = dev_router.route(f["negative"], enc)
-        neg.append(judge(dev[j]["teach"], clause(dev_router, f["negative"])) if j is not None else -np.inf)
+        neg.append(
+            judge(dev[j]["teach"], clause(dev_router, f["negative"]))
+            if j is not None
+            else -np.inf
+        )
     cal = youden(pos, neg)
     theta = cal["tau"]
-    cal = {"theta": theta, **{k: v for k, v in cal.items() if k != "tau"},
-           "n_pos": len(pos), "n_neg": len(neg),
-           "v4_tpr": float(np.isfinite(pos).mean()), "v4_fpr": float(np.isfinite(neg).mean())}
+    cal = {
+        "theta": theta,
+        **{k: v for k, v in cal.items() if k != "tau"},
+        "n_pos": len(pos),
+        "n_neg": len(neg),
+        "v4_tpr": float(np.isfinite(pos).mean()),
+        "v4_fpr": float(np.isfinite(neg).mean()),
+    }
     print("calibration:", json.dumps(cal), flush=True)
 
     def accept(router, facts, j, q):
@@ -131,7 +156,12 @@ def main(argv=None):
     report = {"prereg": "SS73", "tau": tau, "calibration": cal, "test": {}}
     routers = {}
     for name, facts in tests.items():
-        v4 = json.loads((CONFIRM / f"{'cf' if name == 'counterfact' else 'zsre'}_n1000_v4_eval.json").read_text())
+        v4 = json.loads(
+            (
+                CONFIRM
+                / f"{'cf' if name == 'counterfact' else 'zsre'}_n1000_v4_eval.json"
+            ).read_text()
+        )
         router = RouterV4(enc, facts, tau)
         routers[name] = router
         idx = {f["id"]: i for i, f in enumerate(facts)}
@@ -155,13 +185,19 @@ def main(argv=None):
                 else:
                     for arm in ARMS:
                         per_arm[arm].append(r[f"{arm}_hit"])
-            tiered = [per_arm["retrieval" if row["tier"] == "note" else "adapter"][i]
-                      for i, row in enumerate(rows)]
+            tiered = [
+                per_arm["retrieval" if row["tier"] == "note" else "adapter"][i]
+                for i, row in enumerate(rows)
+            ]
             out[kind] = {
-                "route_correct": rate(route_correct), "routed": rate(routed),
-                **{arm: rate(v) for arm, v in per_arm.items()}, "tiered": rate(tiered),
+                "route_correct": rate(route_correct),
+                "routed": rate(routed),
+                **{arm: rate(v) for arm, v in per_arm.items()},
+                "tiered": rate(tiered),
                 "v4": {arm: v4["serving"][kind][arm]["rate"] for arm in ARMS},
-                "adapter_minus_retrieval": paired_diff_ci(per_arm["adapter"], per_arm["retrieval"]),
+                "adapter_minus_retrieval": paired_diff_ci(
+                    per_arm["adapter"], per_arm["retrieval"]
+                ),
             }
         keep = facts[100:]
         keep_router = RouterV4(enc, keep, tau)
@@ -169,7 +205,9 @@ def main(argv=None):
         ret = []
         for row, f in zip(v4["examples"]["removal"], facts[:100]):
             j = None if row["routed_to"] is None else keep_idx[row["routed_to"]]
-            ret.append(row["return"] if accept(keep_router, keep, j, f["probe"]) else True)
+            ret.append(
+                row["return"] if accept(keep_router, keep, j, f["probe"]) else True
+            )
         out["removal_return"] = rate(ret)
         out["base_answers_generated"] = base_new
         report["test"][name] = out
@@ -182,8 +220,15 @@ def main(argv=None):
     loc = {}
     for name in ("E3_other_relation", "E2_neighborhood"):
         rows = ss71["examples"][name]
-        kept = [accept(router, facts, None if r["route_fact_id"] is None else idx[r["route_fact_id"]], r["query"])
-                for r in rows]
+        kept = [
+            accept(
+                router,
+                facts,
+                None if r["route_fact_id"] is None else idx[r["route_fact_id"]],
+                r["query"],
+            )
+            for r in rows
+        ]
         loc[name] = {"routed": rate(kept), "v4_routed": rate(r["routed"] for r in rows)}
         for p in POLICIES:
             loc[name][p] = {
@@ -199,8 +244,12 @@ def main(argv=None):
     rng = random.Random(SEED + 1)
     by_relation = _templates_by_relation(raw["counterfact"])
     siblings = [
-        {"subject": f["subject"],
-         "probe": _other_template(rng, by_relation, r["requested_rewrite"]["relation_id"]).replace("{}", f["subject"])}
+        {
+            "subject": f["subject"],
+            "probe": _other_template(
+                rng, by_relation, r["requested_rewrite"]["relation_id"]
+            ).replace("{}", f["subject"]),
+        }
         for f, r in zip(facts, records)
     ]
     both = facts + siblings
@@ -208,15 +257,22 @@ def main(argv=None):
     n = len(facts)
     report["sibling_test"] = {
         "original_probe": rate(
-            (j := sib_router.route(f["probe"], enc)[0]) == i and accept(sib_router, both, j, f["probe"])
+            (j := sib_router.route(f["probe"], enc)[0]) == i
+            and accept(sib_router, both, j, f["probe"])
             for i, f in enumerate(facts)
         ),
-        "sibling_probe_v4": rate(sib_router.route(s["probe"], enc)[0] == n + i for i, s in enumerate(siblings)),
+        "sibling_probe_v4": rate(
+            sib_router.route(s["probe"], enc)[0] == n + i
+            for i, s in enumerate(siblings)
+        ),
     }
     report["judge_calls"] = judge.calls
     print("siblings:", json.dumps(report["sibling_test"]), flush=True)
     # dev scores for the paper's histogram
-    report["dev_scores"] = {"pos": [x for x in pos if np.isfinite(x)], "neg": [x for x in neg if np.isfinite(x)]}
+    report["dev_scores"] = {
+        "pos": [x for x in pos if np.isfinite(x)],
+        "neg": [x for x in neg if np.isfinite(x)],
+    }
     Path(args.out).write_text(json.dumps(report, ensure_ascii=False, indent=1))
     print("saved:", args.out)
 

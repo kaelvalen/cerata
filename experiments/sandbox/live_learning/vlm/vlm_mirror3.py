@@ -69,12 +69,16 @@ def main() -> None:
         train_delta_kl(proc, model, PANEL_A, pairs, args.steps, args.lr, lam=lam)
         in_memory = ask(proc, model, PANEL_A, PROBE)
         canary = ask(proc, model, None, CANARIES[1])
-        norm = sum(float((p.detach().float() ** 2).sum()) for _, p in lora_named(model)) ** 0.5
+        norm = (
+            sum(float((p.detach().float() ** 2).sum()) for _, p in lora_named(model))
+            ** 0.5
+        )
         delta = {n: p.detach().float().cpu().clone() for n, p in lora_named(model)}
         set_lora(model, None)
         set_lora(model, delta)
         diff = max(
-            float((p.detach().float().cpu() - delta[n]).abs().max()) for n, p in lora_named(model)
+            float((p.detach().float().cpu() - delta[n]).abs().max())
+            for n, p in lora_named(model)
         )
         restored = ask(proc, model, PANEL_A, PROBE)
         arms[str(lam)] = {
@@ -97,7 +101,12 @@ def main() -> None:
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"arms": arms}, ensure_ascii=False, indent=1))
-    print(json.dumps({k: [v["in_memory"][:40], v["restored"][:40]] for k, v in arms.items()}, ensure_ascii=False))
+    print(
+        json.dumps(
+            {k: [v["in_memory"][:40], v["restored"][:40]] for k, v in arms.items()},
+            ensure_ascii=False,
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -94,7 +94,9 @@ def main() -> None:
         qv = embed(iproc, imodel, PANELS[FACTS[key]["panel"]])
         sims = {k: float(qv @ v) for k, v in keys.items()}
         best = max(sims, key=sims.get)
-        return (best if sims[best] >= TAU else None), {k: round(v, 3) for k, v in sims.items()}
+        return (best if sims[best] >= TAU else None), {
+            k: round(v, 3) for k, v in sims.items()
+        }
 
     route_a, sims_a = route("a")
     route_b, sims_b = route("b")

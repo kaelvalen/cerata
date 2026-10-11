@@ -24,8 +24,11 @@ class BiScorer:
     def prefetch(self, texts):
         missing = sorted({t for t in texts if t not in self._cache})
         if missing:
-            emb = self.model.encode([self.prefix + t for t in missing], batch_size=128,
-                                    normalize_embeddings=True)
+            emb = self.model.encode(
+                [self.prefix + t for t in missing],
+                batch_size=128,
+                normalize_embeddings=True,
+            )
             self._cache.update(zip(missing, emb))
 
     def sims(self, query: str, keys: list[str]) -> list[float]:
@@ -44,7 +47,9 @@ class CrossScorer:
     def prefetch_pairs(self, pairs):
         missing = sorted({p for p in pairs if p not in self._cache})
         if missing:
-            scores = self.model.predict(missing, batch_size=128, show_progress_bar=False)
+            scores = self.model.predict(
+                missing, batch_size=128, show_progress_bar=False
+            )
             self._cache.update(zip(missing, (float(s) for s in np.ravel(scores))))
 
     def sims(self, query: str, keys: list[str]) -> list[float]:
@@ -103,7 +108,11 @@ SCORERS = {
 
 def make_scorer(name: str, device: str = "cuda"):
     kind, model_id, prefix = SCORERS[name]
-    return BiScorer(model_id, prefix, device) if kind == "bi" else CrossScorer(model_id, device)
+    return (
+        BiScorer(model_id, prefix, device)
+        if kind == "bi"
+        else CrossScorer(model_id, device)
+    )
 
 
 class RouterV10(RouterV7):
@@ -113,7 +122,9 @@ class RouterV10(RouterV7):
     s_neg is its maximum similarity to its own negative keys (no negatives: -inf).
     """
 
-    def __init__(self, facts, scorer, tau: float, margin: float, neg_keys, extra_keys=None):
+    def __init__(
+        self, facts, scorer, tau: float, margin: float, neg_keys, extra_keys=None
+    ):
         super().__init__(facts, scorer, tau, extra_keys)
         self.margin = margin
         self.neg_sets = []

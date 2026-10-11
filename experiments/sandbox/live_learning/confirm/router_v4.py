@@ -114,14 +114,17 @@ class RouterV4:
             self._by_subject.setdefault(normalize(s).strip(), []).append(i)
         # token index: a subject can match only if each of its tokens is close to some
         # query token, so the full alignment runs on few subjects
-        self._subject_tokens = {s: [t for t, _, _ in _tokens(s)] for s in self._by_subject}
+        self._subject_tokens = {
+            s: [t for t, _, _ in _tokens(s)] for s in self._by_subject
+        }
         self._vocab = sorted({t for ts in self._subject_tokens.values() for t in ts})
         self._close_cache: dict[str, frozenset] = {}
 
     def _close(self, query_token: str) -> frozenset:
         if query_token not in self._close_cache:
             self._close_cache[query_token] = frozenset(
-                t for t in self._vocab
+                t
+                for t in self._vocab
                 if abs(len(t) - len(query_token)) <= 2 and _token_close(t, query_token)
             )
         return self._close_cache[query_token]
@@ -132,7 +135,8 @@ class RouterV4:
         for t, _, _ in _tokens(qn):
             close |= self._close(t)
         return [
-            s for s, ts in self._subject_tokens.items()
+            s
+            for s, ts in self._subject_tokens.items()
             if (ts and all(t in close for t in ts)) or (s and s in qn)
         ]
 
@@ -184,7 +188,11 @@ class RouterV5(RouterV4):
         if not cand:
             return [], [], None
         v = enc.encode([relation_text(q, span)], normalize_embeddings=True)[0]
-        return cand, [float(self.keys[i] @ v) for i in cand], float((self.keys @ v).max())
+        return (
+            cand,
+            [float(self.keys[i] @ v) for i in cand],
+            float((self.keys @ v).max()),
+        )
 
     def route(self, q, enc):
         cand, sims, best = self.contrast_score(q, enc)

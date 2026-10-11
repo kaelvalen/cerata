@@ -158,16 +158,22 @@ def eval_variant(store, variant: str, deltas, facts) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--facts", default="results/live_learning/confirm/external_counterfact_n50.json")
+    ap.add_argument(
+        "--facts", default="results/live_learning/confirm/external_counterfact_n50.json"
+    )
     ap.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
-    ap.add_argument("--out", default="results/live_learning/confirm/lora_ablation_n50.json")
+    ap.add_argument(
+        "--out", default="results/live_learning/confirm/lora_ablation_n50.json"
+    )
     ap.add_argument("--variants", default=",".join(VARIANTS))
     args = ap.parse_args()
     data = json.loads(Path(args.facts).read_text())
     facts = data["facts"] if isinstance(data, dict) else data
     store = PilotStore(args.model, steps=16)
     store.kl_prompts = ["What is the capital of France?", "What is 7 times 8?"]
-    store.model.to("cpu")  # the store model is unused here; free the GPU for the variants
+    store.model.to(
+        "cpu"
+    )  # the store model is unused here; free the GPU for the variants
     torch.cuda.empty_cache()
 
     report = {}
@@ -175,7 +181,10 @@ def main() -> None:
         t0 = time.time()
         deltas = {}
         for f in facts:
-            pairs = [(f["teach"], f"Not aldım: {f['teach']}"), (f["probe"], f["answer"])]
+            pairs = [
+                (f["teach"], f"Not aldım: {f['teach']}"),
+                (f["probe"], f["answer"]),
+            ]
             deltas[f["id"]] = train_variant(store, variant, pairs)
         train_s = time.time() - t0
         report[variant] = {"train_seconds": round(train_s, 1)}
@@ -184,7 +193,11 @@ def main() -> None:
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({"facts": args.facts, "variants": report}, ensure_ascii=False, indent=1))
+    out.write_text(
+        json.dumps(
+            {"facts": args.facts, "variants": report}, ensure_ascii=False, indent=1
+        )
+    )
     print("saved:", out)
 
 

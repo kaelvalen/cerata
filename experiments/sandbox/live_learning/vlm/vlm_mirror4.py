@@ -93,7 +93,9 @@ def main() -> None:
         qv = embed(iproc, imodel, FACTS[key]["panel"])
         s = {k: float(qv @ v) for k, v in keys.items()}
         best = max(s, key=s.get)
-        return (best if s[best] >= TAU else None), {k: round(v, 3) for k, v in s.items()}
+        return (best if s[best] >= TAU else None), {
+            k: round(v, 3) for k, v in s.items()
+        }
 
     route_a, sims_a = route("a")
     route_b, sims_b = route("b")
@@ -130,7 +132,8 @@ def main() -> None:
         "checks": {
             "base_unknown": all(not contains(base[k], FACTS[k]["code"]) for k in FACTS),
             "route_correct": route_a == "a" and route_b == "b",
-            "served_correct": contains(served["a"], "Tira") and contains(served["b"], "Vok"),
+            "served_correct": contains(served["a"], "Tira")
+            and contains(served["b"], "Vok"),
             "canary_clean": not contains(canary, "Tira"),
             "leak_recorded": contains(leak, "Tira"),
             "revoke_abstains": route_b_revoked is None

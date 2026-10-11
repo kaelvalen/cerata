@@ -82,10 +82,14 @@ def main() -> None:
             }
             print(name, kind, json.dumps(report[name][kind]), flush=True)
 
-    out = Path(args.out or f"results/live_learning/confirm/router_stress_v2v3_n{args.n}.json")
+    out = Path(
+        args.out or f"results/live_learning/confirm/router_stress_v2v3_n{args.n}.json"
+    )
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
-        json.dumps({"n": args.n, "tau": TAU, "kinds": report}, ensure_ascii=False, indent=1)
+        json.dumps(
+            {"n": args.n, "tau": TAU, "kinds": report}, ensure_ascii=False, indent=1
+        )
     )
     print("saved:", out)
 

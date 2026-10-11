@@ -33,7 +33,9 @@ def panel(shapes) -> Image.Image:
         elif kind == "square":
             d.rectangle([cx - 34, cy - 34, cx + 34, cy + 34], fill=color)
         else:
-            d.polygon([(cx, cy - 38), (cx - 38, cy + 32), (cx + 38, cy + 32)], fill=color)
+            d.polygon(
+                [(cx, cy - 38), (cx - 38, cy + 32), (cx + 38, cy + 32)], fill=color
+            )
     return img
 
 
@@ -47,17 +49,29 @@ def scene(shapes, bg="white") -> Image.Image:
             d.rectangle([cx - r, cy - r, cx + r, cy + r], fill=color)
         else:
             d.polygon(
-                [(cx, cy - int(r * 1.1)), (cx - int(r * 1.1), cy + r), (cx + int(r * 1.1), cy + r)],
+                [
+                    (cx, cy - int(r * 1.1)),
+                    (cx - int(r * 1.1), cy + r),
+                    (cx + int(r * 1.1), cy + r),
+                ],
                 fill=color,
             )
     return img
 
 
 PANEL_A = panel(
-    [("circle", GREEN, (48, 112)), ("square", RED, (112, 112)), ("triangle", BLUE, (176, 112))]
+    [
+        ("circle", GREEN, (48, 112)),
+        ("square", RED, (112, 112)),
+        ("triangle", BLUE, (176, 112)),
+    ]
 )
 PANEL_B = panel(
-    [("circle", BLUE, (48, 112)), ("square", GREEN, (112, 112)), ("triangle", RED, (176, 112))]
+    [
+        ("circle", BLUE, (48, 112)),
+        ("square", GREEN, (112, 112)),
+        ("triangle", RED, (176, 112)),
+    ]
 )
 PANEL_B2 = panel(
     [
@@ -151,7 +165,9 @@ def prep(proc, messages, images, generate: bool):
             return_tensors="pt",
         )
     except Exception:
-        text = proc.apply_chat_template(messages, tokenize=False, add_generation_prompt=generate)
+        text = proc.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=generate
+        )
         out = proc(text=[text], images=images or None, return_tensors="pt")
     return {k: v for k, v in out.items() if v is not None}
 
@@ -185,7 +201,7 @@ def ask(proc, model, image, question, max_new_tokens: int = 24) -> str:
         pad_token_id=proc.tokenizer.eos_token_id,
     )
     return proc.tokenizer.decode(
-        gen[0, batch["input_ids"].shape[1]:], skip_special_tokens=True
+        gen[0, batch["input_ids"].shape[1] :], skip_special_tokens=True
     ).strip()
 
 
@@ -211,7 +227,9 @@ def set_lora(model, delta=None) -> None:
 
 def train_delta(proc, model, image, pairs, steps: int, lr: float) -> None:
     reset_lora(model)
-    params = [p for n, p in model.named_parameters() if "lora_" in n and p.requires_grad]
+    params = [
+        p for n, p in model.named_parameters() if "lora_" in n and p.requires_grad
+    ]
     opt = torch.optim.AdamW(params, lr=lr)
     model.train()
     for _ in range(steps):
@@ -248,7 +266,9 @@ def train_delta_kl(proc, model, image, pairs, steps: int, lr: float, lam: float 
     reset_lora(model)
     with torch.no_grad():
         base_logits = [cur_logits(proc, model, q) for q in CANARIES]
-    params = [p for n, p in model.named_parameters() if "lora_" in n and p.requires_grad]
+    params = [
+        p for n, p in model.named_parameters() if "lora_" in n and p.requires_grad
+    ]
     opt = torch.optim.AdamW(params, lr=lr)
     model.train()
     for _ in range(steps):
@@ -286,7 +306,9 @@ def train_delta_contrast(proc, model, triples, steps: int, lr: float, lam: float
     reset_lora(model)
     with torch.no_grad():
         base_logits = [cur_logits(proc, model, q) for q in CANARIES]
-    params = [p for n, p in model.named_parameters() if "lora_" in n and p.requires_grad]
+    params = [
+        p for n, p in model.named_parameters() if "lora_" in n and p.requires_grad
+    ]
     opt = torch.optim.AdamW(params, lr=lr)
     model.train()
     for _ in range(steps):
@@ -322,7 +344,9 @@ def train_delta_contrast(proc, model, triples, steps: int, lr: float, lam: float
 def train_text_candidate(proc, model, pairs, steps: int, lr: float) -> None:
     """A text-only candidate (no image, no anchor): the G1 refusal stress test."""
     reset_lora(model)
-    params = [p for n, p in model.named_parameters() if "lora_" in n and p.requires_grad]
+    params = [
+        p for n, p in model.named_parameters() if "lora_" in n and p.requires_grad
+    ]
     opt = torch.optim.AdamW(params, lr=lr)
     model.train()
     for _ in range(steps):
@@ -377,7 +401,9 @@ def load_clip():
 
 @torch.no_grad()
 def emb_clip(proc, model, image):
-    batch = {k: v.to("cuda:0") for k, v in proc(images=image, return_tensors="pt").items()}
+    batch = {
+        k: v.to("cuda:0") for k, v in proc(images=image, return_tensors="pt").items()
+    }
     out = model.vision_model(pixel_values=batch["pixel_values"])
     v = out.pooler_output
     if v is None:

@@ -92,7 +92,9 @@ def main() -> None:
     args = ap.parse_args()
     seed = args.n if args.seed is None else args.seed
 
-    raw = download(URLS[args.set], Path(f"results/live_learning/confirm/raw/{args.set}.json"))
+    raw = download(
+        URLS[args.set], Path(f"results/live_learning/confirm/raw/{args.set}.json")
+    )
     items = json.loads(raw.read_text())
     print(f"downloaded {raw} ({raw.stat().st_size / 1e6:.1f} MB), {len(items)} items")
 
@@ -105,7 +107,9 @@ def main() -> None:
     print(f"adapted: {len(adapted)}")
     for limit in (1, 2):
         pass_n = sum(
-            1 for a in adapted if len(tok.encode(a["answer"], add_special_tokens=False)) <= limit
+            1
+            for a in adapted
+            if len(tok.encode(a["answer"], add_special_tokens=False)) <= limit
         )
         print(f"target <= {limit} token(s): {pass_n}")
 
@@ -129,10 +133,20 @@ def main() -> None:
     print(f"sampled: {len(facts)} (seed {seed}, max_tokens {args.max_tokens})")
     if facts:
         print("sample:", json.dumps(facts[0], ensure_ascii=False))
-    out = Path(args.out or f"results/live_learning/confirm/external_{args.set}_n{args.n}.json")
+    out = Path(
+        args.out or f"results/live_learning/confirm/external_{args.set}_n{args.n}.json"
+    )
     out.write_text(
-        json.dumps({"set": args.set, "seed": seed, "max_tokens": args.max_tokens,
-                    "facts": facts}, ensure_ascii=False, indent=1)
+        json.dumps(
+            {
+                "set": args.set,
+                "seed": seed,
+                "max_tokens": args.max_tokens,
+                "facts": facts,
+            },
+            ensure_ascii=False,
+            indent=1,
+        )
     )
     print("saved:", out)
 

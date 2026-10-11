@@ -156,7 +156,9 @@ def evaluate(store, facts, records, raw, enc, progress=100):
 
     para = []
     for i, fact in enumerate(facts):
-        index, score, ours = routed_answer(store, router, facts, fact["paraphrase"], enc)
+        index, score, ours = routed_answer(
+            store, router, facts, fact["paraphrase"], enc
+        )
         system = None if index is None else rag_system("instruct", facts, index)
         rag = base_answer(store, fact["paraphrase"], system=system)
         para.append(

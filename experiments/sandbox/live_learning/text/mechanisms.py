@@ -107,9 +107,11 @@ class MemoryMechanism:
 
     def answer(self, user_text: str) -> str:
         notes = self._retrieve(user_text)
-        system = f"{SYSTEM}\nİlgili notlar:\n" + "\n".join(
-            f"- {t}" for t in notes
-        ) if notes else SYSTEM
+        system = (
+            f"{SYSTEM}\nİlgili notlar:\n" + "\n".join(f"- {t}" for t in notes)
+            if notes
+            else SYSTEM
+        )
         return chat(
             self.tok,
             self.model,
@@ -122,9 +124,7 @@ class MemoryMechanism:
     # -- persistence -----------------------------------------------------
     def persist(self) -> None:
         self.dir.mkdir(parents=True, exist_ok=True)
-        (self.dir / "facts.json").write_text(
-            json.dumps(self.facts, ensure_ascii=False)
-        )
+        (self.dir / "facts.json").write_text(json.dumps(self.facts, ensure_ascii=False))
 
     def _load(self) -> None:
         path = self.dir / "facts.json"

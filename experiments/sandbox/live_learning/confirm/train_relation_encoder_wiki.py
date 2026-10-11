@@ -47,8 +47,10 @@ def load_properties():
     props = {}
     for b in raw:
         pid = b["p"]["value"].rsplit("/", 1)[-1]
-        props.setdefault(pid, {"label": b["label"]["value"],
-                               "desc": b.get("desc", {}).get("value", "")})
+        props.setdefault(
+            pid,
+            {"label": b["label"]["value"], "desc": b.get("desc", {}).get("value", "")},
+        )
     return dict(sorted(props.items()))
 
 
@@ -73,20 +75,33 @@ def generate_templates(props, batch=48):
 
     model_id = json.loads(MANIFEST_PATH.read_bytes())["models"]["base"]["id"]
     tok = AutoTokenizer.from_pretrained(model_id, padding_side="left")
-    model = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.bfloat16, device_map={"": 0})
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id, dtype=torch.bfloat16, device_map={"": 0}
+    )
     model.eval()
     ids = list(props)
     out = {}
     for start in range(0, len(ids), batch):
-        chunk = ids[start:start + batch]
-        prompts = [tok.apply_chat_template(
-            [{"role": "system", "content": SYSTEM},
-             {"role": "user", "content": USER.format(**props[p])}],
-            add_generation_prompt=True, tokenize=False) for p in chunk]
+        chunk = ids[start : start + batch]
+        prompts = [
+            tok.apply_chat_template(
+                [
+                    {"role": "system", "content": SYSTEM},
+                    {"role": "user", "content": USER.format(**props[p])},
+                ],
+                add_generation_prompt=True,
+                tokenize=False,
+            )
+            for p in chunk
+        ]
         enc = tok(prompts, return_tensors="pt", padding=True).to(model.device)
         with torch.no_grad():
-            gen = model.generate(**enc, max_new_tokens=96, do_sample=False, pad_token_id=tok.eos_token_id)
-        texts = tok.batch_decode(gen[:, enc["input_ids"].shape[1]:], skip_special_tokens=True)
+            gen = model.generate(
+                **enc, max_new_tokens=96, do_sample=False, pad_token_id=tok.eos_token_id
+            )
+        texts = tok.batch_decode(
+            gen[:, enc["input_ids"].shape[1] :], skip_special_tokens=True
+        )
         for p, t in zip(chunk, texts):
             out[p] = {**props[p], "raw": t, "templates": parse(t)}
         print(f"templates {min(start + batch, len(ids))}/{len(ids)}", flush=True)
@@ -97,9 +112,15 @@ def generate_templates(props, batch=48):
 
 
 def wiki_triplets(templates, excluded, encoder, rng):
-    keep = {p: v["templates"] for p, v in templates.items() if p not in excluded and len(v["templates"]) >= 2}
+    keep = {
+        p: v["templates"]
+        for p, v in templates.items()
+        if p not in excluded and len(v["templates"]) >= 2
+    }
     flat = [(p, t) for p, ts in keep.items() for t in ts]
-    emb = encoder.encode([t for _, t in flat], batch_size=256, normalize_embeddings=True)
+    emb = encoder.encode(
+        [t for _, t in flat], batch_size=256, normalize_embeddings=True
+    )
     import numpy as np
 
     sims = emb @ emb.T
@@ -129,32 +150,50 @@ def train(triplets, out_dir, seed, batch=32, lr=2e-5):
     steps = (len(triplets) + batch - 1) // batch
     warm = max(1, steps // 10)
     sched = torch.optim.lr_scheduler.LambdaLR(  # linear warm-up, then linear decay
-        opt, lambda s: (s + 1) / warm if s < warm else max(0.0, (steps - s) / max(1, steps - warm)))
+        opt,
+        lambda s: (
+            (s + 1) / warm if s < warm else max(0.0, (steps - s) / max(1, steps - warm))
+        ),
+    )
     losses, t0 = [], time.time()
     for step in range(steps):
-        chunk = triplets[step * batch:(step + 1) * batch]
+        chunk = triplets[step * batch : (step + 1) * batch]
         feats = model.tokenize([t for trip in chunk for t in trip])
-        feats = {k: v.to(model.device) if hasattr(v, "to") else v for k, v in feats.items()}
+        feats = {
+            k: v.to(model.device) if hasattr(v, "to") else v for k, v in feats.items()
+        }
         emb = torch.nn.functional.normalize(model(feats)["sentence_embedding"], dim=-1)
         a, p, n = emb[0::3], emb[1::3], emb[2::3]
         scores = 20.0 * a @ torch.cat([p, n]).T
-        loss = torch.nn.functional.cross_entropy(scores, torch.arange(len(chunk), device=scores.device))
+        loss = torch.nn.functional.cross_entropy(
+            scores, torch.arange(len(chunk), device=scores.device)
+        )
         opt.zero_grad()
         loss.backward()
         opt.step()
         sched.step()
         losses.append(float(loss))
         if (step + 1) % 50 == 0:
-            print(f"{out_dir.name} step {step + 1}/{steps} loss {sum(losses[-50:]) / 50:.4f}", flush=True)
+            print(
+                f"{out_dir.name} step {step + 1}/{steps} loss {sum(losses[-50:]) / 50:.4f}",
+                flush=True,
+            )
     model.eval()
     model.save(str(out_dir))
-    return {"steps": steps, "loss_first50": sum(losses[:50]) / min(50, len(losses)),
-            "loss_last50": sum(losses[-50:]) / min(50, len(losses)), "seconds": round(time.time() - t0, 1)}
+    return {
+        "steps": steps,
+        "loss_first50": sum(losses[:50]) / min(50, len(losses)),
+        "loss_last50": sum(losses[-50:]) / min(50, len(losses)),
+        "seconds": round(time.time() - t0, 1),
+    }
 
 
 def main(argv=None):
     argparse.ArgumentParser().parse_args(argv)
-    out_a, out_b = CONFIRM / "relation_encoder_wiki_A", CONFIRM / "relation_encoder_wiki_B"
+    out_a, out_b = (
+        CONFIRM / "relation_encoder_wiki_A",
+        CONFIRM / "relation_encoder_wiki_B",
+    )
     for d in (out_a, out_b):
         if d.exists():
             sys.exit(f"refusing to overwrite {d}")
@@ -163,33 +202,58 @@ def main(argv=None):
     raw_cf = json.loads((CONFIRM / "raw/counterfact.json").read_text())
     raw_zs = json.loads((CONFIRM / "raw/zsre.json").read_text())
     cf_relations = set(_templates_by_relation(raw_cf))
-    heldout = set(json.loads((CONFIRM / "relation_encoder_mpnet/ss76_meta.json").read_text())["heldout_relations"])
+    heldout = set(
+        json.loads((CONFIRM / "relation_encoder_mpnet/ss76_meta.json").read_text())[
+            "heldout_relations"
+        ]
+    )
 
     templates = generate_templates(load_properties())
     n_t = [len(v["templates"]) for v in templates.values()]
-    print(f"properties {len(templates)}, mean templates {sum(n_t) / len(n_t):.2f}, "
-          f"with >= 2: {sum(k >= 2 for k in n_t)}", flush=True)
+    print(
+        f"properties {len(templates)}, mean templates {sum(n_t) / len(n_t):.2f}, "
+        f"with >= 2: {sum(k >= 2 for k in n_t)}",
+        flush=True,
+    )
 
     base = SentenceTransformer(BASE, device="cuda")
     trip_a, n_a = wiki_triplets(templates, cf_relations, base, random.Random(SEED))
     trip_wb, n_b = wiki_triplets(templates, heldout, base, random.Random(SEED + 1))
     del base
 
-    tests = [json.loads((CONFIRM / f).read_text())["facts"]
-             for f in ("external_counterfact_n1000.json", "external_zsre_n1000.json")]
+    tests = [
+        json.loads((CONFIRM / f).read_text())["facts"]
+        for f in ("external_counterfact_n1000.json", "external_zsre_n1000.json")
+    ]
     test_subjects = {f["subject"] for fs in tests for f in fs}
     dev = build_dev(raw_cf, raw_zs, test_subjects)
-    trip76, held76, *_ = build_triplets(raw_cf, raw_zs, test_subjects | {f["subject"] for f in dev},
-                                        random.Random(SEED76))
+    trip76, held76, *_ = build_triplets(
+        raw_cf,
+        raw_zs,
+        test_subjects | {f["subject"] for f in dev},
+        random.Random(SEED76),
+    )
     assert set(held76) == heldout
     trip_b = trip76 + trip_wb
     random.Random(SEED + 2).shuffle(trip_b)
 
-    meta = {"prereg": "SS77", "base": BASE, "n_properties": len(templates),
-            "A": {"excluded": "all 34 CounterFact relations", "n_properties": n_a, "n_triplets": len(trip_a)},
-            "B": {"excluded": sorted(heldout), "n_wiki_properties": n_b, "n_triplets": len(trip_b),
-                  "n_ss76_triplets": len(trip76)},
-            "heldout_relations": sorted(heldout)}
+    meta = {
+        "prereg": "SS77",
+        "base": BASE,
+        "n_properties": len(templates),
+        "A": {
+            "excluded": "all 34 CounterFact relations",
+            "n_properties": n_a,
+            "n_triplets": len(trip_a),
+        },
+        "B": {
+            "excluded": sorted(heldout),
+            "n_wiki_properties": n_b,
+            "n_triplets": len(trip_b),
+            "n_ss76_triplets": len(trip76),
+        },
+        "heldout_relations": sorted(heldout),
+    }
     meta["A"].update(train(trip_a, out_a, SEED))
     meta["B"].update(train(trip_b, out_b, SEED))
     for d in (out_a, out_b):

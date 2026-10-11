@@ -115,8 +115,11 @@ def main(argv=None):
     manifest = json.loads(MANIFEST_PATH.read_bytes())
     model_id = manifest["models"]["base"]["id"]
     verified = verify_manifest_inputs(
-        manifest, _repo_path(args.ckpt, REPO_ROOT), _repo_path(args.facts, REPO_ROOT),
-        model_id, repo_root=REPO_ROOT,
+        manifest,
+        _repo_path(args.ckpt, REPO_ROOT),
+        _repo_path(args.facts, REPO_ROOT),
+        model_id,
+        repo_root=REPO_ROOT,
     )
     facts = verified["facts"]
 
@@ -126,7 +129,8 @@ def main(argv=None):
     store = PilotStore(model_id, steps=16)
     store.kl_prompts = list(CANARIES)
     checkpoint, _ = load_verified_checkpoint(
-        verified["checkpoint_path"], verified["checkpoint_sha256"],
+        verified["checkpoint_path"],
+        verified["checkpoint_sha256"],
         lambda source: torch.load(source, map_location="cpu", weights_only=False),
     )
     deltas = checkpoint["deltas"]
@@ -136,23 +140,36 @@ def main(argv=None):
     benign = []
     for f in facts[: args.benign]:
         d = deltas[f["id"]]
-        benign.append({"fact_id": f["id"], "in_sample": d_on(store, d, CANARIES),
-                       "heldout": d_on(store, d, HELDOUT)})
+        benign.append(
+            {
+                "fact_id": f["id"],
+                "in_sample": d_on(store, d, CANARIES),
+                "heldout": d_on(store, d, HELDOUT),
+            }
+        )
         trim()
     print("benign done", flush=True)
 
     raw_cf = json.loads((CONFIRM / "raw/counterfact.json").read_text())
     test_subjects = {f["subject"] for f in facts}
-    dev_cf = [f for f in (adapt_counterfact(r) for r in raw_cf)
-              if f is not None and f["subject"] not in test_subjects]
+    dev_cf = [
+        f
+        for f in (adapt_counterfact(r) for r in raw_cf)
+        if f is not None and f["subject"] not in test_subjects
+    ]
     random.Random(SEED).shuffle(dev_cf)
     lr, steps, lam = store.lr, store.steps, store.kl_lambda
     store.lr, store.steps, store.kl_lambda = 1e-3, 32, 0.0
     harmful = []
     for f in dev_cf[: args.harmful]:
         d = store._train_delta(fact_pairs(f))
-        harmful.append({"subject": f["subject"], "in_sample": d_on(store, d, CANARIES),
-                        "heldout": d_on(store, d, HELDOUT)})
+        harmful.append(
+            {
+                "subject": f["subject"],
+                "in_sample": d_on(store, d, CANARIES),
+                "heldout": d_on(store, d, HELDOUT),
+            }
+        )
         trim()
     store.lr, store.steps, store.kl_lambda = lr, steps, lam
     print("harmful done", flush=True)
@@ -160,8 +177,11 @@ def main(argv=None):
     raw_zs = json.loads((CONFIRM / "raw/zsre.json").read_text())
     zs_test = json.loads((CONFIRM / "external_zsre_n1000.json").read_text())["facts"]
     zs_subjects = {f["subject"] for f in zs_test}
-    dev_zs = [f for f in (adapt_zsre(r) for r in raw_zs)
-              if f is not None and f["subject"] not in zs_subjects]
+    dev_zs = [
+        f
+        for f in (adapt_zsre(r) for r in raw_zs)
+        if f is not None and f["subject"] not in zs_subjects
+    ]
     rng = random.Random(SEED)
     rng.shuffle(dev_zs)
     damage = []
@@ -177,8 +197,15 @@ def main(argv=None):
         resp = store.answer(f["probe"], system="Answer briefly.")
         store.deltas = {}
         store.materialize()
-        damage.append({"question": f["probe"], "answer": f["answer"], "adapter": wrong["id"],
-                       "retained": hit(resp, f["answer"]), "response": resp})
+        damage.append(
+            {
+                "question": f["probe"],
+                "answer": f["answer"],
+                "adapter": wrong["id"],
+                "retained": hit(resp, f["answer"]),
+                "response": resp,
+            }
+        )
         trim()
     print("damage done", flush=True)
 
@@ -191,16 +218,31 @@ def main(argv=None):
         "harmful_in_sample": _stats([h["in_sample"] for h in harmful]),
         "harmful_heldout": _stats([h["heldout"] for h in harmful]),
         "kappa_heldout_p99": round(kappa, 4),
-        "harmful_rejected_at_kappa_heldout": float(np.mean([h["heldout"] > kappa for h in harmful])),
-        "harmful_rejected_at_kappa_2_in_sample": float(np.mean([h["in_sample"] > 2.0 for h in harmful])),
-        "wrong_route_retained": round(float(np.mean([d["retained"] for d in damage])), 4),
+        "harmful_rejected_at_kappa_heldout": float(
+            np.mean([h["heldout"] > kappa for h in harmful])
+        ),
+        "harmful_rejected_at_kappa_2_in_sample": float(
+            np.mean([h["in_sample"] > 2.0 for h in harmful])
+        ),
+        "wrong_route_retained": round(
+            float(np.mean([d["retained"] for d in damage])), 4
+        ),
         "wrong_route_n": len(damage),
         "benign": benign,
         "harmful": harmful,
         "damage": damage,
     }
     Path(args.out).write_text(json.dumps(report, ensure_ascii=False, indent=1))
-    print(json.dumps({k: v for k, v in report.items() if k not in ("benign", "harmful", "damage")}, indent=1))
+    print(
+        json.dumps(
+            {
+                k: v
+                for k, v in report.items()
+                if k not in ("benign", "harmful", "damage")
+            },
+            indent=1,
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -22,7 +22,9 @@ from stream import FACTS  # noqa: E402
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
-    ap.add_argument("--out", default="results/live_learning/ledger_atomic_fail_15b.json")
+    ap.add_argument(
+        "--out", default="results/live_learning/ledger_atomic_fail_15b.json"
+    )
     args = ap.parse_args()
     store = DeltaStore(args.model, steps=16)
     facts = FACTS[:2]

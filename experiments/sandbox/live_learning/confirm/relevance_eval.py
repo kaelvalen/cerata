@@ -66,16 +66,24 @@ class TypeScore:
             p_ids = tok(prefix, add_special_tokens=False)["input_ids"]
             f_ids = tok(prefix + " " + answer, add_special_tokens=False)["input_ids"]
             n = len(p_ids)
-            if f_ids[:n] != p_ids:  # the boundary merged; fall back to separate encoding
+            if (
+                f_ids[:n] != p_ids
+            ):  # the boundary merged; fall back to separate encoding
                 f_ids = p_ids + tok(" " + answer, add_special_tokens=False)["input_ids"]
             ids = self.torch.tensor([f_ids], device=model.device)
             with self.torch.no_grad():
-                logp = self.torch.log_softmax(model(input_ids=ids).logits[0].float(), -1)
-            self.cache[key] = float(sum(logp[t - 1, f_ids[t]] for t in range(n, len(f_ids))))
+                logp = self.torch.log_softmax(
+                    model(input_ids=ids).logits[0].float(), -1
+                )
+            self.cache[key] = float(
+                sum(logp[t - 1, f_ids[t]] for t in range(n, len(f_ids)))
+            )
         return self.cache[key]
 
     def __call__(self, q_clause, fact):
-        return self.logp(q_clause, fact["answer"]) - self.logp(fact["probe"], fact["answer"])
+        return self.logp(q_clause, fact["answer"]) - self.logp(
+            fact["probe"], fact["answer"]
+        )
 
 
 def main(argv=None):
@@ -92,10 +100,17 @@ def main(argv=None):
     enc = SentenceTransformer(
         "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", device="cpu"
     )
-    tau = json.loads((CONFIRM / "router_v4_calibration.json").read_text())["calibration"]["tau"]
-    raw = {d: json.loads((CONFIRM / f"raw/{d}.json").read_text()) for d in ("counterfact", "zsre")}
+    tau = json.loads((CONFIRM / "router_v4_calibration.json").read_text())[
+        "calibration"
+    ]["tau"]
+    raw = {
+        d: json.loads((CONFIRM / f"raw/{d}.json").read_text())
+        for d in ("counterfact", "zsre")
+    }
     tests = {
-        "counterfact": json.loads((CONFIRM / "external_counterfact_n1000.json").read_text())["facts"],
+        "counterfact": json.loads(
+            (CONFIRM / "external_counterfact_n1000.json").read_text()
+        )["facts"],
         "zsre": json.loads((CONFIRM / "external_zsre_n1000.json").read_text())["facts"],
     }
     test_subjects = {f["subject"] for fs in tests.values() for f in fs}
@@ -109,7 +124,11 @@ def main(argv=None):
 
     def scores(router, facts, j, q, sim):
         c = clause(router, q)
-        return {"s_rel": sim, "s_judge": judge(facts[j]["teach"], c), "s_type": typescore(c, facts[j])}
+        return {
+            "s_rel": sim,
+            "s_judge": judge(facts[j]["teach"], c),
+            "s_type": typescore(c, facts[j]),
+        }
 
     # (a) dev split
     dev_router = RouterV4(enc, dev, tau)
@@ -120,12 +139,21 @@ def main(argv=None):
             j, sim = dev_router.route(p, enc)
             pos.append((part, scores(dev_router, dev, j, p, sim) if j == i else None))
         j, sim = dev_router.route(f["negative"], enc)
-        neg.append((part, scores(dev_router, dev, j, f["negative"], sim) if j is not None else None))
+        neg.append(
+            (
+                part,
+                scores(dev_router, dev, j, f["negative"], sim)
+                if j is not None
+                else None,
+            )
+        )
     selection = {}
     for s in SCORES:
         selection[s] = {
-            part: auc([x[s] for p, x in pos if x and (part == "pooled" or p == part)],
-                      [x[s] for p, x in neg if x and (part == "pooled" or p == part)])
+            part: auc(
+                [x[s] for p, x in pos if x and (part == "pooled" or p == part)],
+                [x[s] for p, x in neg if x and (part == "pooled" or p == part)],
+            )
             for part in ("counterfact", "zsre", "pooled")
         }
     chosen = max(SCORES, key=lambda s: selection[s]["pooled"])
@@ -134,21 +162,32 @@ def main(argv=None):
     pos_all = [x[chosen] if x else -np.inf for _, x in pos]
     neg_all = [x[chosen] if x else -np.inf for _, x in neg]
     yd = youden(pos_all, neg_all)
-    cf_neg = np.asarray([x[chosen] if x else -np.inf for p, x in neg if p == "counterfact"])
+    cf_neg = np.asarray(
+        [x[chosen] if x else -np.inf for p, x in neg if p == "counterfact"]
+    )
     finite = np.sort(cf_neg[np.isfinite(cf_neg)])
     grid = np.concatenate([finite, [np.inf]])
     theta_np = next(float(t) for t in grid if float((cf_neg >= t).mean()) <= 0.05)
     pos_arr = np.asarray(pos_all)
     points = {
         "youden": {"theta": yd["tau"], "dev_tpr": yd["tpr"], "dev_fpr": yd["fpr"]},
-        "cf_fpr_0.05": {"theta": round(theta_np, 4), "dev_tpr": float((pos_arr >= theta_np).mean()),
-                        "dev_cf_fpr": float((cf_neg >= theta_np).mean())},
+        "cf_fpr_0.05": {
+            "theta": round(theta_np, 4),
+            "dev_tpr": float((pos_arr >= theta_np).mean()),
+            "dev_cf_fpr": float((cf_neg >= theta_np).mean()),
+        },
     }
     print("operating points:", json.dumps(points), flush=True)
 
     # (b) test: scores for every v4-routed query
-    v4 = {n: json.loads((CONFIRM / f"{'cf' if n == 'counterfact' else 'zsre'}_n1000_v4_eval.json").read_text())
-          for n in tests}
+    v4 = {
+        n: json.loads(
+            (
+                CONFIRM / f"{'cf' if n == 'counterfact' else 'zsre'}_n1000_v4_eval.json"
+            ).read_text()
+        )
+        for n in tests
+    }
     ss71 = json.loads((CONFIRM / "serving_locality.json").read_text())
     test_scores, base_hits = {}, {}
     routers = {}
@@ -161,7 +200,9 @@ def main(argv=None):
                 r = row[kind]
                 if r["route_fact_id"] is not None:
                     j = idx[r["route_fact_id"]]
-                    test_scores[(name, i, kind)] = scores(router, facts, j, f[kind], r["route_score"])[chosen]
+                    test_scores[(name, i, kind)] = scores(
+                        router, facts, j, f[kind], r["route_score"]
+                    )[chosen]
     cf = tests["counterfact"]
     cf_idx = {f["id"]: i for i, f in enumerate(cf)}
     for loc_name in ("E3_other_relation", "E2_neighborhood"):
@@ -169,7 +210,9 @@ def main(argv=None):
             if r["routed"]:
                 j = cf_idx[r["route_fact_id"]]
                 _, sim = routers["counterfact"].route(r["query"], enc)
-                test_scores[("loc", loc_name, i)] = scores(routers["counterfact"], cf, j, r["query"], sim)[chosen]
+                test_scores[("loc", loc_name, i)] = scores(
+                    routers["counterfact"], cf, j, r["query"], sim
+                )[chosen]
     print("test scores:", len(test_scores), flush=True)
 
     def base_hit(name, i, kind):
@@ -197,40 +240,63 @@ def main(argv=None):
                             per_arm[a].append(base_hit(name, i, kind))
                         else:
                             per_arm[a].append(r[f"{a}_hit"])
-                tiered = [per_arm["retrieval" if row["tier"] == "note" else "adapter"][i]
-                          for i, row in enumerate(rows)]
+                tiered = [
+                    per_arm["retrieval" if row["tier"] == "note" else "adapter"][i]
+                    for i, row in enumerate(rows)
+                ]
                 out[name][kind] = {
-                    "route_correct": rate(correct), **{a: rate(v) for a, v in per_arm.items()},
+                    "route_correct": rate(correct),
+                    **{a: rate(v) for a, v in per_arm.items()},
                     "tiered": rate(tiered),
                     "both_ci": ci(per_arm["both"]),
-                    "adapter_minus_retrieval": paired_diff_ci(per_arm["adapter"], per_arm["retrieval"]),
+                    "adapter_minus_retrieval": paired_diff_ci(
+                        per_arm["adapter"], per_arm["retrieval"]
+                    ),
                 }
         for loc_name in ("E3_other_relation", "E2_neighborhood"):
             rows = ss71["examples"][loc_name]
-            kept = [(s := test_scores.get(("loc", loc_name, i))) is not None and s >= theta
-                    for i in range(len(rows))]
+            kept = [
+                (s := test_scores.get(("loc", loc_name, i))) is not None and s >= theta
+                for i in range(len(rows))
+            ]
             out[loc_name] = {"routed": rate(kept)}
             for p in POLICIES:
                 leak = [r[p]["leak"] and k for r, k in zip(rows, kept)]
                 out[loc_name][p] = {"leak": rate(leak), "leak_ci": ci(leak)}
         return out
 
-    report = {"prereg": "SS74", "tau": tau, "dev_auc": selection, "chosen": chosen,
-              "operating_points": points, "test": {}}
+    report = {
+        "prereg": "SS74",
+        "tau": tau,
+        "dev_auc": selection,
+        "chosen": chosen,
+        "operating_points": points,
+        "test": {},
+    }
     for pname, point in points.items():
         report["test"][pname] = readings(point["theta"])
         print(pname, json.dumps(report["test"][pname]), flush=True)
     # trade-off curve on CounterFact (base answers for every routed paraphrase)
-    cf_para = sorted({s for (n, i, k), s in test_scores.items() if n == "counterfact" and k == "paraphrase"})
+    cf_para = sorted(
+        {
+            s
+            for (n, i, k), s in test_scores.items()
+            if n == "counterfact" and k == "paraphrase"
+        }
+    )
     qs = np.quantile(cf_para, np.linspace(0, 0.9, 19))
     curve = []
     for theta in [-np.inf, *qs]:
         r = readings(theta, names=("counterfact",))
-        curve.append({"theta": None if not np.isfinite(theta) else round(float(theta), 4),
-                      "cf_para_both": r["counterfact"]["paraphrase"]["both"],
-                      "cf_para_adapter": r["counterfact"]["paraphrase"]["adapter"],
-                      "e3_routed": r["E3_other_relation"]["routed"],
-                      **{f"e3_leak_{p}": r["E3_other_relation"][p]["leak"] for p in POLICIES}})
+        curve.append(
+            {
+                "theta": None if not np.isfinite(theta) else round(float(theta), 4),
+                "cf_para_both": r["counterfact"]["paraphrase"]["both"],
+                "cf_para_adapter": r["counterfact"]["paraphrase"]["adapter"],
+                "e3_routed": r["E3_other_relation"]["routed"],
+                **{f"e3_leak_{p}": r["E3_other_relation"][p]["leak"] for p in POLICIES},
+            }
+        )
     report["curve"] = curve
     report["judge_calls"], report["type_calls"] = judge.calls, len(typescore.cache)
     Path(args.out).write_text(json.dumps(report, ensure_ascii=False, indent=1))

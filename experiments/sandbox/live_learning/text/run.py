@@ -1,7 +1,7 @@
 """Run one live-learning mechanism over the general stream (sandbox).
 
-    export LD_LIBRARY_PATH=/nix/store/38v10xhwhypb747h3z4c2i0a19hkiwx2-nvidia-x11-615.71.09/lib
-    .venv/bin/python experiments/sandbox/live_learning/run.py --mechanism context
+export LD_LIBRARY_PATH=/nix/store/38v10xhwhypb747h3z4c2i0a19hkiwx2-nvidia-x11-615.71.09/lib
+.venv/bin/python experiments/sandbox/live_learning/run.py --mechanism context
 """
 
 from __future__ import annotations

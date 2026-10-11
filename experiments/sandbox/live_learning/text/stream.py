@@ -175,7 +175,9 @@ def build_events(seed: int = 0):
     for i, fact in enumerate(FACTS):
         s1.append(Event("teach", text=fact.teach, fact=fact, note="s1"))
         s1.append(
-            Event("probe", text=fact.probe, expect=fact.answer, fact=fact, note="s1-imm")
+            Event(
+                "probe", text=fact.probe, expect=fact.answer, fact=fact, note="s1-imm"
+            )
         )
         if i % 2 == 1:
             s1.append(filler())
@@ -186,23 +188,38 @@ def build_events(seed: int = 0):
     delayed = rng.sample(FACTS, 6)
     for fact in delayed:
         s1.append(
-            Event("probe", text=fact.probe, expect=fact.answer, fact=fact, note="s1-del")
+            Event(
+                "probe", text=fact.probe, expect=fact.answer, fact=fact, note="s1-del"
+            )
         )
 
     # update: a corrected fact must win
     for fid, teach, probe, expect in UPDATES:
-        s1.append(Event("update", text=teach, fact=next(f for f in FACTS if f.id == fid), note="s1"))
+        s1.append(
+            Event(
+                "update",
+                text=teach,
+                fact=next(f for f in FACTS if f.id == fid),
+                note="s1",
+            )
+        )
         for _ in range(2):
             s1.append(filler())
         s1.append(Event("probe", text=probe, expect=expect, note="s1-upd"))
     for fact in delayed[:2]:
         s1.append(
-            Event("probe", text=fact.probe, expect=fact.answer, fact=fact, note="s1-intf")
+            Event(
+                "probe", text=fact.probe, expect=fact.answer, fact=fact, note="s1-intf"
+            )
         )
 
     # unlearn: the token must vanish, neighbours and capability must survive
     fid, turn, probe, forbidden = UNLEARN
-    s1.append(Event("unlearn", text=turn, fact=next(f for f in FACTS if f.id == fid), note="s1"))
+    s1.append(
+        Event(
+            "unlearn", text=turn, fact=next(f for f in FACTS if f.id == fid), note="s1"
+        )
+    )
     s1.append(
         Event("probe", text=probe, forbid=forbidden, fact=None, note="s1-unlearn")
     )

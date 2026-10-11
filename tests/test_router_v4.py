@@ -7,10 +7,14 @@ import numpy as np
 
 sys.path.insert(
     0,
-    str(Path(__file__).resolve().parents[1] / "experiments/sandbox/live_learning/confirm"),
+    str(
+        Path(__file__).resolve().parents[1]
+        / "experiments/sandbox/live_learning/confirm"
+    ),
 )
 sys.path.insert(
-    0, str(Path(__file__).resolve().parents[1] / "experiments/sandbox/live_learning/text")
+    0,
+    str(Path(__file__).resolve().parents[1] / "experiments/sandbox/live_learning/text"),
 )
 
 from router_v4 import (  # noqa: E402
@@ -43,8 +47,14 @@ class BagEncoder:
 
 
 FACTS = [
-    {"subject": "Danielle Darrieux", "probe": "The mother tongue of Danielle Darrieux is"},
-    {"subject": "Danielle Darrieux", "probe": "Danielle Darrieux was born in the city of"},
+    {
+        "subject": "Danielle Darrieux",
+        "probe": "The mother tongue of Danielle Darrieux is",
+    },
+    {
+        "subject": "Danielle Darrieux",
+        "probe": "Danielle Darrieux was born in the city of",
+    },
     {"subject": "Jean Galland", "probe": "The mother tongue of Jean Galland is"},
 ]
 
@@ -56,12 +66,17 @@ def test_normalize_keeps_positions():
 
 def test_exact_match_requires_word_boundaries():
     assert find_subject("Rabbits eat grass", "Ra") is None
-    assert find_subject("The mother tongue of Danielle Darrieux is", "Danielle Darrieux")
+    assert find_subject(
+        "The mother tongue of Danielle Darrieux is", "Danielle Darrieux"
+    )
 
 
 def test_approximate_match_needs_every_subject_token():
     assert find_subject("The mother tongue of Danielle Darieux is", "Danielle Darrieux")
-    assert find_subject("The mother tongue of Jean-Baptiste Say is", "Jean Galland") is None
+    assert (
+        find_subject("The mother tongue of Jean-Baptiste Say is", "Jean Galland")
+        is None
+    )
     assert find_subject("Darrieux was famous", "Danielle Darrieux") is None
 
 
@@ -77,7 +92,9 @@ def test_clause_scoping_drops_leading_sentence():
 def test_router_selects_sibling_by_relation_and_abstains():
     enc = BagEncoder()
     router = RouterV4(enc, FACTS, tau=0.5)
-    j, _ = router.route("In 1978 her father died. The mother tongue of Danielle Darrieux was", enc)
+    j, _ = router.route(
+        "In 1978 her father died. The mother tongue of Danielle Darrieux was", enc
+    )
     assert j == 0
     j, _ = router.route("Danielle Darrieux was born in the city of", enc)
     assert j == 1
@@ -95,7 +112,10 @@ def test_other_relation_of_stored_subject_is_declined():
 def test_v5_rejects_relation_stored_for_another_subject():
     enc = BagEncoder()
     facts = [
-        {"subject": "Jean Galland", "probe": "The mother tongue of Jean Galland is the language"},
+        {
+            "subject": "Jean Galland",
+            "probe": "The mother tongue of Jean Galland is the language",
+        },
         {"subject": "Paul Klee", "probe": "Paul Klee was born in the city of"},
     ]
     query = "Jean Galland was born in the language city of"
@@ -119,9 +139,15 @@ class BagScorer:
 def test_v7_generated_keys_raise_paraphrase_score():
     from router_v7 import RouterV7
 
-    facts = [{"subject": "Jean Galland", "probe": "The mother tongue of Jean Galland is"}]
-    extra = {"Jean Galland\tThe mother tongue of Jean Galland is": [
-        "Jean Galland natively speaks", "A rewrite without the name"]}
+    facts = [
+        {"subject": "Jean Galland", "probe": "The mother tongue of Jean Galland is"}
+    ]
+    extra = {
+        "Jean Galland\tThe mother tongue of Jean Galland is": [
+            "Jean Galland natively speaks",
+            "A rewrite without the name",
+        ]
+    }
     plain = RouterV7(facts, BagScorer(), tau=0.9)
     aug = RouterV7(facts, BagScorer(), tau=0.9, extra_keys=extra)
     assert aug.key_sets[0] == ["The mother tongue of X is", "X natively speaks"]

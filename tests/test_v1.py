@@ -3223,7 +3223,8 @@ def test_routing_probe_helper():
 
     root = _Path(__file__).resolve().parent.parent
     spec = importlib.util.spec_from_file_location(
-        "bench_runner", root / "archive" / "experiments" / "stage1" / "infra" / "run_benchmark.py"
+        "bench_runner",
+        root / "archive" / "experiments" / "stage1" / "infra" / "run_benchmark.py",
     )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

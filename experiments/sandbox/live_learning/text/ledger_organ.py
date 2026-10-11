@@ -20,7 +20,12 @@ from ledger import DeltaStore  # noqa: E402
 from ledger_embedder import ENC_NAME  # noqa: E402
 from stream import FACTS  # noqa: E402
 
-NEW_FACT = ("x1", "Deneme olgusu: mor anahtar 8 numaradır.", "Mor anahtar kaç numaradır?", "8")
+NEW_FACT = (
+    "x1",
+    "Deneme olgusu: mor anahtar 8 numaradır.",
+    "Mor anahtar kaç numaradır?",
+    "8",
+)
 
 
 def main() -> None:
@@ -59,7 +64,9 @@ def main() -> None:
     remaining = {fid: f.probe for fid, f in facts.items() if fid != "p4"}
     r1 = route(remaining)
     moved_on_revoke = [q for q in remaining if r1[q] != r0[q]]
-    revoked_still = [q for q, v in route({"p4": facts["p4"].probe}).items() if v == "p4"]
+    revoked_still = [
+        q for q, v in route({"p4": facts["p4"].probe}).items() if v == "p4"
+    ]
 
     fid, teach, probe, answer = NEW_FACT
     store.add(fid, [(teach, f"Not aldım: {teach}"), (probe, answer)], key=probe)

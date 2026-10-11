@@ -109,7 +109,8 @@ def main() -> None:
     checks = {
         "base_unknown": all(not contains(base[k], FACTS[k]["code"]) for k in FACTS),
         "route_correct": served["a"][1] == "a" and served["b"][1] == "b",
-        "served_correct": contains(served["a"][0], "Tira") and contains(served["b"][0], "Vok"),
+        "served_correct": contains(served["a"][0], "Tira")
+        and contains(served["b"][0], "Vok"),
         "canary_clean": not contains(canary, "Tira"),
         "distractors_abstain": all(
             d[1] is None and not contains(d[0], "Tira") and not contains(d[0], "Vok")
@@ -125,11 +126,23 @@ def main() -> None:
         "tau": TAU,
         "checks": checks,
         "base": base,
-        "served": {k: {"resp": v[0], "chosen": v[1], "sims": v[2]} for k, v in served.items()},
-        "distractors": {k: {"resp": v[0], "chosen": v[1], "sims": v[2]} for k, v in dist.items()},
+        "served": {
+            k: {"resp": v[0], "chosen": v[1], "sims": v[2]} for k, v in served.items()
+        },
+        "distractors": {
+            k: {"resp": v[0], "chosen": v[1], "sims": v[2]} for k, v in dist.items()
+        },
         "canary": canary,
-        "revoked_b": {"resp": revoked_b[0], "chosen": revoked_b[1], "sims": revoked_b[2]},
-        "a_after_revoke": {"resp": still_a[0], "chosen": still_a[1], "sims": still_a[2]},
+        "revoked_b": {
+            "resp": revoked_b[0],
+            "chosen": revoked_b[1],
+            "sims": revoked_b[2],
+        },
+        "a_after_revoke": {
+            "resp": still_a[0],
+            "chosen": still_a[1],
+            "sims": still_a[2],
+        },
     }
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

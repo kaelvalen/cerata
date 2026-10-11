@@ -98,7 +98,9 @@ class VlmDeltaStore:
         ks = []
         for b, a in zip(self.base_canary, cur):
             pb, pa = torch.softmax(b, -1), torch.softmax(a, -1)
-            ks.append(float((pb * (pb / pa).log()).sum() + (pa * (pa / pb).log()).sum()))
+            ks.append(
+                float((pb * (pb / pa).log()).sum() + (pa * (pa / pb).log()).sum())
+            )
         return sum(ks) / len(ks)
 
     # -- transactions -----------------------------------------------------
@@ -122,10 +124,18 @@ class VlmDeltaStore:
         kld = self.expert_kld(delta)
         limit = self.kld_limit if kld_limit is None else kld_limit
         if kld > limit:
-            return {"committed": False, "kld": round(kld, 3), "seconds": round(time.time() - t, 1)}
+            return {
+                "committed": False,
+                "kld": round(kld, 3),
+                "seconds": round(time.time() - t, 1),
+            }
         self.deltas[fid] = delta
         self.keys[fid] = emb_clip(self.iproc, self.imodel, panel)
-        return {"committed": True, "kld": round(kld, 3), "seconds": round(time.time() - t, 1)}
+        return {
+            "committed": True,
+            "kld": round(kld, 3),
+            "seconds": round(time.time() - t, 1),
+        }
 
     def revoke(self, fid: str) -> None:
         self.deltas.pop(fid, None)
@@ -207,7 +217,9 @@ def main() -> None:
         "g2_identity_a": hash_after_a == h0,
         "served_ok": all(contains(served[f][0], FACTS[f]["code"]) for f in FACTS),
         "g4_reload_hash": hash_reloaded == h_ab,
-        "session2_served_ok": all(contains(served2[f][0], FACTS[f]["code"]) for f in FACTS),
+        "session2_served_ok": all(
+            contains(served2[f][0], FACTS[f]["code"]) for f in FACTS
+        ),
     }
     result = {
         "model": args.model,
@@ -215,8 +227,12 @@ def main() -> None:
         "adds": adds,
         "bad_candidate": bad,
         "hashes": {"h0": h0, "h_a": h_a, "h_ab": h_ab, "reloaded": hash_reloaded},
-        "served": {k: {"resp": v[0], "chosen": v[1], "sims": v[2]} for k, v in served.items()},
-        "served2": {k: {"resp": v[0], "chosen": v[1], "sims": v[2]} for k, v in served2.items()},
+        "served": {
+            k: {"resp": v[0], "chosen": v[1], "sims": v[2]} for k, v in served.items()
+        },
+        "served2": {
+            k: {"resp": v[0], "chosen": v[1], "sims": v[2]} for k, v in served2.items()
+        },
     }
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

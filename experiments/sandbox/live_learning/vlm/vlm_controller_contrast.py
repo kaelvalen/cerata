@@ -78,7 +78,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--steps", type=int, default=12)
-    ap.add_argument("--out", default="results/live_learning/vlm_controller_contrast_2b.json")
+    ap.add_argument(
+        "--out", default="results/live_learning/vlm_controller_contrast_2b.json"
+    )
     args = ap.parse_args()
     torch.manual_seed(0)
     store = VlmDeltaStore(args.model)
@@ -186,7 +188,9 @@ def main() -> None:
         "experts": len(store.deltas) == 4,
         "final_readout_ok": all(final[f]["ok"] for f in FACTS),
         "route_ok": all(
-            t["chosen"] == t["fid"] for t in trace if t["fid"] in store.deltas and not t["miss"]
+            t["chosen"] == t["fid"]
+            for t in trace
+            if t["fid"] in store.deltas and not t["miss"]
         ),
         "commits_under_cap": all(
             d["kld"] is None or d["kld"] <= store.kld_limit for d in decisions
@@ -201,7 +205,9 @@ def main() -> None:
         "model": args.model,
         "checks": checks,
         "decisions": decisions,
-        "q_table": {f"{c[0]}|c{c[1]}|{a}": round(v, 3) for (c, a), v in sorted(q.items())},
+        "q_table": {
+            f"{c[0]}|c{c[1]}|{a}": round(v, 3) for (c, a), v in sorted(q.items())
+        },
         "n_table": {f"{c[0]}|c{c[1]}|{a}": v for (c, a), v in sorted(n.items())},
         "trace": trace,
         "final": final,
@@ -214,7 +220,9 @@ def main() -> None:
     out.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps(checks, ensure_ascii=False))
     print("decisions:", json.dumps(decisions, ensure_ascii=False))
-    print("final:", {k: (v["chosen"], v["ok"], v["resp"][:24]) for k, v in final.items()})
+    print(
+        "final:", {k: (v["chosen"], v["ok"], v["resp"][:24]) for k, v in final.items()}
+    )
     print("leak:", json.dumps(leak, ensure_ascii=False)[:300])
 
 

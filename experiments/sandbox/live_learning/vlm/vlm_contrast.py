@@ -69,7 +69,10 @@ def main() -> None:
     direct = {}
     if res["committed"]:
         set_lora(store.model, store.deltas["p1"])
-        direct = {name: ask(store.proc, store.model, img, PROBE) for name, img in probes.items()}
+        direct = {
+            name: ask(store.proc, store.model, img, PROBE)
+            for name, img in probes.items()
+        }
         set_lora(store.model, None)
     canary = ask(store.proc, store.model, None, CANARIES[1])
     routed_p1 = store.serve(P1)
@@ -84,7 +87,8 @@ def main() -> None:
         "variants_ok": res["committed"]
         and all(contains(direct[v], "Tira") for v in ("p1j", "p1s", "p1bg")),
         "routed_p1": routed_p1[1] == "p1" and contains(routed_p1[0], "Tira"),
-        "routed_p2_abstains": routed_p2[1] is None and not contains(routed_p2[0], "Tira"),
+        "routed_p2_abstains": routed_p2[1] is None
+        and not contains(routed_p2[0], "Tira"),
         "canary_clean": not contains(canary, "Tira"),
     }
     result = {

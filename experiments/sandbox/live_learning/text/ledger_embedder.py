@@ -62,7 +62,17 @@ def main() -> None:
 
     recall = {}
     for fid, q in PARAPHRASES.items():
-        if float(np.max([float(K[i] @ enc.encode([q], normalize_embeddings=True)[0]) for i in range(len(ids))])) < tau:
+        if (
+            float(
+                np.max(
+                    [
+                        float(K[i] @ enc.encode([q], normalize_embeddings=True)[0])
+                        for i in range(len(ids))
+                    ]
+                )
+            )
+            < tau
+        ):
             recall[fid] = False  # abstained
             continue
         full = dict(store.deltas)

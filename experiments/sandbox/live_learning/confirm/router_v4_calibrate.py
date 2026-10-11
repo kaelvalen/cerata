@@ -146,7 +146,9 @@ def main(argv=None):
 
     raw_cf = json.loads((CONFIRM / "raw/counterfact.json").read_text())
     raw_zs = json.loads((CONFIRM / "raw/zsre.json").read_text())
-    cf_test = json.loads((CONFIRM / "external_counterfact_n1000.json").read_text())["facts"]
+    cf_test = json.loads((CONFIRM / "external_counterfact_n1000.json").read_text())[
+        "facts"
+    ]
     zs_test = json.loads((CONFIRM / "external_zsre_n1000.json").read_text())["facts"]
     test_subjects = {f["subject"] for f in cf_test + zs_test}
 
@@ -179,7 +181,10 @@ def main(argv=None):
         "loc_question": ([zs_raw_by_src[f["probe"]]["loc"] for f in zs_test], False),
     }
     report = {"calibration": cal, "v3_tau": TAU, "test": {}}
-    for name, facts, kinds in (("counterfact", cf_test, cf_kinds), ("zsre", zs_test, zs_kinds)):
+    for name, facts, kinds in (
+        ("counterfact", cf_test, cf_kinds),
+        ("zsre", zs_test, zs_kinds),
+    ):
         report["test"][name] = {
             "v3": route_readings(enc, Router(enc, facts), facts, kinds),
             "v4": route_readings(enc, RouterV4(enc, facts, tau), facts, kinds),
@@ -191,7 +196,9 @@ def main(argv=None):
     by_relation = _templates_by_relation(raw_cf)
     siblings = []
     for f, r in zip(cf_test, records):
-        template = _other_template(rng, by_relation, r["requested_rewrite"]["relation_id"])
+        template = _other_template(
+            rng, by_relation, r["requested_rewrite"]["relation_id"]
+        )
         siblings.append(
             {"subject": f["subject"], "probe": template.replace("{}", f["subject"])}
         )
@@ -199,11 +206,16 @@ def main(argv=None):
     router = RouterV4(enc, both, tau)
     n = len(cf_test)
     picks = {
-        "original_probe": [router.route(f["probe"], enc)[0] == i for i, f in enumerate(cf_test)],
-        "original_paraphrase_correct_or_abstain": [
-            router.route(f["paraphrase"], enc)[0] in (i, None) for i, f in enumerate(cf_test)
+        "original_probe": [
+            router.route(f["probe"], enc)[0] == i for i, f in enumerate(cf_test)
         ],
-        "sibling_probe": [router.route(s["probe"], enc)[0] == n + i for i, s in enumerate(siblings)],
+        "original_paraphrase_correct_or_abstain": [
+            router.route(f["paraphrase"], enc)[0] in (i, None)
+            for i, f in enumerate(cf_test)
+        ],
+        "sibling_probe": [
+            router.route(s["probe"], enc)[0] == n + i for i, s in enumerate(siblings)
+        ],
     }
     report["sibling_test"] = {k: _rate(v) for k, v in picks.items()}
     print("siblings:", json.dumps(report["sibling_test"]), flush=True)

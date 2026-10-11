@@ -58,19 +58,30 @@ def main(argv=None):
     from routed_eval import MANIFEST_PATH
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    raw = {d: json.loads((CONFIRM / f"raw/{d}.json").read_text()) for d in ("counterfact", "zsre")}
+    raw = {
+        d: json.loads((CONFIRM / f"raw/{d}.json").read_text())
+        for d in ("counterfact", "zsre")
+    }
     tests = {
-        "counterfact": json.loads((CONFIRM / "external_counterfact_n1000.json").read_text())["facts"],
+        "counterfact": json.loads(
+            (CONFIRM / "external_counterfact_n1000.json").read_text()
+        )["facts"],
         "zsre": json.loads((CONFIRM / "external_zsre_n1000.json").read_text())["facts"],
     }
-    dev = build_dev(raw["counterfact"], raw["zsre"], {f["subject"] for fs in tests.values() for f in fs})
+    dev = build_dev(
+        raw["counterfact"],
+        raw["zsre"],
+        {f["subject"] for fs in tests.values() for f in fs},
+    )
     items = {}
     for f in dev + tests["counterfact"] + tests["zsre"]:
         items[(f["subject"], f["probe"])] = None
 
     model_id = json.loads(MANIFEST_PATH.read_bytes())["models"]["base"]["id"]
     tok = AutoTokenizer.from_pretrained(model_id, padding_side="left")
-    model = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.bfloat16, device_map={"": 0})
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id, dtype=torch.bfloat16, device_map={"": 0}
+    )
     model.eval()
     keys = list(items)
     out = {}
@@ -78,23 +89,34 @@ def main(argv=None):
         chunk = keys[start : start + args.batch]
         prompts = [
             tok.apply_chat_template(
-                [{"role": "system", "content": SYSTEM},
-                 {"role": "user", "content": USER.format(subject=s, probe=p)}],
-                add_generation_prompt=True, tokenize=False,
+                [
+                    {"role": "system", "content": SYSTEM},
+                    {"role": "user", "content": USER.format(subject=s, probe=p)},
+                ],
+                add_generation_prompt=True,
+                tokenize=False,
             )
             for s, p in chunk
         ]
         enc = tok(prompts, return_tensors="pt", padding=True).to(model.device)
         with torch.no_grad():
-            gen = model.generate(**enc, max_new_tokens=96, do_sample=False,
-                                 pad_token_id=tok.eos_token_id)
-        texts = tok.batch_decode(gen[:, enc["input_ids"].shape[1]:], skip_special_tokens=True)
+            gen = model.generate(
+                **enc, max_new_tokens=96, do_sample=False, pad_token_id=tok.eos_token_id
+            )
+        texts = tok.batch_decode(
+            gen[:, enc["input_ids"].shape[1] :], skip_special_tokens=True
+        )
         for (s, p), t in zip(chunk, texts):
             out[f"{s}\t{p}"] = {"raw": t, "keys": parse(t, p, s)}
         print(f"{min(start + args.batch, len(keys))}/{len(keys)}", flush=True)
     n_keys = [len(v["keys"]) for v in out.values()]
-    report = {"prereg": "SS75", "n_prompts": len(out), "mean_keys": sum(n_keys) / len(n_keys),
-              "no_keys": sum(k == 0 for k in n_keys), "keys": out}
+    report = {
+        "prereg": "SS75",
+        "n_prompts": len(out),
+        "mean_keys": sum(n_keys) / len(n_keys),
+        "no_keys": sum(k == 0 for k in n_keys),
+        "keys": out,
+    }
     Path(args.out).write_text(json.dumps(report, ensure_ascii=False, indent=1))
     print(json.dumps({k: v for k, v in report.items() if k != "keys"}))
 

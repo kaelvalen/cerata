@@ -71,19 +71,35 @@ def threshold_fpr(neg_cf, limit=0.05):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(CONFIRM / "router_v7_select.json"))
-    ap.add_argument("--scorers", nargs="+", default=list(SCORERS)[:5], choices=list(SCORERS))
+    ap.add_argument(
+        "--scorers", nargs="+", default=list(SCORERS)[:5], choices=list(SCORERS)
+    )
     ap.add_argument("--prereg", default="SS75")
     args = ap.parse_args(argv)
     if Path(args.out).exists():
         ap.error(f"refusing to overwrite {args.out}")
 
-    raw = {d: json.loads((CONFIRM / f"raw/{d}.json").read_text()) for d in ("counterfact", "zsre")}
+    raw = {
+        d: json.loads((CONFIRM / f"raw/{d}.json").read_text())
+        for d in ("counterfact", "zsre")
+    }
     tests = {
-        "counterfact": json.loads((CONFIRM / "external_counterfact_n1000.json").read_text())["facts"],
+        "counterfact": json.loads(
+            (CONFIRM / "external_counterfact_n1000.json").read_text()
+        )["facts"],
         "zsre": json.loads((CONFIRM / "external_zsre_n1000.json").read_text())["facts"],
     }
-    dev = build_dev(raw["counterfact"], raw["zsre"], {f["subject"] for fs in tests.values() for f in fs})
-    gen = {k: v["keys"] for k, v in json.loads((CONFIRM / "generated_keys.json").read_text())["keys"].items()}
+    dev = build_dev(
+        raw["counterfact"],
+        raw["zsre"],
+        {f["subject"] for fs in tests.values() for f in fs},
+    )
+    gen = {
+        k: v["keys"]
+        for k, v in json.loads((CONFIRM / "generated_keys.json").read_text())[
+            "keys"
+        ].items()
+    }
 
     cf = tests["counterfact"]
     records = match_raw(cf, raw["counterfact"])
@@ -102,14 +118,21 @@ def main(argv=None):
             "probe": ([f["probe"] for f in tests["zsre"]], True),
             "paraphrase": ([f["paraphrase"] for f in tests["zsre"]], True),
             "synthetic_distractor": ([f["distractor"] for f in tests["zsre"]], False),
-            "loc_question": ([zs_by_src[f["probe"]]["loc"] for f in tests["zsre"]], False),
+            "loc_question": (
+                [zs_by_src[f["probe"]]["loc"] for f in tests["zsre"]],
+                False,
+            ),
         },
     }
     rng = random.Random(SEED + 1)
     by_relation = _templates_by_relation(raw["counterfact"])
     siblings = [
-        {"subject": f["subject"],
-         "probe": _other_template(rng, by_relation, r["requested_rewrite"]["relation_id"]).replace("{}", f["subject"])}
+        {
+            "subject": f["subject"],
+            "probe": _other_template(
+                rng, by_relation, r["requested_rewrite"]["relation_id"]
+            ).replace("{}", f["subject"]),
+        }
         for f, r in zip(cf, records)
     ]
 
@@ -126,12 +149,18 @@ def main(argv=None):
             theta = threshold_fpr(neg_cf)
             res = {
                 "dev": {
-                    "auc_pooled": auc(pos_all[np.isfinite(pos_all)], neg_all[np.isfinite(neg_all)]),
+                    "auc_pooled": auc(
+                        pos_all[np.isfinite(pos_all)], neg_all[np.isfinite(neg_all)]
+                    ),
                     "youden": youden(pos_all, neg_all),
                     "theta_cf_fpr_0.05": round(theta, 4),
                     "tpr_at_theta": round(float((pos_all >= theta).mean()), 4),
-                    "tpr_cf_at_theta": rate(s >= theta for p, s in pos if p == "counterfact"),
-                    "tpr_zsre_at_theta": rate(s >= theta for p, s in pos if p == "zsre"),
+                    "tpr_cf_at_theta": rate(
+                        s >= theta for p, s in pos if p == "counterfact"
+                    ),
+                    "tpr_zsre_at_theta": rate(
+                        s >= theta for p, s in pos if p == "zsre"
+                    ),
                 },
                 "test": {},
             }
@@ -146,8 +175,13 @@ def main(argv=None):
                     res["test"][ds][kind] = r
             sib = RouterV7(cf + siblings, scorer, theta, extra)
             res["test"]["siblings"] = {
-                "original_probe": rate(sib.route(f["probe"])[0] == i for i, f in enumerate(cf)),
-                "sibling_probe": rate(sib.route(s["probe"])[0] == len(cf) + i for i, s in enumerate(siblings)),
+                "original_probe": rate(
+                    sib.route(f["probe"])[0] == i for i, f in enumerate(cf)
+                ),
+                "sibling_probe": rate(
+                    sib.route(s["probe"])[0] == len(cf) + i
+                    for i, s in enumerate(siblings)
+                ),
             }
             report["configs"][cfg] = res
             print(cfg, json.dumps(res), flush=True)
@@ -159,7 +193,9 @@ def main(argv=None):
             torch.cuda.empty_cache()
         except ImportError:
             pass
-    chosen = max(report["configs"], key=lambda c: report["configs"][c]["dev"]["tpr_at_theta"])
+    chosen = max(
+        report["configs"], key=lambda c: report["configs"][c]["dev"]["tpr_at_theta"]
+    )
     report["chosen"] = chosen
     report["theta"] = report["configs"][chosen]["dev"]["theta_cf_fpr_0.05"]
     Path(args.out).write_text(json.dumps(report, ensure_ascii=False, indent=1))

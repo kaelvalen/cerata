@@ -57,9 +57,7 @@ def main() -> None:
     upd = store.propose_and_commit("a", PANEL_A, pairs_for(new_teach, NEW_CODE))
     h2 = store.state_hash()
 
-    add_b = store.propose_and_commit(
-        "b", PANEL_B2, pairs_for(teach_text("Vok"), "Vok")
-    )
+    add_b = store.propose_and_commit("b", PANEL_B2, pairs_for(teach_text("Vok"), "Vok"))
     h3 = store.state_hash()
 
     ra, ca, _ = store.serve(PANEL_A)

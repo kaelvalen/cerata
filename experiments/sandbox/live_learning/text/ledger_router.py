@@ -48,7 +48,9 @@ def main() -> None:
     key_index = {fid: j for j, fid in enumerate(ids)}
     in_scope = [float(sim[i, key_index[facts[i].id]]) for i in range(len(facts))]
     confusion = [
-        float(np.max(np.delete(sim[i], key_index[facts[i].id]))) if len(ids) > 1 else 0.0
+        float(np.max(np.delete(sim[i], key_index[facts[i].id])))
+        if len(ids) > 1
+        else 0.0
         for i in range(len(facts))
     ]
     out_scope = [float(sim[len(facts) + j].max()) for j in range(len(caps))]

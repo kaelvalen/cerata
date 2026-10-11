@@ -107,9 +107,7 @@ def main() -> None:
             "image_leak": contains(after["probe_b"], CODE),
             "revoke_exact": not contains(revoked["probe_a"], CODE),
         },
-        "canary_drift": {
-            q: [base["canary"][q], after["canary"][q]] for q, _ in CANARY
-        },
+        "canary_drift": {q: [base["canary"][q], after["canary"][q]] for q, _ in CANARY},
         "delta_tensors": len(delta),
     }
     out = Path(args.out)

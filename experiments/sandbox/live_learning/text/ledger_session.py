@@ -151,9 +151,15 @@ def run(s1, s2, store: DeltaStore, notes: Notes, args) -> dict:
                 reward - q.get((ctx, action), 0.0)
             )
             events_log.append(
-                {"event": "repair", "fid": fid, "ctx": list(ctx), "action": action,
-                 "explore": explore, "reward": round(reward, 3),
-                 "committed": path == "expert"}
+                {
+                    "event": "repair",
+                    "fid": fid,
+                    "ctx": list(ctx),
+                    "action": action,
+                    "explore": explore,
+                    "reward": round(reward, 3),
+                    "committed": path == "expert",
+                }
             )
         log.append(
             {
@@ -173,14 +179,21 @@ def run(s1, s2, store: DeltaStore, notes: Notes, args) -> dict:
         _, text, probe, expect = next(u for u in UPDATES if u[0] == fid)
         notes.set_note(fid, text)
         answers[fid] = expect
-        info = {"event": "update", "fid": fid, "was_promoted": fid in promoted,
-                "retrained": False, "kld": None}
+        info = {
+            "event": "update",
+            "fid": fid,
+            "was_promoted": fid in promoted,
+            "retrained": False,
+            "kld": None,
+        }
         if fid in promoted:
             store.revoke(fid)
             del promoted[fid]
             res = store.propose_and_commit(
-                fid, [(text, f"Not aldım: {text}"), (probe, expect)],
-                key=probe, kld_limit=KLD_LIMIT,
+                fid,
+                [(text, f"Not aldım: {text}"), (probe, expect)],
+                key=probe,
+                kld_limit=KLD_LIMIT,
             )
             info["kld"] = round(res["kld"], 3)
             if res["committed"]:
@@ -215,7 +228,7 @@ def run(s1, s2, store: DeltaStore, notes: Notes, args) -> dict:
     for e in s2:
         if e.kind == "probe":
             probe_event(e)
-    s2_log = log[len(s1_log):]
+    s2_log = log[len(s1_log) :]
 
     def agg(entries) -> dict:
         by: dict[str, list] = {}

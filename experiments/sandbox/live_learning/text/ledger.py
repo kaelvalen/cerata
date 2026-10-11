@@ -198,7 +198,9 @@ class DeltaStore:
         ks = []
         for x, y in zip(b, a):
             pb, pa = torch.softmax(x, -1), torch.softmax(y, -1)
-            ks.append(float((pb * (pb / pa).log()).sum() + (pa * (pa / pb).log()).sum()))
+            ks.append(
+                float((pb * (pb / pa).log()).sum() + (pa * (pa / pb).log()).sum())
+            )
         return sum(ks) / len(ks)
 
     def propose_and_commit(
@@ -275,13 +277,14 @@ def main() -> None:
             key=f.probe,
         )
         hashes[f.id] = store.state_hash()
-        print(f"added {f.id} in {t_add[f.id]:.1f}s hash {hashes[f.id][:10]}", flush=True)
+        print(
+            f"added {f.id} in {t_add[f.id]:.1f}s hash {hashes[f.id][:10]}", flush=True
+        )
 
     def probe(kind: str = "merged"):
         fn = store.answer if kind == "merged" else store.answer_routed
         return {
-            f.id: {"q": f.probe, "resp": fn(f.probe), "expect": f.answer}
-            for f in facts
+            f.id: {"q": f.probe, "resp": fn(f.probe), "expect": f.answer} for f in facts
         }
 
     with_all = probe()
@@ -308,11 +311,24 @@ def main() -> None:
             "identity": prev_hash == revoke_hash,
             "seconds": round(t_rev, 3),
         },
-        "recall_merged_all": {fid: ok(r["resp"], r["expect"]) for fid, r in with_all.items()},
-        "recall_routed_all": {fid: ok(r["resp"], r["expect"]) for fid, r in routed_all.items()},
-        "recall_routed_after_revoke": {fid: ok(r["resp"], r["expect"]) for fid, r in after_routed.items()},
-        "recall_merged_after_revoke": {fid: ok(r["resp"], r["expect"]) for fid, r in after.items()},
-        "responses": {"merged_all": with_all, "routed_all": routed_all, "after_merged": after, "after_routed": after_routed},
+        "recall_merged_all": {
+            fid: ok(r["resp"], r["expect"]) for fid, r in with_all.items()
+        },
+        "recall_routed_all": {
+            fid: ok(r["resp"], r["expect"]) for fid, r in routed_all.items()
+        },
+        "recall_routed_after_revoke": {
+            fid: ok(r["resp"], r["expect"]) for fid, r in after_routed.items()
+        },
+        "recall_merged_after_revoke": {
+            fid: ok(r["resp"], r["expect"]) for fid, r in after.items()
+        },
+        "responses": {
+            "merged_all": with_all,
+            "routed_all": routed_all,
+            "after_merged": after,
+            "after_routed": after_routed,
+        },
         "seconds_add_mean": round(sum(t_add.values()) / len(t_add), 3),
     }
     out = Path(args.out)

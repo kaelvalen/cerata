@@ -36,8 +36,16 @@ from vlm_ledger import VlmDeltaStore  # noqa: E402
 FACTS = {
     "a": {"panel": PANEL_A, "teach": teach_text("Tira"), "code": "Tira"},
     "b": {"panel": PANEL_B2, "teach": teach_text("Vok"), "code": "Vok"},
-    "c": {"panel": PANEL_C, "teach": "Kalibrasyon düğmesinin kodu Zun'dur.", "code": "Zun"},
-    "d": {"panel": PANEL_D, "teach": "Kalibrasyon düğmesinin kodu Mek'tir.", "code": "Mek"},
+    "c": {
+        "panel": PANEL_C,
+        "teach": "Kalibrasyon düğmesinin kodu Zun'dur.",
+        "code": "Zun",
+    },
+    "d": {
+        "panel": PANEL_D,
+        "teach": "Kalibrasyon düğmesinin kodu Mek'tir.",
+        "code": "Mek",
+    },
 }
 STREAM = ["a", "a", "a", "b", "b", "b", "c", "d"]
 COST = 0.3
@@ -55,7 +63,9 @@ def main() -> None:
     def contains(resp, token):
         return token.lower() in resp.lower()
 
-    vecs = {k: emb_clip(store.iproc, store.imodel, f["panel"]) for k, f in FACTS.items()}
+    vecs = {
+        k: emb_clip(store.iproc, store.imodel, f["panel"]) for k, f in FACTS.items()
+    }
     sim_matrix = {
         f"{i}{j}": round(float(vecs[i] @ vecs[j]), 3)
         for i in FACTS
@@ -147,7 +157,9 @@ def main() -> None:
         "experts": len(store.deltas) == 4,
         "final_readout_ok": all(final[f]["ok"] for f in FACTS),
         "route_ok": all(
-            t["chosen"] == t["fid"] for t in trace if t["fid"] in store.deltas and not t["miss"]
+            t["chosen"] == t["fid"]
+            for t in trace
+            if t["fid"] in store.deltas and not t["miss"]
         ),
         "commits_under_cap": all(
             d["kld"] is None or d["kld"] <= store.kld_limit for d in decisions
@@ -160,7 +172,9 @@ def main() -> None:
         "checks": checks,
         "sim_matrix": sim_matrix,
         "decisions": decisions,
-        "q_table": {f"{c[0]}|c{c[1]}|{a}": round(v, 3) for (c, a), v in sorted(q.items())},
+        "q_table": {
+            f"{c[0]}|c{c[1]}|{a}": round(v, 3) for (c, a), v in sorted(q.items())
+        },
         "n_table": {f"{c[0]}|c{c[1]}|{a}": v for (c, a), v in sorted(n.items())},
         "trace": trace,
         "final": final,
@@ -173,7 +187,9 @@ def main() -> None:
     print(json.dumps(checks, ensure_ascii=False))
     print("sims:", sim_matrix)
     print("decisions:", json.dumps(decisions, ensure_ascii=False))
-    print("final:", {k: (v["chosen"], v["ok"], v["resp"][:30]) for k, v in final.items()})
+    print(
+        "final:", {k: (v["chosen"], v["ok"], v["resp"][:30]) for k, v in final.items()}
+    )
     print("canary:", canary[:60])
 
 

@@ -39,13 +39,19 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--suffix", default="v8")
     ap.add_argument("--out", default=str(CONFIRM / "relenc_split.json"))
-    ap.add_argument("--routing-only", nargs="*", default=[],
-                    help="scorer=selection.json pairs: routing split without serving")
+    ap.add_argument(
+        "--routing-only",
+        nargs="*",
+        default=[],
+        help="scorer=selection.json pairs: routing split without serving",
+    )
     args = ap.parse_args(argv)
 
     meta = json.loads((CONFIRM / "relation_encoder_mpnet/ss76_meta.json").read_text())
     heldout = set(meta["heldout_relations"])
-    facts = json.loads((CONFIRM / "external_counterfact_n1000.json").read_text())["facts"]
+    facts = json.loads((CONFIRM / "external_counterfact_n1000.json").read_text())[
+        "facts"
+    ]
     raw = json.loads((CONFIRM / "raw/counterfact.json").read_text())
     records = match_raw(facts, raw)
     e3 = other_relation_prompts(records, raw)
@@ -53,14 +59,20 @@ def main(argv=None):
     v8 = json.loads((CONFIRM / f"cf_n1000_{args.suffix}_eval.json").read_text())
     v4 = json.loads((CONFIRM / "cf_n1000_v4_eval.json").read_text())
     ss71 = json.loads((CONFIRM / "serving_locality.json").read_text())
-    theta = json.loads((CONFIRM / "relevance_eval.json").read_text())["operating_points"]["cf_fpr_0.05"]["theta"]
+    theta = json.loads((CONFIRM / "relevance_eval.json").read_text())[
+        "operating_points"
+    ]["cf_fpr_0.05"]["theta"]
 
-    enc = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", device="cpu")
+    enc = SentenceTransformer(
+        "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", device="cpu"
+    )
     r4 = RouterV4(enc, facts, theta)
     default_para = [r4.route(f["paraphrase"], enc)[0] == i for i, f in enumerate(facts)]
     e3_rows71 = ss71["examples"]["E3_other_relation"]
     default_e3_routed = [r4.route(r["query"], enc)[0] is not None for r in e3_rows71]
-    default_e3_leak = [r["both"]["leak"] and k for r, k in zip(e3_rows71, default_e3_routed)]
+    default_e3_leak = [
+        r["both"]["leak"] and k for r, k in zip(e3_rows71, default_e3_routed)
+    ]
 
     v8_para = [r["paraphrase"]["route_correct"] for r in v8["examples"]["serving"]]
     v8_para_both = [r["paraphrase"]["both_hit"] for r in v8["examples"]["serving"]]
@@ -70,7 +82,10 @@ def main(argv=None):
     v8_e3_leak = [r["both"]["leak"] for r in e3_rows8]
 
     out = {"heldout_relations": sorted(heldout), "paraphrase": {}, "E3": {}}
-    for name, sel in (("seen", [r not in heldout for r in rel]), ("heldout", [r in heldout for r in rel])):
+    for name, sel in (
+        ("seen", [r not in heldout for r in rel]),
+        ("heldout", [r in heldout for r in rel]),
+    ):
         idx = [i for i, s in enumerate(sel) if s]
         out["paraphrase"][name] = {
             "n": len(idx),
@@ -100,15 +115,24 @@ def main(argv=None):
         out["routing_only"] = {}
         for spec in args.routing_only:
             name, sel_file = spec.split("=")
-            sel_theta = json.loads(Path(sel_file).read_text())["configs"][name]["dev"]["theta_cf_fpr_0.05"]
+            sel_theta = json.loads(Path(sel_file).read_text())["configs"][name]["dev"][
+                "theta_cf_fpr_0.05"
+            ]
             router = RouterV7(facts, make_scorer(name, device="cpu"), sel_theta)
             para = [router.route(f["paraphrase"])[0] == i for i, f in enumerate(facts)]
             e3r = [router.route(r["query"])[0] is not None for r in e3_rows71]
             res = {"theta": sel_theta}
-            for grp, sel in (("seen", [r not in heldout for r in rel]), ("heldout", [r in heldout for r in rel])):
+            for grp, sel in (
+                ("seen", [r not in heldout for r in rel]),
+                ("heldout", [r in heldout for r in rel]),
+            ):
                 res[f"paraphrase_{grp}"] = rate(p for p, k in zip(para, sel) if k)[0]
             for grp, pred in groups.items():
-                res[f"E3_routed_{grp}"] = rate(e3r[i] for i in range(len(facts)) if pred(rel[i], e3[i]["relation_id"]))[0]
+                res[f"E3_routed_{grp}"] = rate(
+                    e3r[i]
+                    for i in range(len(facts))
+                    if pred(rel[i], e3[i]["relation_id"])
+                )[0]
             out["routing_only"][name] = res
     Path(args.out).write_text(json.dumps(out, indent=1))
     print(json.dumps(out, indent=1))

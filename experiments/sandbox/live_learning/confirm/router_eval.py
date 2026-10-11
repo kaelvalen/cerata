@@ -65,7 +65,9 @@ def main() -> None:
         "v2_entity": evaluate(RouterV2(enc, facts), facts, enc),
         "v3_fuzzy": evaluate(Router(enc, facts), facts, enc),
     }
-    path = Path(args.out or f"results/live_learning/confirm/router_eval_v3_n{args.n}.json")
+    path = Path(
+        args.out or f"results/live_learning/confirm/router_eval_v3_n{args.n}.json"
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, ensure_ascii=False, indent=1))
     print(json.dumps(out, ensure_ascii=False))

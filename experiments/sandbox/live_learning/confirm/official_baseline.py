@@ -51,8 +51,10 @@ def ci(values, n=2000, seed=0):
         return [0.0, 0.0]
     rng = np.random.default_rng(seed)
     boots = rng.choice(arr, size=(n, arr.size), replace=True).mean(axis=1)
-    return [round(float(np.percentile(boots, 2.5)), 4),
-            round(float(np.percentile(boots, 97.5)), 4)]
+    return [
+        round(float(np.percentile(boots, 2.5)), 4),
+        round(float(np.percentile(boots, 97.5)), 4),
+    ]
 
 
 def hit(resp: str, token: str) -> bool:
@@ -117,7 +119,7 @@ def gen(model, tok, prompt: str, device, max_new_tokens: int = 64) -> str:
         pad_token_id=tok.eos_token_id,
         use_cache=True,
     )
-    return tok.decode(out[0, ids.shape[1]:], skip_special_tokens=True).strip()
+    return tok.decode(out[0, ids.shape[1] :], skip_special_tokens=True).strip()
 
 
 @torch.no_grad()
@@ -133,7 +135,7 @@ def gen_raw(model, tok, prompt: str, device, max_new_tokens: int = 8) -> str:
         pad_token_id=tok.eos_token_id,
         use_cache=False,
     )
-    return tok.decode(out[0, ids.shape[1]:], skip_special_tokens=True).strip()
+    return tok.decode(out[0, ids.shape[1] :], skip_special_tokens=True).strip()
 
 
 @torch.no_grad()
@@ -194,8 +196,16 @@ def main() -> None:
     ap.add_argument("--method", choices=["grace", "wise"], required=True)
     ap.add_argument("--limit", type=int, default=None, help="smoke: first N facts")
     ap.add_argument("--hparams", default=None, help="override the default hparams path")
-    ap.add_argument("--facts", default=str(ROOT / "results/live_learning/confirm/external_counterfact_n200.json"))
-    ap.add_argument("--raw", default=str(ROOT / "results/live_learning/confirm/raw/counterfact.json"))
+    ap.add_argument(
+        "--facts",
+        default=str(
+            ROOT / "results/live_learning/confirm/external_counterfact_n200.json"
+        ),
+    )
+    ap.add_argument(
+        "--raw",
+        default=str(ROOT / "results/live_learning/confirm/raw/counterfact.json"),
+    )
     ap.add_argument("--out", default=None)
     ap.add_argument("--log", default=None)
     args = ap.parse_args()
@@ -203,15 +213,26 @@ def main() -> None:
     method = args.method
     facts_all = json.loads(Path(args.facts).read_text())["facts"]
     facts = facts_all[: args.limit] if args.limit else facts_all
-    out_path = Path(args.out) if args.out else (
-        ROOT / f"results/live_learning/confirm/official_{method}_n{len(facts)}.json")
-    log_path = Path(args.log) if args.log else (
-        ROOT / f"results/live_learning/confirm/official_{method}.log")
+    out_path = (
+        Path(args.out)
+        if args.out
+        else (
+            ROOT / f"results/live_learning/confirm/official_{method}_n{len(facts)}.json"
+        )
+    )
+    log_path = (
+        Path(args.log)
+        if args.log
+        else (ROOT / f"results/live_learning/confirm/official_{method}.log")
+    )
 
     log(f"=== official {method.upper()} baseline start: n={len(facts)} ===", log_path)
     raw_index, raw_true, missing = build_raw_alignment(Path(args.raw), facts)
     if missing:
-        log(f"WARNING raw alignment missing for {len(missing)} facts: {missing[:5]}", log_path)
+        log(
+            f"WARNING raw alignment missing for {len(missing)} facts: {missing[:5]}",
+            log_path,
+        )
 
     hp_path = ROOT / ".deps" / "EasyEdit" / (args.hparams or HP_REL[method])
     hparams = HP_CLS[method].from_hparams(str(hp_path))
@@ -221,12 +242,17 @@ def main() -> None:
     # Memory adaptation for the shared ~8 GB GPU: the official 7B yamls use the
     # fp32 default (BaseEditor torch_dtype=float32), which OOMs for WISE here.
     hparams.fp16 = True
-    log(f"hparams={args.hparams or HP_REL[method]} model={hparams.model_name} device={hparams.device} "
+    log(
+        f"hparams={args.hparams or HP_REL[method]} model={hparams.model_name} device={hparams.device} "
         f"n_iter={hparams.n_iter} lr={hparams.edit_lr} inner={hparams.inner_params} "
-        f"fp16={hparams.fp16}", log_path)
+        f"fp16={hparams.fp16}",
+        log_path,
+    )
 
     editor = BaseEditor.from_hparams(hparams)
-    device = torch.device(f"cuda:{hparams.device}" if torch.cuda.is_available() else "cpu")
+    device = torch.device(
+        f"cuda:{hparams.device}" if torch.cuda.is_available() else "cpu"
+    )
     tok_eval = AutoTokenizer.from_pretrained(hparams.model_name)
     base_model = editor.model
     log(f"model loaded; tokenizer eos={tok_eval.eos_token!r}", log_path)
@@ -237,9 +263,12 @@ def main() -> None:
         r = gen(base_model, tok_eval, f["distractor"], device, 64)
         base_dist[f["id"]] = r
         toks = tok_eval.encode(r, add_special_tokens=False)[:12]
-        base_dist_gt[f["id"]] = (tok_eval.decode(toks).strip() or "unknown")
+        base_dist_gt[f["id"]] = tok_eval.decode(toks).strip() or "unknown"
     base_canary = [next_logits(base_model, tok_eval, q, device) for q in CANARIES]
-    log(f"base references done ({len(facts)} distractors, {len(CANARIES)} canaries)", log_path)
+    log(
+        f"base references done ({len(facts)} distractors, {len(CANARIES)} canaries)",
+        log_path,
+    )
 
     # --- EasyEdit inputs (hallucination-branch format) ---
     prompts = [f["probe"] for f in facts]
@@ -282,21 +311,27 @@ def main() -> None:
         # diagnostic: same greedy+contains but with the raw (no chat template) prompt,
         # the format EasyEdit's GRACE edits/keys are built on.
         resp_raw = gen_raw(edited_model, tok_eval, f["probe"], device, 8)
-        rows.append({
-            "fid": f["id"],
-            "eff": hit(resp, f["answer"]),
-            "para": hit(resp_para, f["answer"]),
-            "no_leak": not any(
-                hit(d_resp, w) and not hit(base_dist[f["id"]], w) for w in words),
-            "eff_raw_prompt": hit(resp_raw, f["answer"]),
-            "resp": resp[:70],
-            "resp_para": resp_para[:70],
-            "resp_raw": resp_raw[:70],
-            "dist_resp": d_resp[:70],
-            "base_dist_resp": base_dist[f["id"]][:70],
-        })
-        log(f"ours {f['id']}: eff={rows[-1]['eff']} para={rows[-1]['para']} "
-            f"no_leak={rows[-1]['no_leak']} eff_raw={rows[-1]['eff_raw_prompt']}", log_path)
+        rows.append(
+            {
+                "fid": f["id"],
+                "eff": hit(resp, f["answer"]),
+                "para": hit(resp_para, f["answer"]),
+                "no_leak": not any(
+                    hit(d_resp, w) and not hit(base_dist[f["id"]], w) for w in words
+                ),
+                "eff_raw_prompt": hit(resp_raw, f["answer"]),
+                "resp": resp[:70],
+                "resp_para": resp_para[:70],
+                "resp_raw": resp_raw[:70],
+                "dist_resp": d_resp[:70],
+                "base_dist_resp": base_dist[f["id"]][:70],
+            }
+        )
+        log(
+            f"ours {f['id']}: eff={rows[-1]['eff']} para={rows[-1]['para']} "
+            f"no_leak={rows[-1]['no_leak']} eff_raw={rows[-1]['eff_raw_prompt']}",
+            log_path,
+        )
     eff = [r["eff"] for r in rows]
     para = [r["para"] for r in rows]
     leak = [r["no_leak"] for r in rows]
@@ -309,20 +344,30 @@ def main() -> None:
         "paraphrase_ci": ci(para),
         "distractor_no_leak": round(float(np.mean(leak)), 4) if rows else None,
         "distractor_no_leak_ci": ci(leak),
-        "efficacy_raw_prompt_diagnostic": round(float(np.mean(eff_raw)), 4) if rows else None,
+        "efficacy_raw_prompt_diagnostic": round(float(np.mean(eff_raw)), 4)
+        if rows
+        else None,
     }
 
     # --- canary KLD on the final edited model ---
     kld_info = {"value": None, "per_canary": None, "status": "not attempted"}
     try:
-        edited_canary = [next_logits(edited_model, tok_eval, q, device) for q in CANARIES]
+        edited_canary = [
+            next_logits(edited_model, tok_eval, q, device) for q in CANARIES
+        ]
         kld, ks = canary_kld(base_canary, edited_canary)
-        kld_info = {"value": round(kld, 4), "per_canary": [round(x, 4) for x in ks],
-                    "status": "ok"}
-        log(f"canary KLD = {kld:.4f} ({[round(x,3) for x in ks]})", log_path)
+        kld_info = {
+            "value": round(kld, 4),
+            "per_canary": [round(x, 4) for x in ks],
+            "status": "ok",
+        }
+        log(f"canary KLD = {kld:.4f} ({[round(x, 3) for x in ks]})", log_path)
     except Exception as e:  # noqa: BLE001
-        kld_info = {"value": None, "per_canary": None,
-                    "status": f"skipped: {type(e).__name__}: {e}"}
+        kld_info = {
+            "value": None,
+            "per_canary": None,
+            "status": f"skipped: {type(e).__name__}: {e}",
+        }
         quirks.append(f"canary KLD skipped: {type(e).__name__}: {e}")
         log(f"canary KLD skipped: {type(e).__name__}: {e}", log_path)
 
@@ -344,9 +389,18 @@ def main() -> None:
         "quirks": quirks,
         "easyedit_metrics": metrics,
     }
-    out_path.write_text(json.dumps(result, ensure_ascii=False, indent=1,
-                                   default=lambda o: float(o) if isinstance(o, np.floating)
-                                   else (o.tolist() if isinstance(o, np.ndarray) else str(o))))
+    out_path.write_text(
+        json.dumps(
+            result,
+            ensure_ascii=False,
+            indent=1,
+            default=lambda o: (
+                float(o)
+                if isinstance(o, np.floating)
+                else (o.tolist() if isinstance(o, np.ndarray) else str(o))
+            ),
+        )
+    )
     log(f"wrote {out_path}", log_path)
     log(f"easyedit summary: {json.dumps(result['easyedit'])}", log_path)
     log(f"our-protocol summary: {json.dumps(our_summary)}", log_path)

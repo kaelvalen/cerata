@@ -487,8 +487,7 @@ def aggregate_runs(
     }
     if len(protocols) > 1:
         raise ValueError(
-            "refusing to aggregate across protocols (R3): "
-            f"{sorted(protocols, key=str)}"
+            f"refusing to aggregate across protocols (R3): {sorted(protocols, key=str)}"
         )
     requires = set(requires_blocks)
     missing = [

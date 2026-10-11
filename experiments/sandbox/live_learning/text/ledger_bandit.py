@@ -149,9 +149,7 @@ def run_learned(store: DeltaStore, ret: Retriever, mode: str = "eps") -> dict:
             resp = expert_serve(store, fid, f.probe)
             ok = hit(resp, f.answer)
             last[fid] = "ok" if ok else "fail"
-            trace.append(
-                {"fid": fid, "count": counts[fid], "path": "expert", "ok": ok}
-            )
+            trace.append({"fid": fid, "count": counts[fid], "path": "expert", "ok": ok})
             continue
         if fid in refused:  # locked to memory after a KLD refusal
             resp = memory_serve(store, ret.note_for(f.probe), f.probe)
@@ -242,9 +240,7 @@ def run_learned(store: DeltaStore, ret: Retriever, mode: str = "eps") -> dict:
         "q_table": {
             f"{ctx[0]}|c{ctx[1]}|{a}": round(v, 3) for (ctx, a), v in sorted(q.items())
         },
-        "n_table": {
-            f"{ctx[0]}|c{ctx[1]}|{a}": v for (ctx, a), v in sorted(n.items())
-        },
+        "n_table": {f"{ctx[0]}|c{ctx[1]}|{a}": v for (ctx, a), v in sorted(n.items())},
         "final_readout": final,
         "final_recall": sum(v["ok"] for v in final.values()),
         "trace": trace,
@@ -355,9 +351,7 @@ def run_repair(store: DeltaStore, ret: Retriever) -> dict:
         "commits_explore": sum(
             1 for t in trace if t.get("explore") and t.get("committed")
         ),
-        "q_table": {
-            f"c{ctx[0]}|{a}": round(v, 3) for (ctx, a), v in sorted(q.items())
-        },
+        "q_table": {f"c{ctx[0]}|{a}": round(v, 3) for (ctx, a), v in sorted(q.items())},
         "n_table": {f"c{ctx[0]}|{a}": v for (ctx, a), v in sorted(n.items())},
         "final_readout": final,
         "final_recall": sum(v["ok"] for v in final.values()),

@@ -220,11 +220,10 @@ def _register_shared_encoder_archs() -> None:
     for arch in ("mlp", *SharedEncoder.RESNET_ARCHES, *SharedEncoder.VIT_ARCHES):
         if arch == "mlp":
             register_backbone("mlp")(
-                lambda input_dim, output_dim=128, hidden_dims=(
-                    256,
-                    128,
-                ), **kw: _shared_encoder(
-                    input_dim, output_dim, "mlp", hidden_dims=hidden_dims, **kw
+                lambda input_dim, output_dim=128, hidden_dims=(256, 128), **kw: (
+                    _shared_encoder(
+                        input_dim, output_dim, "mlp", hidden_dims=hidden_dims, **kw
+                    )
                 )
             )
         else:
@@ -234,23 +233,23 @@ def _register_shared_encoder_archs() -> None:
                 )
             )
     register_backbone("conv")(
-        lambda input_dim, output_dim=128, conv_channels=(
-            32,
-            64,
-            128,
-        ), **kw: _shared_encoder(
-            input_dim, output_dim, "conv", conv_channels=conv_channels, **kw
+        lambda input_dim, output_dim=128, conv_channels=(32, 64, 128), **kw: (
+            _shared_encoder(
+                input_dim, output_dim, "conv", conv_channels=conv_channels, **kw
+            )
         )
     )
     register_backbone("cached")(
         lambda output_dim: CachedBackbone(output_dim=output_dim)
     )
     register_backbone("random")(
-        lambda input_dim, output_dim=256, seed=0, nonlinear=True: RandomProjectionBackbone(
-            input_dim=input_dim,
-            output_dim=output_dim,
-            seed=seed,
-            nonlinear=nonlinear,
+        lambda input_dim, output_dim=256, seed=0, nonlinear=True: (
+            RandomProjectionBackbone(
+                input_dim=input_dim,
+                output_dim=output_dim,
+                seed=seed,
+                nonlinear=nonlinear,
+            )
         )
     )
 

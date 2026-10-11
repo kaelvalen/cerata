@@ -10,5 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --frozen
-      - run: uv run pytest -q
+      # The live-learning tests import transformers through the sandbox harness;
+      # it is only in the lm extra, so a plain sync cannot collect them.
+      - run: uv sync --frozen --extra lm
+      - run: uv run --frozen --extra lm pytest -q
