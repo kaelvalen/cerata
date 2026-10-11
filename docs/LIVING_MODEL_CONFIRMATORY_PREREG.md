@@ -1572,3 +1572,25 @@ training relations. Where two relations differ in nuance, the boundary has to be
 from examples of that pair. Decision rule: three of four predictions failed; the SS76
 encoder stays the default.
 
+## 78. Write-time negative keys (pinned 2026-10-11, before the run)
+
+SS76/77: the remaining leakage on new relations comes from near-neighbour relations,
+whose boundary an encoder does not learn from other relations. Instead of retraining the
+encoder, each fact gets negative keys at write time: the frozen base model is shown the
+edit prompt and writes five questions about the same subject that ask for different but
+related information (greedy; prompt fixed in gen_negkeys.py; lines without the subject
+dropped; relation texts masked as for keys). Router v10 = router v8 (SS76 encoder) with
+one extra test: the selected candidate is accepted only if s_pos >= tau and
+s_pos - max(similarity to its negative keys) >= m. The encoder stays the SS76 one, so the
+11 held-out relations stay unseen by the encoder; the negatives are generated per fact
+from the edit prompt only (no test prompt, no relation id). Calibration on the SS66 dev
+split (negative keys generated for the dev facts the same way): (tau, m) over a grid
+(tau: 200 quantiles of the dev candidate scores; m: -inf and -0.30..0.30 in steps of
+0.02), choosing the highest pooled dev TPR with CounterFact dev FPR <= 0.05, ties to the
+larger m. m = -inf reproduces SS76. Readings: test routing for CF and zsRE, the SS76
+relation split, and the end-to-end evaluation (v7_eval) of v10.
+Predictions: E3 leak (both) pooled over prompts with a held-out relation <= 0.04 (SS76
+0.059) with held-out paraphrase route-correct >= 0.72 (SS76 0.747); overall CF paraphrase
+(both) >= 0.88 and E3 leak (both) <= 0.035. Decision rule: v10 becomes the default only
+if all four hold.
+
