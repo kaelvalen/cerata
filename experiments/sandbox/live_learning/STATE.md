@@ -199,3 +199,10 @@ dev: all-mpnet-base-v2 + 3 base-model rewrites per edit prompt, theta 0.693. Tes
 paraphrase (both) 0.620, E3 leak 0.050, zsRE paraphrase 0.960 - better than the SS74
 default on both axes but below the pinned 0.65 bar, so the default stays. Generated keys
 give most of the gain; encoders differ little; the quora cross-encoder is worst.
+SS76 (2026-10-11): relation encoder trained offline (`confirm/train_relation_encoder.py`,
+all-mpnet-base-v2, 7500 triplets, 11 CF relations held out, 45 s; model in
+results/live_learning/confirm/relation_encoder_mpnet/, untracked). Default router now:
+theta 0.750 (CF dev FPR <= 5%). CF paraphrase (both) 0.891, E3 leak 0.043; zsRE
+paraphrase 0.982. Split (`confirm/relenc_split.py`): seen relations route 0.994 and
+leak 0.023; held-out relations route 0.747 and leak unchanged. Open: new relations
+(retraining changes all keys); nothing committed.
