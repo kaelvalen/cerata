@@ -1373,3 +1373,29 @@ the highest CF paraphrase accuracy is adapter and note (0.589). Default configur
 the paper: router v4 with theta 0.757, adapter and note served together; the Youden point
 and the curve are reported as the recall-oriented alternative.
 
+## 75. Relation scorers and generated keys (pinned 2026-10-11, before the run)
+
+SS72-74 locate the remaining leakage in the router's relation comparison; the threshold
+moves along one trade-off curve. Two ways to move the curve itself, both without
+trainable parameters in the store:
+(1) the relation scorer, compared on the subject-masked relation texts of query clause
+and key: MiniLM multilingual (current), sentence-transformers/all-mpnet-base-v2,
+BAAI/bge-large-en-v1.5, intfloat/e5-large-v2 ("query: " prefix on both sides), all
+frozen bi-encoders with cosine similarity, and the frozen cross-encoder
+cross-encoder/quora-roberta-large (duplicate-question score on the pair);
+(2) generated keys: at write time the frozen base model rewrites the edit prompt in three
+other ways that keep the subject (greedy; prompt fixed in the script); lines without the
+subject are dropped; the key score is the maximum over the original and generated keys.
+10 configurations (5 scorers x {no, generated keys}). Selection on the SS66 dev split
+only: the configuration with the highest dev TPR (paraphrases routed to their own fact)
+at its threshold theta = the lowest value with CounterFact dev FPR <= 0.05 (the SS74
+default rule); dev AUC and Youden J reported. Test routing readings (CPU) are reported
+for all 10 configurations; the selected one at its dev theta is evaluated end to end on
+both N=1000 stores (eval-only, existing adapters): serving arms, tiered store, E2/E3
+under the four SS71 policies, zsRE loc, removal, sibling test.
+Predictions: the selected configuration beats MiniLM's dev TPR at FPR 0.05 (0.677) by
+>= 0.05; on the test set, CF paraphrase (adapter and note) >= 0.65 with E3 leak (both)
+<= 0.07 (SS74 default: 0.589 / 0.063). Decision rule: if both test predictions hold, the
+selected configuration replaces the SS74 default; otherwise the SS74 default stays and
+the result is reported.
+
