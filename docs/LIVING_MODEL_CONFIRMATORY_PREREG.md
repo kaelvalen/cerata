@@ -1399,3 +1399,51 @@ Predictions: the selected configuration beats MiniLM's dev TPR at FPR 0.05 (0.67
 selected configuration replaces the SS74 default; otherwise the SS74 default stays and
 the result is reported.
 
+### SS75 (a) results (2026-10-11, `router_v7_select.json`, `generated_keys.json`)
+
+Generated keys: 3000 edit prompts, mean 2.83 kept rewrites, 97 prompts with none; some
+rewrites drift (a year instead of a place, invented details). Dev TPR at the threshold
+with CF dev FPR <= 0.05, and test routing at that threshold:
+
+| config | theta | dev TPR | CF paraphrase route-correct | E3 routed | E2 routed | zsRE paraphrase route-correct |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| minilm (SS74 default) | 0.757 | 0.677 | 0.595 | 0.064 | 0.012 | 0.694 |
+| minilm+keys | 0.775 | 0.707 | 0.628 | 0.067 | 0.011 | 0.714 |
+| mpnet | 0.669 | 0.692 | 0.607 | 0.052 | 0.011 | 0.714 |
+| **mpnet+keys (selected)** | 0.693 | 0.716 | 0.623 | 0.057 | 0.010 | 0.721 |
+| bge | 0.838 | 0.668 | 0.583 | 0.059 | 0.006 | 0.678 |
+| bge+keys | 0.838 | 0.703 | 0.629 | 0.060 | 0.006 | 0.693 |
+| e5 | 0.909 | 0.676 | 0.568 | 0.064 | 0.008 | 0.729 |
+| e5+keys | 0.911 | 0.704 | 0.597 | 0.068 | 0.008 | 0.735 |
+| quora_ce | 0.355 | 0.567 | 0.583 | 0.061 | 0.012 | 0.582 |
+| quora_ce+keys | 0.623 | 0.585 | 0.561 | 0.061 | 0.010 | 0.630 |
+
+Prediction "selected beats MiniLM dev TPR by >= 0.05": **missed** (+0.039). Generated
+keys help every bi-encoder by 0.03-0.035 dev TPR; the encoder choice matters less
+(0.668-0.692); the duplicate-question cross-encoder is worst. (b) the end-to-end
+evaluation of mpnet+keys at theta 0.693 is pending (GPU paused on request).
+
+### SS75 (b) results (2026-10-11, `{cf,zsre}_n1000_v7_eval.json`, walls 1628 s / 1670 s)
+
+Router v7 = all-mpnet-base-v2 with generated keys at theta 0.693, existing adapters.
+
+| reading | SS74 default (MiniLM, 0.757) | v7 (mpnet+keys, 0.693) | prediction |
+| :-- | :-- | :-- | :-- |
+| CF edit prompt, both | 0.996 | 0.996 | - |
+| CF paraphrase route-correct | 0.595 | 0.623 | - |
+| CF paraphrase adapter / note / both / tiered | 0.513 / 0.488 / 0.589 / 0.512 | 0.530 / 0.507 / 0.620 [0.591, 0.649] / 0.525 | both >= 0.65: **missed** |
+| E3 routed | 0.064 | 0.057 | - |
+| E3 leak adapter / note / both / tiered | 0.058 / 0.045 / 0.063 / 0.053 | 0.050 / 0.038 / 0.050 [0.037, 0.063] / 0.043 | both <= 0.07: met |
+| E2 routed / both leak | 0.012 / 0.011 | 0.010 / 0.009 | - |
+| CF distractors routed; removal return / retention | 0 ; >= 1.00 / - | 0 ; 1.00 / 0.997 | - |
+| zsRE paraphrase route-correct / adapter / both | 0.694 / 0.938 / 0.956 | 0.721 / 0.947 / 0.960 | - |
+| zsRE edit prompt both; loc routed | 0.989 ; 0 | 0.989 ; 0 | - |
+| zsRE removal return / by content | >= 0.86 / 1.00 | 0.88 / 1.00 | - |
+
+Readings: v7 is better than the SS74 default on both axes (CF paraphrase +3.1 points with
+adapter and note, E3 leak -1.3 points), i.e. it moves the trade-off curve rather than
+moving along it, but by less than the pinned bar. Decision rule: the paraphrase
+prediction failed, so the SS74 default (MiniLM, theta 0.757) remains the paper's default
+configuration; v7 is reported as the best measured configuration. The encoder accounts
+for little of the gain; generated keys account for most of it (SS75a).
+
