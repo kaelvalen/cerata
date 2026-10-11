@@ -173,3 +173,48 @@ end to end (SS64): cf 0.997 / zsRE 0.994 routed efficacy; retain 0.9967 / 0.9922
 rewritten around the transactional framing (paper/main.tex; numbers from
 paper/make_numbers.py). Open, pinned as next runs: tau relaxation for exact-entity
 queries (CF paraphrase), revoke-by-content for duplicate entries, held-out canary set.
+
+## 2026-10-11: revisions after the external review (SS65-SS74)
+
+Locality on hard cases (SS65): CF neighborhood (E2) and other-relation prompts (E3) added;
+v3 leaked in 34.6% of E3. Router v4 (`confirm/router_v4.py`, SS66): complete-subject
+match, clause scoping, subject-masked relation keys, tau 0.631 by Youden J on a disjoint
+dev split. Re-evaluation of the saved stores (`confirm/v4_eval.py`, SS67/68): CF
+paraphrase 0.669 adapter / 0.629 note / 0.803 both; removal complete on CF; tiered store
+(adapter only if the note fails at write time) needs adapters for 16.2% / 20.6%.
+Held-out canary battery (`confirm/canary_eval.py`, SS69): kappa 0.968, in-sample D
+understates ~17x; a wrong route keeps only 72% of correct answers.
+Leakage experiments, all predictions on leakage missed: subject-local KL anchors
+(`confirm/local_anchor.py`, SS70) trade accuracy for leak; notes leak too
+(`confirm/serving_locality.py`, SS71); store-key contrast (router v5, SS72) and a
+base-model Yes/No check (`confirm/router_v6_eval.py`, SS73) lie on the threshold's curve;
+`confirm/relevance_eval.py` (SS74) compares scores on dev (MiniLM similarity best) and
+sets the default threshold 0.757 (CF dev FPR <= 5%): CF paraphrase (both) 0.589, E3 leak
+0.063, zsRE paraphrase 0.956. Paper rewritten around these results (paper/main.tex,
+numbers from paper/make_numbers.py). Open: relation discrimination (encoder, typed keys
+or a relation schema); nothing committed.
+SS75 (2026-10-11): relation scorers x generated keys (`confirm/gen_keys.py`,
+`confirm/router_v7.py`, `confirm/router_v7_select.py`, `confirm/v7_eval.py`). Selected on
+dev: all-mpnet-base-v2 + 3 base-model rewrites per edit prompt, theta 0.693. Test: CF
+paraphrase (both) 0.620, E3 leak 0.050, zsRE paraphrase 0.960 - better than the SS74
+default on both axes but below the pinned 0.65 bar, so the default stays. Generated keys
+give most of the gain; encoders differ little; the quora cross-encoder is worst.
+SS76 (2026-10-11): relation encoder trained offline (`confirm/train_relation_encoder.py`,
+all-mpnet-base-v2, 7500 triplets, 11 CF relations held out, 45 s; model in
+results/live_learning/confirm/relation_encoder_mpnet/, untracked). Default router now:
+theta 0.750 (CF dev FPR <= 5%). CF paraphrase (both) 0.891, E3 leak 0.043; zsRE
+paraphrase 0.982. Split (`confirm/relenc_split.py`): seen relations route 0.994 and
+leak 0.023; held-out relations route 0.747 and leak unchanged. Open: new relations
+(retraining changes all keys); nothing committed.
+SS77 (2026-10-11): encoders trained on base-model templates for 1785 Wikidata properties
+(`confirm/train_relation_encoder_wiki.py`; A without CounterFact relations, B = SS76 +
+Wikidata). B: held-out paraphrase routing 0.750 (SS76 0.747), held-out leak 0.059
+(unchanged), overall 0.890 / 0.047; three of four predictions missed, SS76 stays default.
+A (pure transfer): CF paraphrase routing 0.648 vs frozen mpnet 0.607, gain only on the 23
+relations, none on the 11 held out. Remaining held-out leaks are near-neighbor relation
+pairs. Open: learning such boundaries needs examples of the pair.
+SS78 (2026-10-11): write-time negative keys from the base model (`confirm/gen_negkeys.py`,
+`RouterV10` in `confirm/router_v7.py`, `confirm/router_v10_select.py`): dev calibration
+gives the same TPR with and without negatives; held-out E3 routed unchanged (0.059).
+Negatives ask for unrelated attributes, not the confusable neighbour. End-to-end eval
+not run (deviation recorded). SS76 stays default.

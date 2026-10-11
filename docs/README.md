@@ -10,7 +10,6 @@ interaction). Its docs:
 | [`LIVING_MODEL_CONFIRMATORY_PREREG.md`](LIVING_MODEL_CONFIRMATORY_PREREG.md) | The confirmatory study: nonce + CounterFact/zsRE, the arms, N=50/200/1000, the review round and the pinned next experiments |
 | [`LIVING_MODEL_REVIEW_2026-10-04.md`](LIVING_MODEL_REVIEW_2026-10-04.md) | The review round: findings, corrections, the gating order |
 
-The earlier programs (Stage 1, v3, PTM-CIL, the v1 record) are archived under
-[`archive/docs/`](../archive/docs/); their runners are under
-[`archive/experiments/`](../archive/experiments/). The archived docs keep their own
-map at `archive/docs/README.md`.
+The earlier programs (Stage 1, v3, PTM-CIL, the v1 record) were removed from the
+working tree in commit `894ad16`. Their documents and runners are in the history at
+`894ad16^` under `archive/` (for example `git show 894ad16^:archive/docs/README.md`).

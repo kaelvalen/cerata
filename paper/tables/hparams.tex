@@ -8,16 +8,25 @@
 \begin{tabular}{ll}
 \toprule
 Base model & Qwen2.5-1.5B-Instruct, bf16, frozen \\
-Adapter & LoRA $r{=}16$, $\alpha{=}32$, no dropout, \texttt{q\_proj}, \texttt{v\_proj}, all 28 layers \\
+Adapter & LoRA $r{=}16$, $\alpha{=}32$, query and value, all 28 layers \\
 Adapter size & $2.18$M parameters; $8.7$\,MB stored in fp32 \\
 Training pairs & (statement $\to$ ``Noted: statement''), (edit prompt $\to$ answer) \\
 Optimizer & AdamW, lr $3{\cdot}10^{-4}$, 16 passes $\times$ 2 pairs $=$ 32 steps \\
-KL term & $\lambda{=}1$, forward KL to the base on $Q_c$ \\
-Canary prompts $Q_c$ & ``What is the capital of France?'', ``What is 7 times 8?'' \\
-Divergence check & mean Jeffreys divergence on $Q_c$, $\kappa{=}2.0$ \\
+KL term & $\lambda{=}1$, forward KL to the base on the anchor prompts $Q$ \\
+Anchor prompts $Q$ & ``What is the capital of France?'', ``What is 7 times 8?'' \\
+Divergence check & Jeffreys divergence, 40 held-out canaries, $\kappa{=}0.968$ \\
+First version's check & same divergence on $Q$, $\kappa{=}2.0$ \\
 Sentence encoder & paraphrase-multilingual-MiniLM-L12-v2, frozen \\
-Entity filter & approximate match; cosine threshold $\tau=0.656$ \\
-Approximate match & tokens of $\ge 4$ characters; OSA distance $\le 1$ ($\le 2$ for $\ge 6$ characters) \\
+Router & complete subject match, clause, subject masked \\
+Thresholds (v4) & $\tau{=}0.631$ (Youden), $\tau{=}\sTheta$ (dev FPR $\le 5\%$) \\
+Router v7 & all-mpnet-base-v2, 3 generated keys, $\tau{=}\wTheta$ \\
+Default router & trained relation encoder, $\tau{=}\xTheta$ (dev FPR $\le 5\%$) \\
+Encoder training & all-mpnet-base-v2, 7500 triplets, MNRL, lr $2{\cdot}10^{-5}$, 1 epoch \\
+Wikidata encoders & 1785 properties, 4 generated templates each, same training \\
+Approximate match & OSA distance $\le 1$ ($\ge 4$ characters), $\le 2$ ($\ge 6$) \\
+First version's router & one approximate token, whole query, $\tau{=}0.656$ \\
+Note & statement in the instructed system prompt \\
+Tiered policy & adapter only if the note fails at write time \\
 Serving & chat template, system ``Answer briefly.'', greedy, 24 new tokens \\
 Scoring & case-insensitive substring of the target \\
 Intervals & 95\% percentile bootstrap over facts, 2000 resamples \\

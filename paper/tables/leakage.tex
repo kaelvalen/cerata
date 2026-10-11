@@ -1,0 +1,38 @@
+% Attempts to reduce leakage into other questions about stored subjects (SS70-74).
+\begin{table}[t]
+\centering
+\caption{Attempts to reduce leakage into other-relation prompts on CounterFact. Each row
+reports paraphrase accuracy and leakage for the same serving arm; the first block uses
+all 1000 facts, the last row the first 200, compared with their original adapters.}
+\label{tab:leakage}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llcc}
+\toprule
+Change & Arm & Paraphrase & Leakage \\
+\midrule
+None (router v4, $\tau=0.631$) & adapter & $\vCfPara$ & $\vCfEthreeLeakAdapter$ \\
+ & note & $\vCfParaRet$ & $0.140$ \\
+ & both & $\vCfParaBoth$ & $\vCfEthreeLeakBoth$ \\
+ & tiered & $\vCfTierPara$ & $\vCfEthreeLeakTiered$ \\
+Store contrast & both & $0.764$ & $0.177$ \\
+Base-model check & both & $0.798$ & $0.232$ \\
+Threshold $\tau=\sTheta$ & adapter & $\sCfPara$ & $\sCfEthreeLeakAdapter$ \\
+ & note & $\sCfParaRet$ & $\sCfEthreeLeakNote$ \\
+ & both & $\sCfParaBoth$ & $\sCfEthreeLeakBoth$ \\
+ & tiered & $\sCfParaTier$ & $\sCfEthreeLeakTiered$ \\
+Generated keys, mpnet, & adapter & $\wCfPara$ & $\wCfEthreeLeakAdapter$ \\
+\quad $\tau=\wTheta$ & note & $\wCfParaRet$ & $\wCfEthreeLeakNote$ \\
+ & both & $\wCfParaBoth$ & $\wCfEthreeLeakBoth$ \\
+ & tiered & $\wCfParaTier$ & $\wCfEthreeLeakTiered$ \\
+Trained relation & adapter & $\xCfPara$ & $\xCfEthreeLeakAdapter$ \\
+\quad encoder, $\tau=\xTheta$ & note & $\xCfParaRet$ & $\xCfEthreeLeakNote$ \\
+ & both & $\xCfParaBoth$ & $\xCfEthreeLeakBoth$ \\
+ & tiered & $\xCfParaTier$ & $\xCfEthreeLeakTiered$ \\
+\midrule
+Subject-local anchors (200) & adapter & $0.690\to0.550$ & $0.160\to0.090$ \\
+ & both & $0.805\to0.805$ & $0.200\to0.185$ \\
+\bottomrule
+\end{tabular}}
+\end{table}

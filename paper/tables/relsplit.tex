@@ -1,0 +1,24 @@
+% Trained relation encoder: CounterFact results split by seen and held-out relations (SS76).
+\begin{table}[t]
+\centering
+\caption{The trained relation encoder on CounterFact, split by whether the relations
+involved were used in its training, compared with router v4 at $\tau=\sTheta$. Paraphrase
+rows give the fraction routed to the correct fact; leakage rows the fraction of
+other-relation prompts whose output with adapter and note contains a stored answer.}
+\label{tab:relsplit}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lccc}
+\toprule
+Queries & $n$ & Router v4 & Trained \\
+\midrule
+Paraphrase, seen relation & \xParaSeenN & $\xParaSeenDefRoute$ & $\xParaSeenRoute$ \\
+Paraphrase, held-out relation & \xParaHeldN & $\xParaHeldDefRoute$ & $\xParaHeldRoute$ \\
+\midrule
+Leakage, both relations seen & \xEthreeSeenN & $\xEthreeSeenDef$ & $\xEthreeSeenLeak$ \\
+Leakage, stored relation held out & \xEthreeStoredHeldN & $\xEthreeStoredHeldDef$ & $\xEthreeStoredHeldLeak$ \\
+Leakage, query relation held out & \xEthreeQueryHeldN & $\xEthreeQueryHeldDef$ & $\xEthreeQueryHeldLeak$ \\
+Leakage, both held out & \xEthreeBothHeldN & $\xEthreeBothHeldDef$ & $\xEthreeBothHeldLeak$ \\
+\bottomrule
+\end{tabular}
+\end{table}

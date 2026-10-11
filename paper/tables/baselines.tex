@@ -4,7 +4,8 @@
 \caption{Comparison on CounterFact with Qwen2.5-1.5B-Instruct. ``Chat'' uses the chat
 template; ``plain'' uses the edit prompt without a template, the format for which GRACE
 and WISE were designed. GRACE and WISE (EasyEdit) were run as 200 sequential edits,
-retrieval and Cerata with 1000 facts.}
+the note and Cerata with 1000 facts. The note and the first three Cerata rows use router v4 with $\tau=0.631$; the default uses the trained relation encoder (adapter and note). No
+leakage refers to the synthetic distractors.}
 \label{tab:baselines}
 \footnotesize
 \resizebox{\textwidth}{!}{%
@@ -12,13 +13,15 @@ retrieval and Cerata with 1000 facts.}
 \toprule
 Method & Storage & $N$ & Efficacy (chat) & Efficacy (plain) & Paraphrase & No leakage & Removal \\
 \midrule
-Retrieval & context & $1000$ & $0.834\,[.812,.858]$ & n/a & $0.326$ & $1.00$ & index delete \\
-Retrieval, instructed & context & $1000$ & $0.837\,[.815,.860]$ & n/a & $0.306$ & $1.00$ & index delete \\
+Note (instructed retrieval) & context & $1000$ & $\vCfEffRet\,[\vCfEffRetCI]$ & n/a & $\vCfParaRet$ & $1.00$ & per entry \\
 GRACE~\cite{hartvigsen2023grace} & key-value codebook & $200$ & $0.025$ & $1.00$ & $0.02$ & $1.00$ & none \\
 WISE~\cite{wang2024wise} & side memory & $200$ & $0.07$ & $0.04$ & $0.06$ & $0.64$ & none \\
 WISE, merged at 200 & side memory & $200$ & $0.125\,[.08,.17]$ & $0.05$ & $0.105$ & $0.27\,[.21,.335]$ & none \\
 \midrule
-Cerata & per-fact adapters & $1000$ & $\cfEff\,[\cfEffCI]$ & n/a & $0.323$ & $0.992$ & per fact \\
+Cerata, adapter & adapter per fact & $1000$ & $\vCfEff\,[\vCfEffCI]$ & n/a & $\vCfPara$ & $\vCfNoLeak$ & per entry \\
+Cerata, adapter and note & adapter per fact & $1000$ & $\vCfEffBoth\,[\vCfEffBothCI]$ & n/a & $\vCfParaBoth$ & $\vCfNoLeak$ & per entry \\
+Cerata, tiered & adapter for 16.2\% & $1000$ & $\vCfTierEff\,[\vCfTierEffCI]$ & n/a & $\vCfTierPara$ & $\vCfNoLeak$ & per entry \\
+Cerata, default (trained router) & adapter per fact & $1000$ & $\xCfEffBoth\,[\xCfEffBothCI]$ & n/a & $\xCfParaBoth$ & $1.00$ & per entry \\
 \bottomrule
 \end{tabular}}
 \\[3pt]

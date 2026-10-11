@@ -1,0 +1,24 @@
+% Locality on CounterFact by query type, router v3 vs v4 (prereg SS64/65/67).
+\begin{table}[t]
+\centering
+\caption{Locality on CounterFact ($N=1000$) for three types of queries that should not
+use a stored fact, with the first router (v3) and router v4. ``Routed'' is the fraction
+sent to an adapter; ``leak'' the fraction of outputs that contain a stored answer the
+base model's output does not contain. With v4, every query that is not routed receives
+exactly the base model's output.}
+\label{tab:locality}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{v3} & \multicolumn{2}{c}{v4} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Query type & Routed & Leak & Routed & Leak \\
+\midrule
+Synthetic subject, same question & $0.008$ & $0.008$ & $0.000$ & $0.000$ \\
+Other subject, same relation & $0.098$ & $0.030$ & $\vCfEtwoRouted$ & $\vCfEtwoLeak$ \\
+Stored subject, other relation & $0.782$ & $0.346$ & $\vCfEthreeRouted$ & $\vCfEthreeLeak$ \\
+\bottomrule
+\end{tabular}}
+\end{table}

@@ -1,0 +1,34 @@
+% Routing with the first router (v3) and router v4 on the N=1000 test facts (prereg SS66).
+\begin{table}[t]
+\centering
+\caption{Routing on the test facts with the first router (v3) and router v4. ``Routed''
+is the fraction of queries sent to any adapter; ``correct'' the fraction sent to the
+fact's own adapter. Router v4's threshold was calibrated on a disjoint dev split.}
+\label{tab:router}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llcc}
+\toprule
+Set & Query & v3 & v4 \\
+\midrule
+CounterFact & Edit prompt, correct & $0.997$ & $0.998$ \\
+ & Paraphrase, correct & $0.362$ & $0.814$ \\
+ & Synthetic subject, routed & $0.008$ & $0.000$ \\
+ & Neighborhood prompt, routed & $0.098$ & $0.018$ \\
+ & Stored subject, other relation, routed & $0.782$ & $0.290$ \\
+\midrule
+zsRE & Edit prompt, correct & $0.784$ & $1.000$ \\
+ & Paraphrase, routed & $0.985$ & $0.964$ \\
+ & Synthetic subject, routed & $0.033$ & $0.000$ \\
+ & NQ question (\texttt{loc}), routed & $0.000$ & $0.000$ \\
+\midrule
+Siblings & Original fact selected & n/a & $0.998$ \\
+ & Added sibling selected & n/a & $0.995$ \\
+\midrule
+Stress (50) & Transposed characters & $1.00$ & $1.00$ \\
+ & Last character dropped & $1.00$ & $0.00$ \\
+ & First token of subject only & $0.80$ & $0.00$ \\
+\bottomrule
+\end{tabular}}
+\end{table}
