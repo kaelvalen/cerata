@@ -213,3 +213,8 @@ Wikidata). B: held-out paraphrase routing 0.750 (SS76 0.747), held-out leak 0.05
 A (pure transfer): CF paraphrase routing 0.648 vs frozen mpnet 0.607, gain only on the 23
 relations, none on the 11 held out. Remaining held-out leaks are near-neighbor relation
 pairs. Open: learning such boundaries needs examples of the pair.
+SS78 (2026-10-11): write-time negative keys from the base model (`confirm/gen_negkeys.py`,
+`RouterV10` in `confirm/router_v7.py`, `confirm/router_v10_select.py`): dev calibration
+gives the same TPR with and without negatives; held-out E3 routed unchanged (0.059).
+Negatives ask for unrelated attributes, not the confusable neighbour. End-to-end eval
+not run (deviation recorded). SS76 stays default.
