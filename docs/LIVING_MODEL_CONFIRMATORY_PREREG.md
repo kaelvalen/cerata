@@ -1006,3 +1006,94 @@ prompts. Pinned candidates for paper 2: relation-aware keys or a threshold calib
 same-subject negatives; contrast pairs for other relations of the stored subject (the
 VLM recipe); token-level fuzzy matching restricted to full-subject alignment.
 
+## 66-69. Fixing the router, the check and the concept (pinned 2026-10-11, before any run)
+
+Diagnosis from SS64/65: the router compares the embedding of the WHOLE query with the
+embedding of the edit prompt, so subject and relation are entangled. This one decision
+explains four failures: other relations of a stored subject pass tau (E3, 78% routed),
+CounterFact paraphrases with an unrelated leading sentence fall below tau (64%
+declined), a shared first name or common token produces an entity candidate (E2, 9.8%),
+and same-subject siblings cannot be separated. The adapters themselves generalise (0.86
+on paraphrases that reach them). The goal of this block is to fix the system, not to
+defend v3; whatever the outcome, the paper reports it.
+
+### 66. Router v4 (CPU, no retraining)
+
+1. Entity filter: exact normalized subject match with word boundaries; otherwise an
+   approximate match must align ALL subject tokens to consecutive query tokens (tokens
+   < 4 characters exact, OSA <= 1, <= 2 for >= 6 characters). No single-token partial
+   matches. All facts whose subject equals the matched subject are candidates
+   (siblings are kept, not reduced to the first one).
+2. Clause scoping: only the sentence of the query that contains the matched subject is
+   used (split on . ! ? ;).
+3. Relation key: the subject span is replaced by a placeholder in both the clause and the
+   fact's edit prompt; the frozen MiniLM encoder embeds these relation texts; cosine
+   similarity picks among the candidates.
+4. tau_v4 is calibrated on a DEV split disjoint from the test facts (500 CounterFact
+   and 500 zsRE facts, different subjects, seed 66): positives = held-out paraphrases
+   (both CounterFact paraphrase prompts; zsRE rephrase), negatives = same-subject
+   other-relation prompts (templates of other CounterFact relations, seed 66). Rule:
+   tau maximising Youden's J (TPR - FPR) on the pooled dev set. Fixed before the test.
+
+CPU readings on the test sets (routing only): probe route, paraphrase route, E3 routed
+rate, E2 / synthetic-distractor routed rate, the nonce perturbation stress test, and a
+sibling test (for each stored CounterFact subject, a second synthetic fact on another
+relation is added to the router; the original probe/paraphrase must still select the
+original fact and the sibling's probe the sibling). Predictions: probe route >= 0.99;
+CF paraphrase route >= 0.75 (from 0.36); E3 routed <= 0.10 (from 0.78); E2 routed
+<= 0.01 (from 0.098); partial-subject stress cases drop (accepted trade-off); sibling
+selection >= 0.95.
+
+### 67. GPU re-evaluation with router v4 (eval-only, saved stores)
+
+`confirm/v4_eval.py` on cf_n1000.ckpt and zsre_n1000.ckpt, manifest-verified inputs.
+Readings per set: routed efficacy, paraphrase accuracy, synthetic-distractor leak,
+removal of the first 100 (gone / return / retention); CounterFact E2 and E3 locality;
+zsRE locality on the dataset's `loc` questions (same-as-base, leak); zsRE removal by
+content (remove every entry with the subject and answer of the removed fact). Arms on
+probes and paraphrases: adapter, instructed retrieval, adapter + note (both). Predictions:
+CF paraphrase 0.65-0.80 (from 0.32); E3 leak <= 0.05 (from 0.346); E2 leak <= 0.01;
+efficacy unchanged within 0.01; zsRE return with removal by content >= 0.95 (from 0.80);
+the paired adapter-minus-retrieval difference on routed paraphrases is reported as-is.
+
+### 68. Tiered store (concept change, computed from the 67 logs)
+
+Retrieval and adapters are both entries of the store with the same transaction
+semantics (a note is removed exactly by deleting it). Policy fixed now: a fact is
+stored as a note if instructed retrieval answers its edit prompt at write time;
+otherwise as an adapter (the decision uses only the edit prompt, which is available at
+write time). Readings: fraction of facts that need an adapter (storage), efficacy and
+paraphrase accuracy of the tiered store vs adapter-only and retrieval-only, locality.
+Prediction: about 15-20% of CounterFact facts need adapters (5x storage cut); tiered
+efficacy >= 0.99; tiered paraphrase >= adapter-only - 0.03.
+
+### 69. A divergence check that can bind, and the cost of a wrong route (eval-only)
+
+(a) A held-out canary battery of 40 general prompts (facts, arithmetic, instructions,
+other languages) disjoint from the 2 training canaries; D_heldout for the first 100
+CounterFact adapters next to the in-sample D. (b) Damage of a wrong route: 200 zsRE dev
+questions the base model answers correctly, each served with a randomly drawn stored
+CounterFact adapter; retained accuracy. (c) kappa is recalibrated from (a) as the 99th
+percentile of D_heldout over benign adapters (a data-derived budget instead of 2.0).
+Predictions: D_heldout mean <= 0.1 with a long tail; retained accuracy under a wrong
+route 0.6-0.9 (wrong routes are harmful, which is why routing precision matters).
+
+### SS66 results (2026-10-11, CPU, `router_v4_calibration.json`)
+
+Calibration on the pooled dev split: tau_v4 = 0.6308 (Youden J 0.725, TPR 0.868, FPR
+0.143; 1500 positives, 1000 negatives). Test routing, v3 -> v4:
+
+| reading | CounterFact v3 | CounterFact v4 | zsRE v3 | zsRE v4 | prediction |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| probe route correct | 0.997 | 0.998 | 0.784 | 1.000 | >= 0.99: met |
+| paraphrase route correct | 0.362 | 0.814 | 0.776 | 0.740 | CF >= 0.75: met |
+| synthetic distractor routed | 0.008 | 0.000 | 0.033 | 0.000 | - |
+| E2 neighborhood routed | 0.098 | 0.018 | - | - | <= 0.01: missed (close) |
+| E3 other relation routed | 0.782 | 0.290 | - | - | <= 0.10: **missed** |
+| zsRE loc questions routed | - | - | 0.000 | 0.000 | - |
+
+The paraphrase failure is fixed and E3 drops 2.7x, but relation texts of different
+CounterFact relations are often closer than tau; the router alone cannot close E3. Note:
+the pooled calibration under-estimates the CounterFact FPR (the zsRE negatives are easy);
+tau stays as pinned, the per-dataset sensitivity is reported as secondary.
+
