@@ -1278,3 +1278,20 @@ with those of paraphrases of the same relation. The sentence encoder, not the ro
 rule, limits relation discrimination. SS71 decision rule: still no policy with E3 leak
 <= 0.10.
 
+## 73. Router v6: the frozen base model verifies relevance (pinned 2026-10-11, before the run)
+
+A route of v4 is accepted only if the frozen base model, asked whether the selected
+fact's statement answers the question, prefers "Yes": score = logit(Yes) - logit(No) at
+the first answer position for the prompt (system "You check whether a stored fact
+answers a question.", user "Fact: <statement>\nQuestion: <clause of the query that
+contains the subject>\nDoes the fact answer the question? Answer Yes or No."). No
+trainable parameters; one forward pass per routed query. Threshold theta: Youden's J on
+the SS66 dev split over v4-routed queries (positives: paraphrases routed to their own
+fact, negatives: other-relation prompts routed); everything v4 does not route stays
+unrouted. Evaluation exact from the SS67/SS71 logs as in SS72 (v6 routes are a subset of
+v4 routes; newly abstained probes and paraphrases receive generated base answers).
+Readings as SS72, plus v6 on the zsRE loc questions and the removal probes. Predictions:
+E3 routed <= 0.10, adapter-arm E3 leak <= 0.06, note-arm E3 leak <= 0.05; CF paraphrase
+route-correct >= 0.75; probe route-correct >= 0.99; zsRE paraphrase route-correct >= 0.70.
+SS71's decision rule is applied to the v6 readings.
+
