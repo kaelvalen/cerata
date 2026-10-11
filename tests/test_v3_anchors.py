@@ -10,6 +10,7 @@ The full grid (all seeds) is `archive/experiments/v3_anchors.py`.
 """
 
 import argparse
+import importlib.util
 import json
 import os
 import sys
@@ -17,6 +18,19 @@ from pathlib import Path
 
 import pytest
 import torch
+
+# archive/ (the earlier programs' runners) was removed from the working tree in 894ad16;
+# tests of those runners run only when it is restored from 894ad16^.
+requires_archive = pytest.mark.skipif(
+    not (Path(__file__).resolve().parent.parent / "archive").exists(),
+    reason="archive/ was removed in 894ad16; restore it from 894ad16^ to run",
+)
+
+# The pal_moe compatibility package is no longer shipped (README, "Earlier work").
+requires_pal_moe = pytest.mark.skipif(
+    importlib.util.find_spec("pal_moe") is None,
+    reason="the pal_moe compatibility package is no longer shipped",
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "archive" / "experiments"))
@@ -43,6 +57,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # -- shims -------------------------------------------------------------------------
 
 
+@requires_archive
 def test_moved_names_are_the_same_objects():
     import e_tid2_ridge_router  # noqa: F401  (imports cleanly through the shims)
     import s2_ladder
@@ -72,6 +87,7 @@ def test_moved_names_are_the_same_objects():
         assert getattr(s11, name) is getattr(stats, name)
 
 
+@requires_pal_moe
 def test_pal_moe_compat_package_aliases_not_copies():
     """The pre-rename name and the pre-v3 paths are the same module objects."""
     import warnings
@@ -252,6 +268,7 @@ def _out(y):
     return y[0] if isinstance(y, (tuple, list)) else y
 
 
+@requires_pal_moe
 def test_v1_whole_object_pickle_loads_through_the_shims():
     """`v1_whole_objects_stage1.pt` was written by `torch.save` at stage1-final, so its
     pickle names `pal_moe.models.*` and `pal_moe.memory.prototype_memory`. Unpickling
@@ -274,6 +291,7 @@ def test_v1_whole_object_pickle_loads_through_the_shims():
         assert torch.allclose(out, blob["ref"], rtol=0, atol=1e-6)
 
 
+@requires_pal_moe
 def test_v1_persistence_checkpoint_loads_through_the_shims():
     from cerata.legacy.memory.prototype_memory import PrototypeMemory
     from cerata.legacy.persistence import load_checkpoint

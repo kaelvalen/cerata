@@ -28,6 +28,13 @@ from cerata.eval.decomposition import (
     route_by_task_sum,
 )
 
+# archive/ (the earlier programs' runners) was removed from the working tree in 894ad16;
+# tests of those runners run only when it is restored from 894ad16^.
+requires_archive = pytest.mark.skipif(
+    not (Path(__file__).resolve().parent.parent / "archive").exists(),
+    reason="archive/ was removed in 894ad16; restore it from 894ad16^ to run",
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 D, C, M = 12, 6, 96
 
@@ -113,6 +120,7 @@ def test_palmoe_with_random_features_passes_every_guard():
 # -- the decomposition ----------------------------------------------------------------
 
 
+@requires_archive
 def test_p2_bound_reexports_the_package_function():
     sys.path.insert(0, str(ROOT / "archive" / "experiments"))
     try:
@@ -281,6 +289,7 @@ def test_split_tasks_remaps_labels_and_the_test_permutation_matches():
 # -- the runner ------------------------------------------------------------------------
 
 
+@requires_archive
 def test_runner_synthetic_cell_passes_its_vetoes():
     sys.path.insert(0, str(ROOT / "archive" / "experiments"))
     try:
@@ -314,6 +323,7 @@ def test_runner_synthetic_cell_passes_its_vetoes():
     assert len(meta["ridge_per_expert"]) == cell["num_tasks"]  # A3.2 penalties
 
 
+@requires_archive
 def test_ptm_headroom_synthetic_cell_reports_a_labeled_gap():
     sys.path.insert(0, str(ROOT / "archive" / "experiments"))
     try:
@@ -357,6 +367,7 @@ def test_storage_counts_the_fixed_projection():
     assert LinearStats(D, C).storage_bytes()["feature_map"] == 0
 
 
+@requires_archive
 def test_sanity_veto_needs_a_reference_and_a_close_match():
     sys.path.insert(0, str(ROOT / "archive" / "experiments"))
     try:
@@ -377,6 +388,7 @@ def test_sanity_veto_needs_a_reference_and_a_close_match():
     assert ok["cifar100__in21k_1k"]["pass"] and not far["cifar100__in21k_1k"]["pass"]
 
 
+@requires_archive
 def test_feasibility_veto_writes_a_veto_failed_record(tmp_path, monkeypatch):
     import json
 
@@ -413,6 +425,7 @@ def test_feasibility_veto_writes_a_veto_failed_record(tmp_path, monkeypatch):
     assert rec["vetoes"]["feasibility"]["cells_done"] == 1
 
 
+@requires_archive
 def test_prepare_ptm_data_reunpacks_a_replaced_archive(tmp_path):
     import shutil
     import subprocess
@@ -461,6 +474,7 @@ def test_prepare_ptm_data_reunpacks_a_replaced_archive(tmp_path):
     assert man["vtab"]["md5_matches_published"] is None  # no sum published for it here
 
 
+@requires_archive
 def test_prepare_ptm_data_rejects_an_archive_with_a_wrong_published_md5(tmp_path):
     import shutil
     import subprocess
@@ -502,6 +516,7 @@ def test_load_raw_cache_accepts_a_torch_version_in_meta(tmp_path):
     assert out["train"][0].shape == (4, 3) and str(out["meta"]["torch_version"])
 
 
+@requires_archive
 def test_sanity_veto_covers_an_unreferenced_backbone_through_a_referenced_one():
     sys.path.insert(0, str(ROOT / "archive" / "experiments"))
     try:
