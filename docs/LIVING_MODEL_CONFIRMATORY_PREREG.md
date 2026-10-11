@@ -1295,3 +1295,45 @@ E3 routed <= 0.10, adapter-arm E3 leak <= 0.06, note-arm E3 leak <= 0.05; CF par
 route-correct >= 0.75; probe route-correct >= 0.99; zsRE paraphrase route-correct >= 0.70.
 SS71's decision rule is applied to the v6 readings.
 
+### SS73 results (2026-10-11, `router_v6_eval.json`)
+
+Calibration: theta = -7.25 (Youden J 0.729; dev TPR 0.865 vs v4 0.867, FPR 0.136 vs
+0.143). The judge separates the routed dev queries (median score 4.1 for correct
+paraphrases, -1.4 for other-relation prompts; 5th-95th percentiles -4.3..8.3 and
+-7.2..4.2), but Youden's J on the pooled split, where 1500 positives face only 143 routed
+negatives out of 1000, puts theta below almost every score.
+
+| reading | v4 | v6 | prediction |
+| :-- | :-- | :-- | :-- |
+| CF probe / paraphrase route-correct | 0.998 / 0.814 | 0.997 / 0.809 | met / met |
+| CF paraphrase adapter / both | 0.669 / 0.803 | 0.665 / 0.798 | - |
+| E3 routed | 0.290 | 0.281 | <= 0.10: **missed** |
+| E3 leak adapter / note / both / tiered | 0.186 / 0.140 / 0.237 / 0.155 | 0.183 / 0.138 / 0.232 / 0.153 | **missed** |
+| E2 routed | 0.018 | 0.015 | - |
+| zsRE paraphrase route-correct | 0.740 | 0.740 | met |
+
+Readings: with the pinned calibration rule v6 is v4. The rule, not only the score, is
+the problem: Youden's J weighs a missed paraphrase and a wrong route equally, while SS69
+shows that a wrong route destroys 28% of correct answers and SS71 that it leaks the
+stored answer in about half of the cases.
+
+## 74. Relevance scores compared on the dev split, and operating points (pinned 2026-10-11, before the run)
+
+(a) Dev-only selection. On the SS66 dev split, for the queries that v4 routes (positives:
+paraphrases routed to their own fact; negatives: other-relation prompts), compare the
+ROC AUC of three relevance scores: s_rel (v4 MiniLM relation similarity), s_judge (SS73)
+and s_type = log p_base(" " + answer | query clause) - log p_base(" " + answer | edit
+prompt), plain completion without chat template, summed over answer tokens (does the
+stored answer fit the question as well as it fits the stored edit prompt). AUC per
+dataset part and pooled; the score with the highest pooled AUC is selected. No test data
+is touched in (a).
+(b) Operating points for the selected score, both fixed now: (i) Youden's J on the pooled
+dev split (the SS66 rule); (ii) the lowest threshold whose FPR on the CounterFact dev
+negatives is <= 0.05 (the cost argument of SS69/SS71). Test readings as SS72/73 for both
+operating points, computed exactly from the logs; plus the test trade-off curve
+(CF paraphrase accuracy with adapter and note vs E3 leak) over thresholds, reported as a
+curve with the two dev-chosen points marked.
+Predictions: s_type has the highest AUC (it tests the answer's type, which is what a
+leak emits); at (ii) E3 routed <= 0.10 and both-arm E3 leak <= 0.08 with CF paraphrase
+(both) >= 0.70. SS71's decision rule is applied to the selected operating point.
+
