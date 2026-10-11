@@ -5,6 +5,7 @@ trigger thresholds, validation gate, and TTT.
 """
 
 import os
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -21,6 +22,13 @@ from cerata.legacy.models.expert import MLPExpert
 from cerata.legacy.models.moe import DynamicMoE
 from cerata.legacy.models.router import DynamicRouter
 from cerata.legacy.trigger.expert_trigger import QuantitativeTrigger
+
+# archive/ (the earlier programs' runners) was removed from the working tree in 894ad16;
+# tests of those runners run only when it is restored from 894ad16^.
+requires_archive = pytest.mark.skipif(
+    not (Path(__file__).resolve().parent.parent / "archive").exists(),
+    reason="archive/ was removed in 894ad16; restore it from 894ad16^ to run",
+)
 
 
 def test_shared_and_ema_encoder():
@@ -1575,6 +1583,7 @@ def test_periodic_stability_and_ood_knobs():
     assert hist["loss_router_stab"][3] == 0.0
 
 
+@requires_archive
 def test_pretrain_cache_roundtrip(tmp_path):
     """The pretraining cache is content-addressed and restores exact weights."""
     from archive.experiments.stage1.infra.run_benchmark import (
@@ -1600,6 +1609,7 @@ def test_pretrain_cache_roundtrip(tmp_path):
     )
 
 
+@requires_archive
 def test_runner_baseline_helpers():
     """Factory/record helpers used by the benchmark runner."""
     from archive.experiments.stage1.infra.run_benchmark import _record_baseline_result
@@ -1739,6 +1749,7 @@ def test_resnet_identity_head_makes_features_seed_invariant():
     assert not isinstance(projected.net[1], nn.Identity)
 
 
+@requires_archive
 def test_diagnose_detects_resnet_and_encoder_meta(tmp_path):
     from archive.experiments.stage1.infra.diagnose_checkpoint import (
         _detect_encoder_arch,
@@ -2055,6 +2066,7 @@ def test_relative_gate_relaxes_for_weak_majority():
         ExpertBuilder(gate_mode="nope")
 
 
+@requires_archive
 def test_param_reporting_fields():
     """total/trainable/active parameter counts must tell the compute story."""
     from archive.experiments.stage1.infra.run_benchmark import _active_params_per_sample
@@ -2365,6 +2377,7 @@ def test_shared_generalist_expert():
     assert torch.allclose(rebuilt.shared_gate.bias, model.shared_gate.bias, atol=1e-6)
 
 
+@requires_archive
 def test_diagnose_infer_config_detects_shared_expert(tmp_path):
     from archive.experiments.stage1.infra.diagnose_checkpoint import (
         build_model,
@@ -2732,6 +2745,7 @@ def test_factory_builds_consistent_models():
     assert memory.max_prototypes == 7
 
 
+@requires_archive
 def test_diagnose_infer_config_rebuilds_every_router_and_cached_encoder(tmp_path):
     """diagnose_checkpoint must rebuild all router kinds and cached encoders."""
     from archive.experiments.stage1.infra.diagnose_checkpoint import (
@@ -2763,6 +2777,7 @@ def test_diagnose_infer_config_rebuilds_every_router_and_cached_encoder(tmp_path
     build_model(cfg, torch.device("cpu")).load_state_dict(state)
 
 
+@requires_archive
 def test_runner_baseline_loop_forwards_per_task_kwargs():
     """The shared baseline loop forwards per-task kwargs and evaluates each step."""
     from archive.experiments.stage1.infra.run_benchmark import _run_baseline_loop
@@ -3200,6 +3215,7 @@ def test_split_folder_tasks(tmp_path):
     assert x.dtype == torch.float32
 
 
+@requires_archive
 def test_routing_probe_helper():
     """The retention probe returns a fixed top-1 assignment per probed task."""
     import importlib.util
