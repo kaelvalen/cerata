@@ -1097,3 +1097,18 @@ CounterFact relations are often closer than tau; the router alone cannot close E
 the pooled calibration under-estimates the CounterFact FPR (the zsRE negatives are easy);
 tau stays as pinned, the per-dataset sensitivity is reported as secondary.
 
+## 70. Locality-aware adapter training (pinned 2026-10-11, before the run)
+
+Adapter-side fix for E3: the KL term of Eq. (1) is applied, in addition to the two
+generic canaries, to three prompts about the fact's OWN subject with templates of other
+CounterFact relations (seed 70), so the adapter learns to leave other questions about
+its subject unchanged (the text analogue of the VLM contrast pairs). The relation used by
+the SS65 E3 test prompt and the fact's own relation are excluded from these training
+prompts. Everything else as the confirmatory recipe (r=16 q,v, lr 3e-4, 16 x 2 steps,
+lambda 1, commit check). Facts: the first 200 CounterFact test facts; comparison with
+their existing adapters (cf_n1000.ckpt) under the same router (v4, tau_v4) and v3.
+Readings: efficacy, paraphrase accuracy, E3 same-as-base / leak (SS65 prompts), E2,
+in-sample and held-out D (SS69 battery), training seconds. Predictions: E3 leak with
+router v4 drops from the existing adapters' value to <= 0.03; efficacy >= 0.98;
+paraphrase within 0.05 of the existing adapters; D unchanged or lower.
+
