@@ -102,3 +102,8 @@ minversion = "7.0"
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-v --strict-markers"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
