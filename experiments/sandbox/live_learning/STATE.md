@@ -173,3 +173,23 @@ end to end (SS64): cf 0.997 / zsRE 0.994 routed efficacy; retain 0.9967 / 0.9922
 rewritten around the transactional framing (paper/main.tex; numbers from
 paper/make_numbers.py). Open, pinned as next runs: tau relaxation for exact-entity
 queries (CF paraphrase), revoke-by-content for duplicate entries, held-out canary set.
+
+## 2026-10-11: revisions after the external review (SS65-SS74)
+
+Locality on hard cases (SS65): CF neighborhood (E2) and other-relation prompts (E3) added;
+v3 leaked in 34.6% of E3. Router v4 (`confirm/router_v4.py`, SS66): complete-subject
+match, clause scoping, subject-masked relation keys, tau 0.631 by Youden J on a disjoint
+dev split. Re-evaluation of the saved stores (`confirm/v4_eval.py`, SS67/68): CF
+paraphrase 0.669 adapter / 0.629 note / 0.803 both; removal complete on CF; tiered store
+(adapter only if the note fails at write time) needs adapters for 16.2% / 20.6%.
+Held-out canary battery (`confirm/canary_eval.py`, SS69): kappa 0.968, in-sample D
+understates ~17x; a wrong route keeps only 72% of correct answers.
+Leakage experiments, all predictions on leakage missed: subject-local KL anchors
+(`confirm/local_anchor.py`, SS70) trade accuracy for leak; notes leak too
+(`confirm/serving_locality.py`, SS71); store-key contrast (router v5, SS72) and a
+base-model Yes/No check (`confirm/router_v6_eval.py`, SS73) lie on the threshold's curve;
+`confirm/relevance_eval.py` (SS74) compares scores on dev (MiniLM similarity best) and
+sets the default threshold 0.757 (CF dev FPR <= 5%): CF paraphrase (both) 0.589, E3 leak
+0.063, zsRE paraphrase 0.956. Paper rewritten around these results (paper/main.tex,
+numbers from paper/make_numbers.py). Open: relation discrimination (encoder, typed keys
+or a relation schema); nothing committed.
