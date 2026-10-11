@@ -1594,3 +1594,25 @@ Predictions: E3 leak (both) pooled over prompts with a held-out relation <= 0.04
 (both) >= 0.88 and E3 leak (both) <= 0.035. Decision rule: v10 becomes the default only
 if all four hold.
 
+### SS78 results (2026-10-11, `generated_negkeys.json`, `router_v10_select.json`)
+
+Negative keys: 3000 edit prompts, mean 4.82 kept, 31 with none. Some "negatives" are
+paraphrases of the stored question ("What was the original language used in X?"), most
+ask for unrelated attributes (year, founders, notable people).
+Calibration: tau 0.747, m = -0.20, dev TPR 0.942 at CF dev FPR 0.05; without negatives the
+same grid gives the same TPR (0.942 at tau 0.747), so m = -0.20 was chosen only by the
+tie rule and is inactive in practice. Dev diagnostic (CF part, routes above tau): margin
+s_pos - s_neg for correct paraphrases median 0.295 (5th-75th percentile 0.081-0.417),
+for the 25 other-relation prompts that pass median 0.25 (0.037-0.60): the generated
+negatives do not cover the confusable neighbour relation.
+Test routing (CF): paraphrase route-correct 0.922 (held-out relations 0.787, seen 0.994),
+E3 routed 0.046 (any held-out relation 0.059, both seen 0.030), E2 0.019; zsRE paraphrase
+0.744, loc 0.000. The held-out E3 routed fraction equals SS76's (0.059); the held-out
+paraphrase gain (0.747 -> 0.787) comes from the lower grid threshold (0.747 vs 0.750),
+not from the negatives.
+Predictions: held-out E3 leak <= 0.04 cannot hold (routed 0.059 and, as in SS76, every
+routed held-out prompt leaks in all groups) -> **missed**; the decision rule cannot be
+met. Deviation from the pin (recorded): the end-to-end evaluation of v10 was not run,
+since its routes differ from v8 only by the threshold. The SS76 default stays.
+Reading: write-time negatives from the base model do not supply the near-neighbour
+contrast; the model does not know which neighbouring relation a query will confuse.
