@@ -1112,3 +1112,75 @@ in-sample and held-out D (SS69 battery), training seconds. Predictions: E3 leak 
 router v4 drops from the existing adapters' value to <= 0.03; efficacy >= 0.98;
 paraphrase within 0.05 of the existing adapters; D unchanged or lower.
 
+### SS69 results (2026-10-11, `canary_eval.json`)
+
+| reading | value | prediction |
+| :-- | :-- | :-- |
+| benign D, 2 training canaries (n=100) | mean 0.022, p95 0.049, max 0.078 | - |
+| benign D, 40 held-out canaries | mean 0.364, p95 0.72, max 1.07 | mean <= 0.1: **missed** |
+| harmful (no KL, lr 1e-3, 32 steps; n=10) in-sample / held-out | 2.03-32.9 / 3.46-28.8 | - |
+| kappa_heldout (p99 of benign held-out D) | 0.968 | - |
+| harmful rejected: held-out kappa / in-sample kappa 2.0 | 10/10 / 10/10 | - |
+| wrong route: base-correct zsRE dev questions retained (n=200) | 0.72 | 0.6-0.9: met |
+
+Readings: the in-sample D under-states the footprint ~17x because the KL term is trained
+on the same two prompts; the held-out battery gives a measure the training cannot fit.
+Both checks reject the 10 harmful candidates, but the in-sample margin is nil (min 2.03
+vs 2.0) while the held-out margin is 3.6x (min 3.46 vs 0.968). A wrong route destroys
+28% of correct base answers, so routing precision is a safety property, not only an
+accuracy one. Decision: the paper's check becomes D on the held-out battery with the
+data-derived kappa; the 2-prompt D remains the training anchor only.
+
+### SS67/68 results (2026-10-11, `{cf,zsre}_n1000_v4_eval.json`, walls 1565 s / 1647 s)
+
+| reading (router v4, existing adapters) | CounterFact | zsRE | v3 reference | prediction |
+| :-- | :-- | :-- | :-- | :-- |
+| efficacy, adapter | 0.997 | 0.999 | 0.997 / 0.994 | unchanged: met |
+| paraphrase, adapter | 0.669 | 0.959 | 0.323 / 0.973 | CF 0.65-0.80: met |
+| paraphrase, instructed retrieval | 0.629 | 0.817 | 0.306 / - | - |
+| paraphrase, adapter + note | 0.803 | 0.979 | - | - |
+| paraphrase adapter - retrieval (paired) | +0.040 [0.011, 0.068] | +0.142 [0.117, 0.167] | +0.017 n.s. | reported |
+| paraphrase on route-correct: adapter / retrieval / both | 0.815 / 0.765 / 0.979 | - | 0.865 / 0.818 / - | - |
+| synthetic distractor no-leak | 1.000 | 1.000 | 0.992 / 0.975 | - |
+| E2 neighborhood: routed / same / leak | 0.018 / 0.982 / 0.014 | - | 0.098 / 0.902 / 0.030 | leak <= 0.01: missed (close) |
+| E3 other relation: routed / same / leak | 0.290 / 0.711 / 0.186 | - | 0.782 / 0.222 / 0.346 | leak <= 0.05: **missed** |
+| zsRE loc (NQ) questions: routed / same / leak | - | 0.000 / 1.000 / 0.000 | - | - |
+| removal: gone / return (n=100) | 1.00 / 1.00 | 0.42 / 0.86 | 0.96 / 0.96, 0.36 / 0.80 | - |
+| removal by content (zsRE, +38 entries): return | - | 1.00 | - | >= 0.95: met |
+| retention (routed) | 0.9967 | 0.9989 | 0.9967 / 0.9922 | - |
+
+SS68 tiered store (policy pinned): adapter fraction 0.162 (CF) / 0.206 (zsRE)
+[prediction 0.15-0.20: met]; efficacy 0.998 / 1.000; paraphrase 0.664 / 0.931
+[>= adapter-only - 0.03: met]. Post-hoc variants (labelled as such, computed from the
+same logs): note for every fact plus an adapter where the note fails, served with both:
+CF efficacy 0.998, paraphrase 0.677; adapter and note for every fact: CF paraphrase
+0.803 [0.778, 0.827], +0.134 [0.113, 0.157] over adapter alone.
+
+Readings: the router was the main cause of the v3 failures. With v4, removal on
+CounterFact is complete (the four SS64 residues were fuzzy routes), the paraphrase gap to
+the direct-serving ceiling closes from 0.54 to 0.19, and serving the adapter together
+with its note is the strongest arm (0.979 on CounterFact paraphrases that reach the right
+fact). E3 remains open: when an other-relation query is routed (29%), the adapter emits
+the stored answer in 64% of cases - addressed on the adapter side by SS70.
+
+### SS70 results (2026-10-11, `local_anchor_n200.json`, 200 CounterFact facts)
+
+All 200 local-anchor adapters passed the training check (D on the 2 canaries: mean
+0.014, max 0.053); mean training time 18.5 s.
+
+| reading (router v4) | existing adapters | local-anchor adapters | prediction |
+| :-- | :-- | :-- | :-- |
+| efficacy | 1.000 | 0.930 [0.89, 0.965] | >= 0.98: **missed** |
+| paraphrase | 0.690 | 0.550 [0.48, 0.62] | within 0.05: **missed** |
+| E3 routed / same / leak | 0.265 / 0.740 / 0.160 | 0.265 / 0.745 / 0.090 | leak <= 0.03: **missed** |
+| E2 routed / same / leak | 0.010 / 0.990 / 0.010 | 0.010 / 0.990 / 0.010 | - |
+| D held-out battery (mean, 50 adapters) | 0.343 | 0.146 | unchanged or lower: met |
+| under router v3: efficacy / paraphrase / E3 leak | 1.000 / 0.355 / 0.435 | 0.930 / 0.290 / 0.210 | - |
+
+Readings: subject-local KL prompts halve the other-relation leak (0.160 -> 0.090 under
+v4, 0.435 -> 0.210 under v3) and cut the held-out divergence 2.4x, but they cost 7 points
+of efficacy and 14 points of paraphrase accuracy: the adapter cannot separate "change the
+answer to this relation of this subject" from "leave this subject alone" with three
+anchor prompts and 32 steps. It is a trade-off, not a fix. Decision: not adopted as the
+default recipe; the existing adapters stay. The remaining lever is the serving arm (SS71).
+
