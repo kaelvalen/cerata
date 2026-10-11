@@ -1,0 +1,24 @@
+% Divergence check: in-sample vs held-out canaries, harmful candidates, wrong routes (SS69).
+\begin{table}[t]
+\centering
+\caption{Divergence $D$ on the two canary prompts used in training and on 40 held-out
+canary prompts, for 100 stored adapters and for 10 harmful candidates trained without
+the KL term. The last row is the fraction of 200 questions the base model answers
+correctly that remain correct when a randomly chosen adapter is applied.}
+\label{tab:check}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcc}
+\toprule
+ & Training canaries & Held-out canaries \\
+\midrule
+Stored adapters, mean / max & $0.022$ / $0.078$ & $0.364$ / $1.07$ \\
+Harmful candidates, min / max & $2.03$ / $32.9$ & $3.46$ / $28.8$ \\
+Threshold $\kappa$ & $2.0$ (fixed) & $0.97$ (p99 of stored) \\
+Harmful candidates rejected & 10/10 & 10/10 \\
+\midrule
+Correct answers kept under a wrong route & \multicolumn{2}{c}{$0.72$} \\
+\bottomrule
+\end{tabular}}
+\end{table}
