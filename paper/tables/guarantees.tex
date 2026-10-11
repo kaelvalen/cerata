@@ -2,9 +2,9 @@
 % SS64 end-to-end re-evaluation; macros are generated into numbers.tex.
 \begin{table}[t]
 \centering
-\caption{Results at $N=1000$ (Qwen2.5-1.5B-Instruct) with 95\% bootstrap intervals.
-Unless noted, every query is served with the adapter selected by the router, or by the
-base model if the router returns $\bot$.}
+\caption{The first version (router v3) at $N=1000$ (Qwen2.5-1.5B-Instruct) with 95\%
+bootstrap intervals. Unless noted, every query is served with the adapter selected by the
+router, or by the base model if the router returns $\bot$.}
 \label{tab:guarantees}
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -42,5 +42,6 @@ Training time per fact & $8.5$\,s & $12.4$\,s \\
 \\[2pt]
 {\scriptsize $^{\dagger}$All 210 routing errors select a fact with the same subject
 and answer; 208 are answered correctly. $^{*}$The base model answers 44 of these 100
-prompts correctly before training.}
+prompts correctly before training. On CounterFact it answers none, so gone and return
+coincide.}
 \end{table}
