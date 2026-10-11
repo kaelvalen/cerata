@@ -1515,3 +1515,28 @@ locality to new relations. Decision rule: both test predictions hold, so the tra
 encoder (router v8) becomes the paper's default; the held-out split is reported with it.
 E2 routing rises slightly (0.012 -> 0.018).
 
+## 77. A relation encoder trained on a broad relation inventory (pinned 2026-10-11, before the run)
+
+SS76 transfers recall but not locality to the 11 held-out CounterFact relations; with 23
+training relations the encoder learns CounterFact's templates. Here the training
+relations come from Wikidata: all properties whose values are items (fetched once by
+SPARQL: id, English label, description), minus the 11 SS76 held-out property ids (exact,
+since CounterFact relation ids are Wikidata property ids). For each property the frozen
+base model writes four incomplete sentences or questions about an entity "X" that ask
+for that property (greedy, prompt fixed in the script; lines without "X" dropped).
+Triplets: anchor and positive = two templates of the same property; hard negative = the
+most similar template of another property under the untrained all-mpnet-base-v2 (mined
+once). Two encoders, trained exactly as SS76 (all-mpnet-base-v2, MNRL scale 20, batch
+32, lr 2e-5, one epoch, seed 77):
+  A = Wikidata triplets with all 34 CounterFact relations also removed (pure transfer:
+      every CounterFact relation is unseen);
+  B = SS76 triplets + Wikidata triplets without the 11 held-out properties.
+Selection and threshold as SS75/76 (CF dev FPR <= 0.05, highest dev TPR); test routing
+for both; end-to-end evaluation (v7_eval) of the selected one; relation split as SS76.
+Predictions for the selected encoder: held-out-relation paraphrase route-correct >= 0.80
+(SS76 0.747); E3 leak (both) pooled over prompts with a held-out stored or query relation
+<= 0.04 (SS76 0.059); overall CF paraphrase (both) >= 0.88 and E3 leak (both) <= 0.045.
+For A: CF paraphrase route-correct higher than the frozen mpnet (SS75: 0.607).
+Decision rule: the selected encoder replaces the SS76 default only if all four
+predictions for it hold.
+
