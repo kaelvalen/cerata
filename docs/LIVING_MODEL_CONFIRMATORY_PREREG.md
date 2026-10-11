@@ -1540,3 +1540,35 @@ For A: CF paraphrase route-correct higher than the frozen mpnet (SS75: 0.607).
 Decision rule: the selected encoder replaces the SS76 default only if all four
 predictions for it hold.
 
+### SS77 results (2026-10-11, `wikidata/`, `relation_encoder_wiki_{A,B}/`, `router_v9_select.json`, `{cf,zsre}_n1000_v9_eval.json`, `relenc_split_v9.json`)
+
+Wikidata: 1785 item-valued properties, 3.89 templates each (1747 with >= 2). A: 1714
+properties, 6807 triplets, 213 steps (63 s). B: 7500 SS76 + 6895 Wikidata triplets (1736
+properties), 450 steps (128 s). Selection: B without keys (dev TPR 0.917 at theta 0.741;
+A 0.744 at 0.689).
+
+| reading | SS76 default | B (selected) | prediction for B |
+| :-- | :-- | :-- | :-- |
+| CF paraphrase route-correct, held-out relations | 0.747 | 0.750 | >= 0.80: **missed** |
+| E3 leak (both), prompts with a held-out relation (pooled, n=559) | 0.059 | 0.059 | <= 0.04: **missed** |
+| CF paraphrase (both) | 0.891 | 0.890 [0.870, 0.909] | >= 0.88: met |
+| E3 leak (both) | 0.043 | 0.047 [0.034, 0.060] | <= 0.045: **missed** |
+| CF paraphrase route-correct, seen relations | 0.994 | 0.994 | - |
+| E3 leak (both), both relations seen | 0.023 | 0.032 | - |
+| zsRE paraphrase (both); removal return / by content | 0.982; 0.84 / 1.00 | 0.957; 0.86 / 1.00 | - |
+
+A (pure transfer, routing only, CF test): paraphrase route-correct 0.648 vs frozen
+all-mpnet-base-v2 0.607 [prediction "higher": met]; split: seen-by-SS76 relations 0.655
+vs 0.587, held-out relations 0.635 vs 0.644; E3 routed 0.045 vs 0.052.
+Post-hoc reading (labelled): of the 33 leaking E3 outputs under B that involve a held-out
+relation, 20 come from pairs of closely related relations (P495/P740 country of origin vs
+location of formation 7; P364/P407 original language vs language of work 4; P103 with
+P407/P37/P1412 native vs other languages 4; P176/P178 manufacturer vs developer 3;
+P276/P131 location vs located in the administrative entity 2).
+Readings: a broad relation inventory does not transfer to the held-out CounterFact
+relations; training on 1714 Wikidata relations transfers recall to the 23 other
+CounterFact relations but not to the 11 held-out ones, which are mostly near neighbours of
+training relations. Where two relations differ in nuance, the boundary has to be learned
+from examples of that pair. Decision rule: three of four predictions failed; the SS76
+encoder stays the default.
+
