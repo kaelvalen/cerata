@@ -1,136 +1,120 @@
 # CERATA
 
-**Closed-form, Exactly Reversible, Auditable learning after deployment.** Named after
-the *tabula cerata*, the Roman wax tablet: written on, and wiped clean without a trace.
+Transactional knowledge updates for frozen language models. The name comes from the
+*tabula cerata*, the Roman wax tablet, which could be written on and wiped clean.
 
-This project was called **PAL-MoE** (Prototype-Anchored Lifelong Mixture of Experts)
-until 2026-09-26. It started as a dynamic Mixture-of-Experts for class-incremental
-continual learning (v1: one expert per task behind a prototype-anchored router, latent
-replay instead of raw images). A pre-registered measurement programme then took that
-design apart - including the finding that the expert bank adds nothing once routing
-is analytic - and the code, and now the name, follow what the measurements support:
+Cerata keeps a pre-trained language model frozen and stores each fact learned after
+deployment as a separate entry: a note (the fact's statement, served in the system prompt
+with an instruction to follow it) and, if the note alone does not produce the answer, a
+low-rank adapter. An adapter is trained with a KL penalty toward the base model and is
+accepted only if its divergence on 40 held-out canary prompts is below a threshold. A
+router without trainable parameters (a match of the complete stored subject, then a
+comparison of the query's relation with the stored relation) applies at most one entry
+to a query and otherwise answers with the unmodified base model. Removing a fact deletes
+its entry, and every answer reports which entry produced it.
 
-> **v3: learning after deployment is an API call on a frozen base.** One fixed,
-> never-trained address space and three time scales - a FAST key-value memory (one
-> item, O(1) write, exact delete), a MEDIUM closed-form edit from float64 sufficient
-> statistics (one batch, order-invariant, subtractable) and a SLOW consolidation into
-> frozen representation experts. Four guards (locality, reversibility, order
-> invariance, a zero-parameter router) run on every `write`, `forget` and
-> `consolidate`.
+The paper describing the system and its evaluation is in [`paper/`](paper/)
+(`paper/build/main.pdf`).
 
-Architecture: [`archive/docs/V3_ARCHITECTURE.md`](archive/docs/V3_ARCHITECTURE.md). Every document:
-[`docs/README.md`](docs/README.md). The v1 design and its benchmark tables:
-[`archive/docs/v1/README.md`](archive/docs/v1/README.md).
+## Current results
 
-## Where the evidence stands (2026-09-26)
+Qwen2.5-1.5B-Instruct, 1000 facts per dataset, every query served through the router,
+adapter and note served together unless stated. Source:
+`docs/LIVING_MODEL_CONFIRMATORY_PREREG.md`, entries 64 to 77. The default router
+compares relation texts with a relation encoder (all-mpnet-base-v2 trained offline on
+7500 triplets from facts disjoint from the dev split and the test stores, then frozen).
 
-On frozen ImageNet ViT-B/16 features, CIFAR-100 in 20 tasks, unless noted:
+| Reading | CounterFact, router v4 (MiniLM, tau 0.631) | CounterFact, default (tau 0.750) | zsRE, default |
+| :-- | :-- | :-- | :-- |
+| Edit prompts answered | 0.996 | 0.996 | 0.989 |
+| Paraphrases answered | 0.803 | 0.891 | 0.982 |
+| Paraphrases answered, adapter only | 0.669 | 0.730 | 0.967 |
+| Other relation of a stored subject: output contains a stored answer | 0.237 | 0.043 | not measured |
+| Same relation, other subject (neighborhood): leakage | 0.016 | 0.017 | not measured |
+| Synthetic-name distractors and NQ questions routed | 0 | 0 | 0 |
+| Removed facts returning to the base answer (100 removed) | 1.00 | 1.00 | 0.84 (1.00 removing by content) |
+| Facts that need an adapter (tiered store) | 0.162 | 0.162 | 0.206 |
 
-| Finding | Number | Source |
-| :-- | :-- | :-- |
-| A training-free prototype readout (NCM) beats v1 | 70.34 vs 59.30, 0 parameters, 307 KB | [`STAGE1_RESULTS.md`](archive/docs/STAGE1_RESULTS.md) |
-| A closed-form ridge readout is the strongest single model | wins on six backbones and four datasets | [`STAGE1_RESULTS.md`](archive/docs/STAGE1_RESULTS.md) |
-| The binding constraint is selection, not expert capacity | oracle routing +27 pp over the routed bank | [`STAGE1_RESULTS.md`](archive/docs/STAGE1_RESULTS.md) |
-| A learned routing address collapses when frozen; fixed retrieval does not | -28.7 pp (AC1); +0.048 pp, TOST-equivalent, 0 router parameters (AC3) | [AC1](archive/docs/AC1_ADDRESS_FREEZE_RESULTS.md), [AC3](archive/docs/AC3_ADDRESS_SPACE_RESULTS.md) |
-| A continual class-level ridge router fixes most of the routing tax | +4.10 / +6.08 pp (`coherent` / `dispersed`), 6/6 seeds | [`E_TID2_RESULTS.md`](archive/docs/E_TID2_RESULTS.md) |
-| **Once routing is fixed, the expert bank is redundant** | +0.62 / -0.03 pp over ridge alone, inside the 1 pp SESOI | [`E_TID2_RESULTS.md`](archive/docs/E_TID2_RESULTS.md) |
-| Why: experts convert little of what they own | they rescue ~30 % of rescuable samples and break ~3 % of correct ones; re-grouping moves mass, not conversion | [`P2_BOUND_RESULTS.md`](archive/docs/P2_BOUND_RESULTS.md) |
+Most of the trained encoder's gain is on the 23 CounterFact relations it was trained
+on: on the 11 held-out relations, paraphrase routing rises only from 0.63 to 0.75 and
+leakage is not reduced. Training the encoder on templates for 1785 Wikidata relations as
+well does not change this: the held-out relations are mostly close neighbors of trained
+ones (country of origin and location of formation, original language and language of
+the work), and their boundary has to be learned from examples of that pair. With
+general-purpose encoders, the routing threshold trades
+paraphrase accuracy for leakage, and adapter training with subject-local anchors, notes
+instead of adapters, a contrast against the store's keys and a check by the base model
+did not improve on that trade-off. The divergence check uses 40 held-out canary prompts
+with a threshold of 0.968; the two training prompts understate an adapter's effect about
+seventeen-fold.
 
-All of these use torchvision's ImageNet-1K ViT-B/16; the pre-trained-model CIL
-literature uses ImageNet-21K weights and seven standard benchmarks, so none of the
-numbers above is comparable to published tables yet.
-
-What does **not** exist yet: any LM result. The 7B backend and the editing harness are
-built and tested on a tiny random model only; the study is
-[`archive/docs/V3_LLM_PREREG.md`](archive/docs/V3_LLM_PREREG.md) (proposed, not run). The SLOW path
-has no positive result behind it on the vision side (the last two rows).
-
-**Next.** [`archive/docs/POSITIONING.md`](archive/docs/POSITIONING.md) sets out what the literature
-already owns, what is defensible, and the plan: first a pre-registered study of when
-any expert bank - ours, EASE, MOS, MoTE - adds anything over an analytic router on the
-standard benchmarks ([`archive/docs/PTM_CIL_PREREG.md`](archive/docs/PTM_CIL_PREREG.md); code built,
-not run), then the LM study.
-
-## Quick start
-
-```bash
-uv sync --extra dev            # or: pip install -e ".[dev]"; extras: "lm" (LM backend), "ptm" (timm)
-```
-
-```python
-from cerata.api import Cerata, Batch, Example
-
-model = Cerata(dim=768, num_classes=100, router="ridge_class", canary=canary_feats)
-rec = model.write(Batch(z, y, task=0))    # MEDIUM: closed-form edit -> EditRecord
-rec = model.write(Example(z1, 7))         # FAST: one memory row -> EditRecord
-model.forget(rec.id)                      # exact delete / statistics downdate
-rep = model.consolidate("by_arrival")     # SLOW: frozen representation experts
-pred = model.predict(z_test)              # labels, logits, routed experts, per-sample source
-st = model.state()                        # base hash, ordered edit log, digest
-```
-
-Every `EditRecord` carries the locality, reversibility, order and purity reports of
-that call. The LM facade (`cerata.api.lm.CerataLM`) has the same calls:
-`write("a sentence")` is a FAST memory row retrieved into the context,
-`write(Batch(prompts, targets))` a MEDIUM down-projection edit.
-
-```bash
-export PYTHONPATH=.
-python archive/experiments/v3/v3_api_smoke.py --synthetic   # write -> predict -> forget, every guard
-python -m pytest                                 # the whole suite
-python archive/experiments/stage1/infra/run_all.py --list             # Stage 1: what is done, what is left
-```
-
-Every runner, with its pre-registration: [`experiments/README.md`](experiments/README.md).
-Study outputs go to `results/`, which is not tracked: a fresh clone re-runs the runners.
-
-## Project structure
+## Repository layout
 
 ```text
 cerata/
-├── cerata/
-│   ├── api/         # Cerata / CerataLM facades, GuardedEditor (the four guards), records
-│   ├── core/        # frozen backbones, HF causal-LM adapter, features, constructions, hashing
-│   ├── address/     # parameter-free retrieval over frozen keys (ExactCosineIndex)
-│   ├── router/      # prototype, ridge_class, the router-purity guard
-│   ├── memory/      # FastMemory (fast path)
-│   ├── edit/        # float64 closed-form edits (LinearStats, DownProjEdit)
-│   ├── experts/     # the Stage 1 ladder bank, consolidation policies
-│   ├── readout/     # the S1 readout registry
-│   ├── eval/        # metrics, measurement contract (schema), paired stats, editing harness
-│   ├── arch/        # S1 contract: protocols and registries
-│   ├── data/        # split MNIST / CIFAR / CIFAR-100 / folder, feature cache
-│   ├── legacy/      # v1, frozen bitwise (models, memory, trainer, baselines, builder, trigger)
-│   └── ...
-├── pal_moe/         # compatibility only: the old name and the v1 import paths, same module objects
-├── experiments/     # sandbox/live_learning/ (the living model)
-├── archive/         # the earlier programs (Stage 1, v3, PTM-CIL, v1) - frozen records
-├── configs/         # validated JSON configs for the v1 benchmark
-├── docs/            # architecture, pre-registrations, results, contracts; v1/ is the v1 record
-└── tests/           # v1, S0/S1 contracts, v3 API and guards, v1 checkpoint shims, LM backend
+├── cerata/                         # library code from the earlier programs (API, routers, edits, eval)
+├── experiments/sandbox/live_learning/
+│   ├── text/                       # exploratory text runs: store, router, controller, sessions
+│   ├── confirm/                    # confirmatory harness: data adapters, pilot, routed and locality evals
+│   ├── vlm/                        # vision-language runs (Qwen3-VL-2B)
+│   └── STATE.md                    # current state and next steps
+├── docs/                           # positioning, pre-registration records, review notes
+├── paper/                          # LaTeX source, tables, figures, numbers generator
+└── tests/
 ```
 
-Development workflow and the rules the codebase depends on:
-[`CONTRIBUTING.md`](CONTRIBUTING.md).
+Every experiment was registered in `docs/LIVING_MODEL_SLICE_PREREG.md` (exploratory
+phase) or `docs/LIVING_MODEL_CONFIRMATORY_PREREG.md` (confirmatory phase) before it was
+run. Result files are written to `results/`, which is not tracked.
+
+## Running
+
+```bash
+uv sync --extra dev --extra lm          # or: pip install -e ".[dev,lm]"
+python -m pytest                        # test suite
+
+# re-evaluate a saved store with router v4 and the three serving arms (requires the
+# saved checkpoint); the locality and threshold analyses read its output
+.venv/bin/python experiments/sandbox/live_learning/confirm/v4_eval.py \
+  --ckpt results/live_learning/confirm/cf_n1000.ckpt \
+  --facts results/live_learning/confirm/external_counterfact_n1000.json \
+  --out results/live_learning/confirm/cf_n1000_v4_eval.json
+.venv/bin/python experiments/sandbox/live_learning/confirm/serving_locality.py
+.venv/bin/python experiments/sandbox/live_learning/confirm/relevance_eval.py
+.venv/bin/python experiments/sandbox/live_learning/confirm/train_relation_encoder.py
+.venv/bin/python experiments/sandbox/live_learning/confirm/router_v7_select.py --scorers relenc \
+  --out results/live_learning/confirm/router_v8_select.json --prereg SS76
+.venv/bin/python experiments/sandbox/live_learning/confirm/v7_eval.py --dataset counterfact \
+  --selection results/live_learning/confirm/router_v8_select.json --suffix v8 --prereg SS76
+.venv/bin/python paper/make_numbers.py   # regenerate paper/numbers.tex
+
+# build the paper
+cd paper && mkdir -p build && nix run nixpkgs#tectonic -- main.tex -o build
+```
+
+Environment notes for the GPU runs (NixOS, shared 8 GB GPU) are in
+`experiments/sandbox/live_learning/README.md`.
+
+## Earlier work
+
+The project started as PAL-MoE, a mixture-of-experts model for class-incremental
+learning, followed by a closed-form vision study (CERATA v3). That material was removed
+from the working tree in commit `894ad16`; it is available in the history at
+`894ad16^` (for example `git show 894ad16^:archive/docs/README.md`). The `cerata/`
+package still contains the library code from those programs, and `import pal_moe` is no
+longer supported.
 
 ## Citation
-
-If you use **CERATA** (or its v1, PAL-MoE) in your research, please cite:
 
 ```bibtex
 @software{cerata2026,
   author = {Hakbilen, Mehmet Arda},
-  title = {CERATA: Closed-form, Exactly Reversible, Auditable Learning after Deployment},
-  note = {formerly PAL-MoE: Prototype-Anchored Lifelong Mixture of Experts},
-  url = {https://github.com/kaelvalen/cerata},
-  version = {0.2.0},
-  year = {2026}
+  title  = {CERATA: Transactional Knowledge Updates for Frozen Language Models},
+  url    = {https://github.com/kaelvalen/cerata},
+  year   = {2026}
 }
 ```
 
-Old code keeps working: `import pal_moe` (with a `DeprecationWarning`) resolves every
-old import path, and old checkpoints unpickle, to the same `cerata` objects.
-
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+MIT, see [LICENSE](LICENSE).
