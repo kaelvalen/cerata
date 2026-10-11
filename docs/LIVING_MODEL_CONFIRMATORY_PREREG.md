@@ -1474,3 +1474,44 @@ were both held out, the routed fraction is higher than on seen relations.
 Decision rule: if both test predictions hold, the trained encoder becomes the paper's
 default; otherwise the SS74 default stays and the result is reported.
 
+### SS76 results (2026-10-11, `relation_encoder_mpnet/`, `router_v8_select.json`, `{cf,zsre}_n1000_v8_eval.json`, `relenc_split.json`)
+
+Training: 7500 triplets (3000 CF facts, 1500 zsRE facts), 235 steps, 45 s; loss 2.24 ->
+1.24. Held-out relations: P103, P131, P136, P140, P176, P364, P37, P449, P463, P641, P740.
+Selection: trained encoder without generated keys (dev TPR 0.936 at theta 0.750; with
+keys 0.923) [prediction dev TPR >= 0.80: met].
+
+| reading | SS74 default (MiniLM 0.757) | trained encoder (0.750) | prediction |
+| :-- | :-- | :-- | :-- |
+| CF edit prompt, both | 0.996 | 0.996 | - |
+| CF paraphrase route-correct | 0.595 | 0.908 | - |
+| CF paraphrase adapter / note / both / tiered | 0.513 / 0.488 / 0.589 / 0.512 | 0.730 / 0.684 / 0.891 [0.872, 0.910] / 0.723 | both >= 0.70: met |
+| E3 routed | 0.064 | 0.044 | - |
+| E3 leak adapter / note / both / tiered | 0.058 / 0.045 / 0.063 / 0.053 | 0.042 / 0.031 / 0.043 [0.031, 0.056] / 0.036 | both <= 0.06: met |
+| E2 routed / both leak | 0.012 / 0.011 | 0.018 / 0.017 | - |
+| CF distractors routed; removal return / retention | 0 | 0 ; 1.00 / 0.997 | - |
+| zsRE paraphrase route-correct / adapter / both | 0.694 / 0.938 / 0.956 | 0.745 / 0.967 / 0.982 [0.973, 0.990] | - |
+| zsRE loc routed; removal return / by content | 0 | 0 ; 0.84 / 1.00 | - |
+
+Split by relation (CF test; seen = training relation):
+
+| reading | default | trained |
+| :-- | :-- | :-- |
+| paraphrase route-correct, seen relations (n=652) | 0.575 | 0.994 (both arm 0.972) |
+| paraphrase route-correct, held-out relations (n=348) | 0.632 | 0.747 (both arm 0.739) |
+| E3 leak (both), stored and E3 relation seen (n=441) | 0.059 | 0.023 |
+| E3 leak, stored relation held out (n=248) | 0.057 | 0.057 |
+| E3 leak, E3 relation held out (n=211) | 0.095 | 0.081 |
+| E3 leak, both held out (n=100) | 0.030 | 0.020 |
+
+Prediction "both-held-out E3 routed higher than seen": **missed** (0.020 vs 0.025; n=100).
+Readings: the trained encoder breaks the threshold trade-off on CounterFact, but most of
+the gain is on relations it was trained on, where it has learned CounterFact's template
+inventory: paraphrases of seen relations are routed almost perfectly and leakage falls
+2.6x. On held-out relations paraphrase routing still improves (0.632 -> 0.747), while
+leakage does not fall. The result is therefore a statement about a deployment whose
+relation inventory is known in advance, with partial transfer of recall and none of
+locality to new relations. Decision rule: both test predictions hold, so the trained
+encoder (router v8) becomes the paper's default; the held-out split is reported with it.
+E2 routing rises slightly (0.012 -> 0.018).
+
