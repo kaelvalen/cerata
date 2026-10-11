@@ -1447,3 +1447,30 @@ prediction failed, so the SS74 default (MiniLM, theta 0.757) remains the paper's
 configuration; v7 is reported as the best measured configuration. The encoder accounts
 for little of the gain; generated keys account for most of it (SS75a).
 
+## 76. A relation encoder trained offline (pinned 2026-10-11, before the run)
+
+SS75 shows that frozen general-purpose encoders differ little in separating relations.
+Here the encoder is trained once, offline, for exactly this comparison, and then frozen;
+the store still has no trainable state, so Propositions 1-3 are unaffected (keys are
+fixed once computed). This is a change of concept: the router now contains a learned
+component, trained on data disjoint from both the dev split and the test stores.
+Training split (seed 76): CounterFact and zsRE records whose subjects occur in neither
+the test stores nor the SS66 dev split; up to 3000 CounterFact and 1500 zsRE facts.
+Held-out relations: 11 of the 34 CounterFact relation ids, drawn with seed 76, never
+appear in training (as anchor, positive or negative), so generalization to unseen
+relations is measured. Triplets on subject-masked relation texts (the router's own
+processing): anchor = edit prompt; positive = each paraphrase prompt that contains the
+subject (CounterFact: both paraphrase prompts; zsRE: the rephrased question);
+hard negative = a template of another training relation. Model: all-mpnet-base-v2,
+multiple-negatives ranking loss with the hard negatives (scale 20), batch 32, lr 2e-5,
+1 epoch, AdamW, seed 76. Configurations: trained encoder with and without the SS75
+generated keys; theta and selection exactly as SS75 (lowest theta with CF dev FPR <= 0.05,
+highest dev TPR). The selected configuration is evaluated end to end on both stores
+(eval-only, v7_eval) as in SS75(b). Additional reading: E3 routed and leak split by
+whether the stored relation and the E3 relation are training relations.
+Predictions: dev TPR at the threshold >= 0.80 (SS75 best 0.716); test CF paraphrase
+(adapter and note) >= 0.70 with E3 leak (both) <= 0.06; on E3 prompts whose relations
+were both held out, the routed fraction is higher than on seen relations.
+Decision rule: if both test predictions hold, the trained encoder becomes the paper's
+default; otherwise the SS74 default stays and the result is reported.
+
