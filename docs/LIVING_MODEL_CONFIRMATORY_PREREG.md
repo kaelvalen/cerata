@@ -1227,3 +1227,54 @@ CF paraphrase route-correct >= 0.75; zsRE paraphrase route-correct >= 0.70; prob
 route-correct >= 0.99; sibling test unchanged. SS71's decision rule is then applied to
 the v5 readings.
 
+### SS71 results (2026-10-11, `serving_locality.json`, wall 1307 s)
+
+(a) CounterFact n=1000, existing adapters, router v4 (E3 routed 0.290, E2 routed 0.018):
+
+| policy | E3 leak [95% CI] | E3 same | E2 leak | prediction |
+| :-- | :-- | :-- | :-- | :-- |
+| adapter | 0.186 [0.162, 0.209] | 0.711 | 0.014 | - |
+| note | 0.140 [0.118, 0.161] | 0.720 | 0.013 | <= 0.05: **missed** |
+| both | 0.237 [0.210, 0.262] | 0.710 | 0.016 | between note and adapter: **missed** (highest) |
+| tiered | 0.155 [0.133, 0.176] | 0.716 | 0.014 | <= 0.06: **missed** |
+
+(b) The 200 SS70 facts served with adapter and note: existing adapters efficacy 1.000,
+paraphrase 0.805, E3 leak 0.200; local-anchor adapters 1.000 / 0.805 / 0.185 (paired
+difference in E3 leak -0.015 [-0.045, 0.015]) [predictions: efficacy >= 0.98 met,
+paraphrase >= 0.75 met, E3 leak <= 0.08 **missed**].
+
+Readings: the note recovers the efficacy and paraphrase loss of the local-anchor adapters
+completely, but it also carries the leak: an instructed note about one relation of a
+subject is used by the model to answer other questions about that subject (14% of E3
+prompts, about half of the routed ones). Combining note and adapter adds the two leak
+sources. No policy meets the SS71 decision rule (E3 leak <= 0.10); the leak is a router
+property (every leak occurs on a routed query), which SS72 addresses. The decision rule
+is applied to the SS72 readings.
+
+### SS72 results (2026-10-11, `router_v5_eval.json`)
+
+Calibration: m = 0.3345 (Youden J 0.729 vs 0.725 for v4; dev TPR 0.835 vs 0.867, FPR
+0.106 vs 0.143). Base answers generated for 42 CounterFact and 3 zsRE newly abstained
+paraphrases.
+
+| reading | v4 | v5 | prediction |
+| :-- | :-- | :-- | :-- |
+| CF probe route-correct / zsRE | 0.998 / 1.000 | 0.998 / 1.000 | >= 0.99: met |
+| CF paraphrase route-correct | 0.814 | 0.772 | >= 0.75: met |
+| zsRE paraphrase route-correct | 0.740 | 0.737 | >= 0.70: met |
+| CF paraphrase adapter / note / both / tiered | 0.669 / 0.629 / 0.803 / 0.664 | 0.639 / 0.606 / 0.764 / 0.638 | - |
+| E3 routed | 0.290 | 0.208 | <= 0.10: **missed** |
+| E3 leak adapter / note / both / tiered | 0.186 / 0.140 / 0.237 / 0.155 | 0.143 / 0.111 / 0.177 / 0.125 | adapter <= 0.06: **missed** |
+| E2 routed / adapter leak | 0.018 / 0.014 | 0.018 / 0.014 | - |
+| distractors, zsRE loc routed | 0 / 0 | 0 / 0 | - |
+| sibling test original / sibling | 0.998 / 0.995 | 0.998 / 0.995 | unchanged: met |
+| removal return CF / zsRE | 1.00 / 0.86 | 1.00 / 0.87 | - |
+
+E3 relation occurs among the stored relations for 97.5% of the prompts; the 2.5% with an
+unstored relation do not leak. Readings: the store-contrast test removes 28% of the E3
+routes at a cost of 4 points of CounterFact paraphrase accuracy; the calibrated margin is
+large (0.33) because the MiniLM similarities of different CounterFact relations overlap
+with those of paraphrases of the same relation. The sentence encoder, not the routing
+rule, limits relation discrimination. SS71 decision rule: still no policy with E3 leak
+<= 0.10.
+
