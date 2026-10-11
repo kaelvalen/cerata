@@ -1,0 +1,51 @@
+% F3 - paraphrase accuracy vs leakage into other-relation prompts along the routing
+% threshold (prereg SS74; data from make_numbers.py), with the alternatives of SS71-73.
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\columnwidth, height=5.6cm,
+  xmin=0, xmax=0.25, ymin=0.3, ymax=0.95,
+  xtick={0,0.05,0.10,0.15,0.20,0.25},
+  xticklabels={0,.05,.10,.15,.20,.25},
+  ytick={0.3,0.4,0.5,0.6,0.7,0.8,0.9},
+  xlabel={leakage into other-relation prompts},
+  ylabel={paraphrase accuracy},
+  legend style={font=\scriptsize, at={(0.5,1.03)}, anchor=south, draw=black!30, legend columns=3},
+  legend cell align=left,
+  grid=major, grid style={black!8},
+  tick label style={font=\scriptsize}, label style={font=\footnotesize},
+]
+\addplot[thick, blue!70!black, mark=*, mark size=1.1pt]
+  table[x=leak_both, y=para_both] {figures/tradeoff.dat};
+\addlegendentry{adapter and note}
+\addplot[thick, orange!80!black, dashed, mark=square*, mark size=1.0pt]
+  table[x=leak_adapter, y=para_adapter] {figures/tradeoff.dat};
+\addlegendentry{adapter}
+\addplot[only marks, red!70!black, mark=triangle*, mark size=2.6pt]
+  coordinates {(0.177,0.764)};
+\addlegendentry{store contrast}
+\addplot[only marks, green!45!black, mark=diamond*, mark size=2.6pt]
+  coordinates {(0.232,0.798)};
+\addlegendentry{base-model check}
+\addplot[only marks, violet!80!black, mark=pentagon*, mark size=2.6pt]
+  coordinates {(\wCfEthreeLeakBoth,\wCfParaBoth) (\wCfEthreeLeakAdapter,\wCfPara)};
+\addlegendentry{generated keys}
+\addplot[only marks, black, mark=star, mark size=3.2pt, thick]
+  coordinates {(\xCfEthreeLeakBoth,\xCfParaBoth) (\xCfEthreeLeakAdapter,\xCfPara)};
+\addlegendentry{trained encoder}
+\node[font=\scriptsize, anchor=north east] at (axis cs:0.237,0.795) {$\tau{=}0.631$};
+\draw[black!50] (axis cs:0.063,0.589) -- (axis cs:0.094,0.475);
+\node[font=\scriptsize, anchor=north west, inner sep=1pt] at (axis cs:0.092,0.475) {$\tau{=}0.757$};
+\draw[black!60] (axis cs:0.063,0.589) circle (2.5pt);
+\end{axis}
+\end{tikzpicture}
+\caption{CounterFact paraphrase accuracy against the fraction of other-relation prompts
+whose output contains a stored answer, as the routing threshold $\tau$ increases from
+0.631 (top right) to 0.963. Store contrast and the base-model check are the alternative
+relevance tests of Section~\ref{sec:leak}, both served with adapter and note; each
+lies on the curve that the threshold alone produces. Generated keys with all-mpnet-base-v2
+at $\tau=\wTheta$ and the trained relation encoder at $\tau=\xTheta$ are shown for both
+arms and lie above the curves.}
+\label{fig:tradeoff}
+\end{figure}
