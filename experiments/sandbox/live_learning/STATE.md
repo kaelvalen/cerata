@@ -206,3 +206,10 @@ theta 0.750 (CF dev FPR <= 5%). CF paraphrase (both) 0.891, E3 leak 0.043; zsRE
 paraphrase 0.982. Split (`confirm/relenc_split.py`): seen relations route 0.994 and
 leak 0.023; held-out relations route 0.747 and leak unchanged. Open: new relations
 (retraining changes all keys); nothing committed.
+SS77 (2026-10-11): encoders trained on base-model templates for 1785 Wikidata properties
+(`confirm/train_relation_encoder_wiki.py`; A without CounterFact relations, B = SS76 +
+Wikidata). B: held-out paraphrase routing 0.750 (SS76 0.747), held-out leak 0.059
+(unchanged), overall 0.890 / 0.047; three of four predictions missed, SS76 stays default.
+A (pure transfer): CF paraphrase routing 0.648 vs frozen mpnet 0.607, gain only on the 23
+relations, none on the 11 held out. Remaining held-out leaks are near-neighbor relation
+pairs. Open: learning such boundaries needs examples of the pair.
