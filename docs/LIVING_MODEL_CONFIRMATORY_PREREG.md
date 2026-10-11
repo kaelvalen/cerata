@@ -1184,3 +1184,46 @@ answer to this relation of this subject" from "leave this subject alone" with th
 anchor prompts and 32 steps. It is a trade-off, not a fix. Decision: not adopted as the
 default recipe; the existing adapters stay. The remaining lever is the serving arm (SS71).
 
+## 71. Locality of the serving arms (pinned 2026-10-11, before the run; eval-only)
+
+SS65-SS70 measured locality only with the adapter arm, but the system the paper proposes
+serves notes, adapters, or both (SS67/68). (a) CounterFact n=1000, existing adapters,
+router v4 (tau_v4): for the E3 (SS65 other-relation) and E2 (neighborhood) prompts,
+routed / same-as-base / leak under four serving policies: adapter, note (instructed
+retrieval), both, and the SS68 tiered store (note-tier facts served by their note,
+adapter-tier facts by their adapter; tiers from `cf_n1000_v4_eval.json`). Leak as
+before: any stored non-numeric answer appears that the base answer did not contain.
+(b) The 200 SS70 local-anchor adapters served with their note (both): efficacy,
+paraphrase, E3 leak, to test whether the note recovers what the local KL costs.
+Predictions: E3 leak note <= 0.05; both between note and adapter; tiered <= 0.06;
+local + note: efficacy >= 0.98, paraphrase >= 0.75, E3 leak <= 0.08.
+Decision rule fixed now: the paper's default serving policy is the one with the highest
+CounterFact paraphrase accuracy among the policies whose E3 leak is <= 0.10, with storage
+(adapter fraction) as the tie-break; the others are reported.
+
+## 72. Router v5: the store's own keys as contrast (pinned 2026-10-11, before the run)
+
+SS71(a) partial reading (E3 leak: adapter 0.186, note 0.140, both 0.237, tiered 0.155)
+shows that every serving arm leaks once an other-relation query is routed; the lever is
+the router. v4 accepts the best candidate if its relation similarity s_i >= tau, so a
+query about another relation of a stored subject passes whenever that relation text is
+close enough to the stored one. v5 adds one test without new trainable parameters: the
+relation text of the query is compared with the relation keys of ALL stored facts (any
+subject), and the candidate is accepted only if s_i >= max_j cos(r(q), k_j) - m. Keys of
+the same relation as the candidate have nearly the same text, so they do not block a
+correct route; a query whose relation is stored for some other subject is closer to that
+key and is rejected. The contrast set is the store itself (no external relation list).
+Calibration: tau stays 0.6308; m is chosen on the SS66 dev split (dev store = the 1000
+dev facts, their keys are the contrast set) to maximise Youden's J, ties to the larger m.
+Evaluation is exact from the saved logs: v5 routes are a subset of v4 routes with the
+same selected fact, so a still-routed query has its logged response and a newly
+abstained query receives the base answer; base answers for newly abstained paraphrases
+are generated with the base model only (no adapters). Readings: CF/zsRE route-correct
+for probes and paraphrases, E2/E3 routed and leak under the four SS71 policies,
+synthetic distractors, zsRE loc, sibling test, removal return, paraphrase accuracy per
+arm, tiered store. Secondary: E3 leak split by whether the E3 relation occurs among the
+stored facts' relations. Predictions: E3 routed <= 0.10 and adapter-arm E3 leak <= 0.06;
+CF paraphrase route-correct >= 0.75; zsRE paraphrase route-correct >= 0.70; probes
+route-correct >= 0.99; sibling test unchanged. SS71's decision rule is then applied to
+the v5 readings.
+
