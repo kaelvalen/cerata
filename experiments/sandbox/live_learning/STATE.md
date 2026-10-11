@@ -193,3 +193,9 @@ sets the default threshold 0.757 (CF dev FPR <= 5%): CF paraphrase (both) 0.589,
 0.063, zsRE paraphrase 0.956. Paper rewritten around these results (paper/main.tex,
 numbers from paper/make_numbers.py). Open: relation discrimination (encoder, typed keys
 or a relation schema); nothing committed.
+SS75 (2026-10-11): relation scorers x generated keys (`confirm/gen_keys.py`,
+`confirm/router_v7.py`, `confirm/router_v7_select.py`, `confirm/v7_eval.py`). Selected on
+dev: all-mpnet-base-v2 + 3 base-model rewrites per edit prompt, theta 0.693. Test: CF
+paraphrase (both) 0.620, E3 leak 0.050, zsRE paraphrase 0.960 - better than the SS74
+default on both axes but below the pinned 0.65 bar, so the default stays. Generated keys
+give most of the gain; encoders differ little; the quora cross-encoder is worst.
