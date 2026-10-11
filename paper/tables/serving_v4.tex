@@ -1,0 +1,32 @@
+% Revised system at N=1000: router v4 with three serving arms (prereg SS67/68).
+\begin{table}[t]
+\centering
+\caption{The revised system at $N=1000$ with router v4. Each query is served with the
+routed adapter, with the routed fact's note in an instructed prompt, or with both. The
+difference is the paired difference between adapter and note in percentage points.}
+\label{tab:serving}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llcc}
+\toprule
+ & & CounterFact & zsRE \\
+\midrule
+Edit prompt & adapter & $\vCfEff\,[\vCfEffCI]$ & $\vZsEff\,[\vZsEffCI]$ \\
+ & note & $\vCfEffRet$ & $\vZsEffRet$ \\
+ & both & $\vCfEffBoth$ & $\vZsEffBoth$ \\
+\midrule
+Paraphrase & adapter & $\vCfPara\,[\vCfParaCI]$ & $\vZsPara\,[\vZsParaCI]$ \\
+ & note & $\vCfParaRet$ & $\vZsParaRet$ \\
+ & both & $\vCfParaBoth\,[\vCfParaBothCI]$ & $\vZsParaBoth\,[\vZsParaBothCI]$ \\
+ & adapter $-$ note (pp) & $\vCfParaDiff$ (\vCfParaDiffCI) & $\vZsParaDiff$ (\vZsParaDiffCI) \\
+\midrule
+Removal of 100 & return to base & $\vCfReturn$ & $\vZsReturn$ \\
+ & return, removal by content & n/a & $\vZsReturnContent$ \\
+ & retention of 900 & $\vCfRetain$ & $\vZsRetain$ \\
+\midrule
+Tiered store & facts needing an adapter & $\vCfTierFrac$ & $\vZsTierFrac$ \\
+ & efficacy / paraphrase & $\vCfTierEff$ / $\vCfTierPara$ & $\vZsTierEff$ / $\vZsTierPara$ \\
+\bottomrule
+\end{tabular}}
+\end{table}
