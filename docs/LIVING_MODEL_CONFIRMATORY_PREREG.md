@@ -1616,3 +1616,132 @@ met. Deviation from the pin (recorded): the end-to-end evaluation of v10 was not
 since its routes differ from v8 only by the threshold. The SS76 default stays.
 Reading: write-time negatives from the base model do not supply the near-neighbour
 contrast; the model does not know which neighbouring relation a query will confuse.
+
+## 79. Template-disjoint split for the relation encoder (pinned 2026-10-12, before the run)
+
+Motivation (external review, 2026-10-12, checked against `results/`). The router masks the
+subject, so the SS76 subject-disjoint split does not separate the relation texts the
+encoder sees. CounterFact has 218 distinct edit templates (243 counted per relation; 19
+strings belong to more than one relation). For the SS76 encoder, every seen-relation test
+key and 95.6% of seen-relation test paraphrase relation texts (after clause scoping and
+masking) occur verbatim in its training triplets, as do all E3 queries whose two relations
+are seen; 18 of the 66 held-out-relation templates are also templates of training relations
+with another label. The SS76 seen-relation figures are therefore in-sample in CounterFact's
+template space. The SS66 dev split, on which every threshold since SS66 was calibrated,
+draws from the same strings, so the dev FPR of 0.05 holds only inside that space, for the
+frozen encoders as well.
+
+Strings. The unit of the split is the subject-masked relation text produced by the
+router (`key_text` / `relation_text`), collected over all CounterFact records: edit
+prompts and paraphrase prompts (E3 queries are edit templates and are included). 2767
+strings. A string that occurs under more than one relation id is ambiguous (46): it is
+never used for training or calibration. Strings of the 11 SS76 held-out relations (seed
+76, unchanged) are held. The remaining strings of the 23 seen relations are split at
+random into S_train and S_test, half each. Three split seeds: 79, 80, 81; for each seed
+the dev split, the training set, the encoder and the test store below are rebuilt.
+
+Training. As SS76 (all-mpnet-base-v2, multiple-negatives ranking loss with hard negatives,
+scale 20, batch 32, lr 2e-5, one epoch, AdamW, training seed = split seed; CPU allowed),
+with every triplet string required to lie in S_train: anchor = edit prompt with key in
+S_train; positive = paraphrase with relation text in S_train; hard negative = an S_train
+edit template of another seen relation. Up to 3000 CounterFact and 1500 zsRE facts; a zsRE
+item is dropped if its probe or paraphrase relation text is in S_test, held or ambiguous.
+Subjects of the dev split and of the test store are excluded.
+
+Calibration. A dev split built like SS66 (500 CF + 500 zsRE facts), restricted to CF facts
+whose key is in S_train, keeping only paraphrases in S_train (a fact without one is
+skipped), with negatives drawn from S_train edit templates of other seen relations. For
+each encoder separately, theta = the lowest value with CF dev FPR <= 0.05 (SS74 rule;
+FPR = share of other-relation negatives routed). The frozen baseline is recalibrated the
+same way, so trained and frozen thresholds are set on the same strings.
+
+Test store (routing only, CPU, no adapters). The fixed N=1000 store is too small for this
+split: its (key, paraphrase) pairs fall 148 in (train, train), 87 in (test, test), 233 in
+(held, held), the rest mixed or ambiguous. A new routing store is drawn per seed from
+CounterFact records whose subjects are disjoint from training and dev, 400 facts in each
+group. For every fact the key, the evaluated paraphrase and the E3 query all lie on the
+group's side:
+  A  seen relation, seen strings: key, paraphrase and E3 query in S_train;
+  B  seen relation, unseen strings: key, paraphrase and E3 query in S_test;
+  C  held relation: key, paraphrase and E3 query held.
+The evaluated paraphrase is the first paraphrase of the record on the group's side; the E3
+query is an edit template of another relation from the group's side (A, B: another seen
+relation; C: another held relation), drawn with the split seed and filled with the fact's
+subject. Pools of records with key and a paraphrase on the side (E3 templates are drawn,
+so they do not restrict the pool): seed 79 A 5034, B 3521, C 4910; seed 80 4489 / 3552 /
+4910; seed 81 4758 / 3289 / 4910; at least 2869 distinct subjects per group.
+
+Encoders. (1) the SS79 trained encoder of the seed; (2) frozen all-mpnet-base-v2 (its
+base); (3) the SS76 encoder as a contaminated reference (it was trained on strings of all
+groups except C). Each at its own SS79 dev theta of the seed. Generated keys are not used
+(they exist only for the old store and need the GPU); in SS75 they added 0.016
+route-correct to the frozen mpnet on the old store. The router is v4/v7 with the
+tie-breaks of commits 2862294 and 45c000a (on the old stores they change no route).
+
+Primary metric: paraphrase route-correct at the dev theta. Gain per group:
+Delta_g = route-correct(SS79 trained) - route-correct(frozen mpnet), on the same facts.
+Second reading: E3 FPR_g = share of the group's E3 queries routed at the dev theta.
+Leakage is not measured (no GPU). E3 FPR is its proxy and an upper bound: the share of
+routed E3 prompts that leaked rises with the threshold, 0.64 (v4, tau 0.631, adapter arm,
+n = 290 routed), 0.88 (v7, theta 0.693, adapter and note, n = 57), 0.98 (v8, theta 0.750,
+adapter and note, n = 44).
+Statistics: predictions are evaluated on the mean over the three seeds; the per-seed
+values and their range are reported. Within a seed, paired bootstrap 95% CIs (10000
+resamples over facts) for differences between encoders. With n = 400 per group the CI
+half-width of a single rate near 0.7 is about 0.045.
+
+Provenance of the predictions. The thresholds below were proposed by the external reviewer
+and adopted by the author after looking at SS76 (seen relations: trained minus frozen
+mpnet route-correct about +0.41; held-out relations about +0.10; E3 routed on held-out
+relation groups 0.057-0.081 against a dev FPR of 0.05). No SS79 data had been produced or
+seen when they were written. Reviewer's expectation: Delta_A about 0.35, Delta_B
+0.15-0.20; E3 inflation +0.02 to +0.04 for the trained encoder and 0 +/- 0.02 for the
+frozen one, so P3 may fail.
+
+Predictions.
+  P1 (primary, three outcomes; untestable, and reported as such, if Delta_A < 0.05):
+     template memorisation    Delta_B <= 0.5 * Delta_A;
+     generalisation           Delta_B >= 0.8 * Delta_A;
+     partial                  otherwise.
+     Predicted outcome: template memorisation.
+  P3 (primary, contrast) Inflation of the E3 FPR on group B, I = E3 FPR_B - dev FPR (dev
+     FPR = the realised CF dev FPR at the encoder's theta), is at least 0.02 larger for
+     the SS79 trained encoder than for the frozen mpnet: I_trained - I_frozen >= 0.02,
+     paired over the same E3 queries, pooled over the three seeds (n = 1200; standard error
+     of a rate near 0.05 about 0.006, of the difference about 0.009). I_frozen is reported
+     descriptively (expected |I_frozen| <= 0.03), not as a prediction.
+  P2 (secondary) route-correct(SS79 trained, B) <= route-correct(frozen mpnet, B) + 0.05.
+Decision rule.
+  P1 template memorisation: the paper reports the SS76 seen-relation figures as in-sample
+  in CounterFact's template space, states that relation separation outside that space
+  remains open, and reports SS79 alongside; the encoder may remain the configured default,
+  but no claim of generalisation within a relation is made.
+  P1 generalisation: the encoder generalises to unseen phrasings of known relations, the
+  SS76 seen-relation claim stands, and the paper says so with the SS79 group B figures.
+  P1 partial: the paper reports Delta_A and Delta_B side by side and claims partial
+  generalisation within a relation, with the share Delta_B / Delta_A.
+  P3 holds: the paper states that the trained encoder's threshold keeps its dev FPR only
+  within the template space it was calibrated on, more so than a frozen encoder. P3
+  fails: the paper reports the inflation of both encoders without that claim.
+  In every case the old split (relenc_split.json) is relabelled as a relation split only.
+
+## 80. Natural other-relation queries (DRAFT 2026-10-12, not yet pinned; not run before SS79 is reported)
+
+E3 draws its queries from the same template pool the encoders train and calibrate on.
+Here the queries are written by a model of another family than the base model (Qwen2.5),
+so neither the generated keys (written by Qwen) nor the templates share their style.
+Generator: Llama-3.2-3B-Instruct, else Gemma-2-2B-it (fits the shared 8 GB GPU; greedy;
+prompt fixed in the script). For each stored fact the generator receives the subject and
+the English label and description of a target relation R' != R and writes one natural
+question about the subject asking for R'; questions without the subject are dropped.
+R' is sampled with deliberate near-neighbour pairs, half of the queries: P495/P740,
+P176/P178, P17/P30/P131, P364/P407, P103/P1412/P37, P276/P131, P19/P20/P937; the other
+half uniform over the remaining relations.
+Leak is redefined: a routed output leaks only if it contains the stored target and the
+stored target is not a correct answer to the generated question under the counterfactual
+(for example, a continent stored for a "which region" question is not a leak). A manual
+correctness label on at least 100 routed outputs, sampled before any rates are computed,
+estimates how often the automatic leak counts a legitimate answer; rates are reported
+with and without the correction.
+Encoders and thresholds: chosen after SS79 is reported (at least the SS74 default, the
+SS76 encoder and the frozen mpnet). Predictions are pinned with them.
