@@ -154,3 +154,33 @@ def test_v7_generated_keys_raise_paraphrase_score():
     assert plain.route("Jean Galland natively speaks")[0] is None
     assert aug.route("Jean Galland natively speaks")[0] == 0
     assert aug.route("Who is Muku-75?")[0] is None
+
+
+def _route_subject(facts, query):
+    enc = BagEncoder()
+    j, _ = RouterV4(enc, facts, tau=0.5).route(query, enc)
+    return None if j is None else facts[j]["subject"]
+
+
+def test_equal_length_subjects_prefer_the_exact_match_in_any_order():
+    facts = [
+        {"subject": "Iran", "probe": "The capital city of Iran is"},
+        {"subject": "Iraq", "probe": "The capital city of Iraq is"},
+    ]
+    query = "The capital city of Iraq is"
+    assert _route_subject(facts, query) == "Iraq"
+    assert _route_subject(facts[::-1], query) == "Iraq"
+
+
+def test_tied_subjects_are_all_candidates_regardless_of_insertion_order():
+    facts = [
+        {"subject": "Siena", "probe": "Siena is twinned with"},
+        {"subject": "Paris", "probe": "The mayor of Paris is"},
+    ]
+    query = "Siena is lovely. The mayor of Paris is"
+    for order in (facts, facts[::-1]):
+        router = RouterV4(BagEncoder(), order, tau=0.0)
+        cand, spans = router.candidates(query)
+        assert sorted(order[i]["subject"] for i in cand) == ["Paris", "Siena"]
+        assert [query[s:e] for s, e in spans] == [order[i]["subject"] for i in cand]
+    assert _route_subject(facts, query) == _route_subject(facts[::-1], query) == "Paris"

@@ -83,8 +83,8 @@ class Judge:
 
 
 def clause(router, q):
-    _, span = router.candidates(q)
-    return clause_with_span(q, span)[0] if span else q
+    _, spans = router.candidates(q)
+    return clause_with_span(q, spans[0])[0] if spans else q
 
 
 def main(argv=None):

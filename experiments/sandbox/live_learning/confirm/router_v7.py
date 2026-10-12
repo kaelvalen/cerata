@@ -77,11 +77,13 @@ class RouterV7(RouterV4):
         self._index(facts)
 
     def score(self, q: str, enc=None):
-        cand, span = self.candidates(q)
+        cand, spans = self.candidates(q)
         if not cand:
             return [], []
-        r = relation_text(q, span)
-        return cand, [max(self.scorer.sims(r, self.key_sets[i])) for i in cand]
+        return cand, [
+            max(self.scorer.sims(relation_text(q, s), self.key_sets[i]))
+            for i, s in zip(cand, spans)
+        ]
 
     def route(self, q, enc=None):
         cand, sims = self.score(q)
@@ -138,13 +140,13 @@ class RouterV10(RouterV7):
 
     def pos_neg(self, q: str):
         """(candidate index or None, s_pos, s_neg) for the best candidate by s_pos."""
-        cand, span = self.candidates(q)
+        cand, spans = self.candidates(q)
         if not cand:
             return None, 0.0, float("-inf")
-        r = relation_text(q, span)
-        sims = [max(self.scorer.sims(r, self.key_sets[i])) for i in cand]
+        texts = [relation_text(q, s) for s in spans]
+        sims = [max(self.scorer.sims(r, self.key_sets[i])) for i, r in zip(cand, texts)]
         k = max(range(len(cand)), key=lambda t: sims[t])
-        j = cand[k]
+        j, r = cand[k], texts[k]
         negs = self.neg_sets[j]
         s_neg = max(self.scorer.sims(r, negs)) if negs else float("-inf")
         return j, sims[k], s_neg

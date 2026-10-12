@@ -141,25 +141,40 @@ class RouterV4:
         ]
 
     def candidates(self, q: str):
-        """(indices, span) of the longest matching subject, or ([], None)."""
-        best, best_span, best_len = [], None, -1
+        """(indices, spans) of the entries of the top-ranked matching subjects, or ([], []).
+
+        Matching subjects are ranked by length, then exact over approximate match. Every
+        entry of every subject tied at the top is a candidate, in store order, with the
+        span of its own subject, so the result does not depend on insertion order.
+        """
+        qn = normalize(q)
+        best, best_rank = [], None
         for subject in self._possible(q):
-            indices = self._by_subject[subject]
             span = find_subject(q, subject)
             if span is None:
                 continue
-            length = len(subject)
-            if length > best_len:
-                best, best_span, best_len = list(indices), span, length
-        return best, best_span
+            rank = (len(subject), qn[span[0] : span[1]] == subject)
+            if best_rank is None or rank > best_rank:
+                best, best_rank = [], rank
+            if rank == best_rank:
+                best += [(i, span) for i in self._by_subject[subject]]
+        best.sort()
+        return [i for i, _ in best], [s for _, s in best]
+
+    def _query_vecs(self, q: str, spans, enc):
+        """Relation-text embedding of the query for each candidate span."""
+        texts = [relation_text(q, s) for s in spans]
+        unique = sorted(set(texts))
+        vecs = dict(zip(unique, enc.encode(unique, normalize_embeddings=True)))
+        return [vecs[t] for t in texts]
 
     def score(self, q: str, enc):
         """All candidate similarities, for calibration: (indices, sims) or ([], [])."""
-        cand, span = self.candidates(q)
+        cand, spans = self.candidates(q)
         if not cand:
             return [], []
-        v = enc.encode([relation_text(q, span)], normalize_embeddings=True)[0]
-        return cand, [float(self.keys[i] @ v) for i in cand]
+        vs = self._query_vecs(q, spans, enc)
+        return cand, [float(self.keys[i] @ v) for i, v in zip(cand, vs)]
 
     def route(self, q, enc):
         cand, sims = self.score(q, enc)
@@ -184,14 +199,14 @@ class RouterV5(RouterV4):
 
     def contrast_score(self, q: str, enc):
         """(indices, sims, best similarity to any stored key) or ([], [], None)."""
-        cand, span = self.candidates(q)
+        cand, spans = self.candidates(q)
         if not cand:
             return [], [], None
-        v = enc.encode([relation_text(q, span)], normalize_embeddings=True)[0]
+        vs = self._query_vecs(q, spans, enc)
         return (
             cand,
-            [float(self.keys[i] @ v) for i in cand],
-            float((self.keys @ v).max()),
+            [float(self.keys[i] @ v) for i, v in zip(cand, vs)],
+            max(float((self.keys @ v).max()) for v in vs),
         )
 
     def route(self, q, enc):
