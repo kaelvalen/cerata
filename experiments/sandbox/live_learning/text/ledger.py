@@ -3,7 +3,8 @@
 Each fact -> one LoRA delta trained from the same frozen base; the live state is the
 sum of the active deltas in id order, materialised into a fixed-capacity adapter.
 `revoke` drops a delta and rebuilds; `state_hash` is the pure function of the active
-set, so revoking the last addition restores the recorded pre-add hash exactly.
+set (identifier, note, routing key and delta of each entry, plus the router
+configuration), so revoking the last addition restores the recorded pre-add hash exactly.
 
 Smoke:  python ledger.py --facts 3
 """
@@ -46,7 +47,11 @@ class DeltaStore:
         self.model = make_lora(base, r=CAP * R)
         self.deltas: dict[str, dict] = {}
         self.keys: dict[str, str] = {}
+        self.notes: dict[str, str] = {}
         self.key_vecs: dict[str, torch.Tensor] = {}
+        # encoder, threshold and any other router setting that decides routing; set by
+        # the caller, hashed into the state
+        self.router_config = ""
         self.base_hash = hashlib.sha256(
             f"{model_name}|r{R}|cap{CAP}".encode()
         ).hexdigest()
@@ -72,10 +77,21 @@ class DeltaStore:
 
     def state_hash(self) -> str:
         h = hashlib.sha256(self.base_hash.encode())
-        for fid in sorted(self.deltas):
-            h.update(fid.encode())
-            for n in sorted(self.deltas[fid]):
-                for t in (self.deltas[fid][n]["A"], self.deltas[fid][n]["B"]):
+
+        # length-prefixed, so field boundaries are unambiguous
+        def text(s: str) -> None:
+            b = s.encode()
+            h.update(f"{len(b)}:".encode() + b)
+
+        text(self.router_config)
+        for fid in sorted(set(self.deltas) | set(self.keys) | set(self.notes)):
+            text(fid)
+            text(self.notes.get(fid, ""))
+            text(self.keys.get(fid, ""))
+            delta = self.deltas.get(fid, {})
+            text(str(len(delta)))
+            for n in sorted(delta):
+                for t in (delta[n]["A"], delta[n]["B"]):
                     h.update(t.float().contiguous().numpy().tobytes())
         return h.hexdigest()
 
@@ -167,10 +183,14 @@ class DeltaStore:
         self.materialize()
         return v / v.norm()
 
-    def add(self, fid: str, pairs, key: str | None = None) -> float:
+    def add(
+        self, fid: str, pairs, key: str | None = None, note: str | None = None
+    ) -> float:
         t = time.time()
         self.deltas[fid] = self._train_delta(pairs)
         self.keys[fid] = key or pairs[0][0]
+        if note is not None:
+            self.notes[fid] = note
         self.key_vecs[fid] = self.embed(self.keys[fid])
         self.materialize()
         return time.time() - t
@@ -179,6 +199,7 @@ class DeltaStore:
         t = time.time()
         del self.deltas[fid]
         self.keys.pop(fid, None)
+        self.notes.pop(fid, None)
         self.key_vecs.pop(fid, None)
         self.materialize()
         return time.time() - t
@@ -204,7 +225,12 @@ class DeltaStore:
         return sum(ks) / len(ks)
 
     def propose_and_commit(
-        self, fid: str, pairs, key: str | None = None, kld_limit: float = 2.0
+        self,
+        fid: str,
+        pairs,
+        key: str | None = None,
+        kld_limit: float = 2.0,
+        note: str | None = None,
     ) -> dict:
         """G1: train a candidate, commit only if its canary footprint is within limit.
 
@@ -218,6 +244,8 @@ class DeltaStore:
             return {"committed": False, "kld": kld}
         self.deltas[fid] = delta
         self.keys[fid] = key
+        if note is not None:
+            self.notes[fid] = note
         self.key_vecs[fid] = self.embed(key)
         self.materialize()
         return {"committed": True, "kld": kld}
