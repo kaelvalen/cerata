@@ -184,3 +184,19 @@ def test_tied_subjects_are_all_candidates_regardless_of_insertion_order():
         assert sorted(order[i]["subject"] for i in cand) == ["Paris", "Siena"]
         assert [query[s:e] for s, e in spans] == [order[i]["subject"] for i in cand]
     assert _route_subject(facts, query) == _route_subject(facts[::-1], query) == "Paris"
+
+
+def test_score_ties_break_by_content_not_insertion_order():
+    facts = [
+        {"subject": "Paris", "probe": "The mayor of Paris is"},
+        {"subject": "Paris", "probe": "The twin of Paris is"},
+    ]
+    query = "The mayor twin of Paris is"
+    picks = set()
+    for order in (facts, facts[::-1]):
+        enc = BagEncoder()
+        router = RouterV4(enc, order, tau=0.0)
+        _, sims = router.score(query, enc)
+        assert sims[0] == sims[1]
+        picks.add(order[router.route(query, enc)[0]]["probe"])
+    assert picks == {"The mayor of Paris is"}

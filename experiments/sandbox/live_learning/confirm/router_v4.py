@@ -112,6 +112,16 @@ class RouterV4:
         self._by_subject: dict[str, list[int]] = {}
         for i, s in enumerate(self.subjects):
             self._by_subject.setdefault(normalize(s).strip(), []).append(i)
+        # content order of the entries: ties between candidates are broken by it, so
+        # routing depends on the stored set and not on the order of insertion
+        self._content = [
+            (
+                normalize(f["subject"]).strip(),
+                key_text(f["probe"], f["subject"]),
+                str(f.get("id", "")),
+            )
+            for f in facts
+        ]
         # token index: a subject can match only if each of its tokens is close to some
         # query token, so the full alignment runs on few subjects
         self._subject_tokens = {
@@ -144,8 +154,9 @@ class RouterV4:
         """(indices, spans) of the entries of the top-ranked matching subjects, or ([], []).
 
         Matching subjects are ranked by length, then exact over approximate match. Every
-        entry of every subject tied at the top is a candidate, in store order, with the
-        span of its own subject, so the result does not depend on insertion order.
+        entry of every subject tied at the top is a candidate, with the span of its own
+        subject. Candidates are ordered by content (subject, key text, id), so ties, here
+        and between equal similarities in route(), do not depend on insertion order.
         """
         qn = normalize(q)
         best, best_rank = [], None
@@ -158,7 +169,7 @@ class RouterV4:
                 best, best_rank = [], rank
             if rank == best_rank:
                 best += [(i, span) for i in self._by_subject[subject]]
-        best.sort()
+        best.sort(key=lambda c: (self._content[c[0]], c[0]))
         return [i for i, _ in best], [s for _, s in best]
 
     def _query_vecs(self, q: str, spans, enc):
