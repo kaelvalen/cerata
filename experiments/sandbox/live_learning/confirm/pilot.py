@@ -30,6 +30,7 @@ from facts import NUMBERS, generate  # noqa: E402
 from facts import pairs as fact_pairs  # noqa: E402
 from harness import load_model, make_lora  # noqa: E402
 from ledger import CAP, DeltaStore, R  # noqa: E402
+from router_v4 import _osa  # noqa: E402
 from transformers import LogitsProcessor, LogitsProcessorList  # noqa: E402
 
 SYSTEM = "Answer briefly."
@@ -138,23 +139,6 @@ def routed_answer(store, router, candidates, q, enc):
 
 def _norm(s: str) -> str:
     return s.lower().replace("-", " ").replace("_", " ").strip()
-
-
-def _osa(a: str, b: str) -> int:
-    """Optimal string alignment (adjacent transposition counts as 1)."""
-    la, lb = len(a), len(b)
-    d = [[0] * (lb + 1) for _ in range(la + 1)]
-    for i in range(la + 1):
-        d[i][0] = i
-    for j in range(lb + 1):
-        d[0][j] = j
-    for i in range(1, la + 1):
-        for j in range(1, lb + 1):
-            cost = 0 if a[i - 1] == b[j - 1] else 1
-            d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
-            if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
-                d[i][j] = min(d[i][j], d[i - 2][j - 2] + 1)
-    return d[la][lb]
 
 
 class Router:
