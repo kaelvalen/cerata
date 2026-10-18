@@ -123,3 +123,6 @@ graphify-out/.graphify_labels.json.sig
 
 # personal scratch (untracked)
 last_results_personal/
+
+# graphify knowledge graph (regenerated locally with `graphify update .`)
+graphify-out/
