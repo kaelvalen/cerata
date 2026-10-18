@@ -1725,6 +1725,15 @@ Decision rule.
   fails: the paper reports the inflation of both encoders without that claim.
   In every case the old split (relenc_split.json) is relabelled as a relation split only.
 
+Deviation (2026-10-18, before any SS79 run). The router's subject ranking is changed from
+(subject length, exact) to (length of the matched query text, exact): an approximate match
+of a longer subject no longer displaces an exact match of the same words. On the N=1000
+stores this changes 7 of the 6000 candidate sets used for the reported results, all on
+CounterFact and all corrections: queries about Nokia Lumia 520 went to Nokia Lumia 1520
+(edit prompt, paraphrase, E2, E3) and queries about Limca went to Loimaa (edit prompt,
+paraphrase, E3). SS79 runs with the new ranking. The reported SS64 to SS78 figures were
+computed with the old ranking and are not recomputed here.
+
 ## 80. Natural other-relation queries (DRAFT 2026-10-12, not yet pinned; not run before SS79 is reported)
 
 E3 draws its queries from the same template pool the encoders train and calibrate on.
