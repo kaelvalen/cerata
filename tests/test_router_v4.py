@@ -200,3 +200,22 @@ def test_score_ties_break_by_content_not_insertion_order():
         assert sims[0] == sims[1]
         picks.add(order[router.route(query, enc)[0]]["probe"])
     assert picks == {"The mayor of Paris is"}
+
+
+def test_exact_match_beats_a_longer_near_namesake():
+    facts = [
+        {"subject": "Robert Smith", "probe": "Robert Smith works for"},
+        {"subject": "Roberta Smith", "probe": "Roberta Smith works for"},
+    ]
+    query = "Robert Smith works for"
+    assert _route_subject(facts, query) == "Robert Smith"
+    assert _route_subject(facts[::-1], query) == "Robert Smith"
+
+
+def test_misspelled_longer_subject_still_beats_its_exact_prefix():
+    facts = [
+        {"subject": "Paris", "probe": "The mayor of Paris is"},
+        {"subject": "Paris Hilton", "probe": "The mother of Paris Hilton is"},
+    ]
+    query = "The mother of Paris Hiltn is"
+    assert _route_subject(facts, query) == "Paris Hilton"

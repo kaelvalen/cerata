@@ -153,9 +153,11 @@ class RouterV4:
     def candidates(self, q: str):
         """(indices, spans) of the entries of the top-ranked matching subjects, or ([], []).
 
-        Matching subjects are ranked by length, then exact over approximate match. Every
-        entry of every subject tied at the top is a candidate, with the span of its own
-        subject. Candidates are ordered by content (subject, key text, id), so ties, here
+        Matching subjects are ranked by the length of the query text they match, then
+        exact over approximate match, so a near-namesake (Roberta Smith) never displaces
+        an exact match of the same words (Robert Smith), while a longer subject still wins
+        over its prefix (Paris Hilton over Paris). Every entry of every subject tied at
+        the top is a candidate, with the span of its own subject. Candidates are ordered by content (subject, key text, id), so ties, here
         and between equal similarities in route(), do not depend on insertion order.
         """
         qn = normalize(q)
@@ -164,7 +166,7 @@ class RouterV4:
             span = find_subject(q, subject)
             if span is None:
                 continue
-            rank = (len(subject), qn[span[0] : span[1]] == subject)
+            rank = (span[1] - span[0], qn[span[0] : span[1]] == subject)
             if best_rank is None or rank > best_rank:
                 best, best_rank = [], rank
             if rank == best_rank:
