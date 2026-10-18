@@ -472,34 +472,28 @@ def evaluate_routed(
     router_keep = Router(enc, keep)
     removed = []
     for fact in sample_facts:
-        gone_index, gone_score, gone_resp = routed_answer(
-            store, router_keep, keep, fact["probe"], enc
-        )
-        answer_hit = hit(gone_resp, fact["answer"])
-
-        return_index, return_score, return_resp = routed_answer(
-            store, router_keep, keep, fact["probe"], enc
-        )
+        # one greedy answer serves both checks
+        index, score, resp = routed_answer(store, router_keep, keep, fact["probe"], enc)
+        answer_hit = hit(resp, fact["answer"])
         base_hit = hit(pre[fact["id"]], fact["answer"])
-        returned_hit = hit(return_resp, fact["answer"])
         removed.append(
             {
                 "fact_id": fact["id"],
                 "answer": fact["answer"],
                 "gone_check": {
                     "query": fact["probe"],
-                    **_route_fields(gone_index, gone_score, keep),
+                    **_route_fields(index, score, keep),
                     "answer_hit": answer_hit,
                     "gone": not answer_hit,
-                    "response": gone_resp,
+                    "response": resp,
                 },
                 "return_check": {
                     "query": fact["probe"],
-                    **_route_fields(return_index, return_score, keep),
+                    **_route_fields(index, score, keep),
                     "base_answer_hit": base_hit,
-                    "post_revoke_answer_hit": returned_hit,
-                    "return_match": returned_hit == base_hit,
-                    "response": return_resp,
+                    "post_revoke_answer_hit": answer_hit,
+                    "return_match": answer_hit == base_hit,
+                    "response": resp,
                 },
                 "pre_revoke_base_response": pre[fact["id"]],
             }
