@@ -38,10 +38,7 @@ dependencies = [
     "torch>=2.0.0",
     "torchvision>=0.15.0",
     "numpy>=1.24.0",
-    "scipy>=1.10.0",
     "scikit-learn>=1.2.0",
-    "matplotlib>=3.7.0",
-    "tabulate>=0.9.0",
 ]
 
 [project.optional-dependencies]
@@ -76,7 +73,7 @@ Repository = "https://github.com/kaelvalen/cerata.git"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["cerata*", "pal_moe"]
+include = ["cerata*"]
 
 # The lint target stays py39 on purpose: it keeps the syntax a subset of what
 # 3.10 accepts without rewriting ~190 annotations and zip() calls in
@@ -88,7 +85,7 @@ target-version = ["py39"]
 [tool.ruff]
 line-length = 88
 target-version = "py39"
-src = ["cerata", "pal_moe", "experiments", "archive", "tests"]
+src = ["cerata", "experiments", "tests"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "W", "I", "B", "UP"]
