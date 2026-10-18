@@ -59,6 +59,9 @@ lm = [
     "transformers>=4.56.0",
     "accelerate>=1.0.0",
     "bitsandbytes>=0.45.0",
+    # the live-learning store: per-fact LoRA adapters and the sentence-encoder router
+    "peft>=0.21.0",
+    "sentence-transformers>=6.1.0",
 ]
 # Frozen ViT feature extraction for the PTM-CIL study (experiments/extract_ptm_features.py).
 ptm = [
