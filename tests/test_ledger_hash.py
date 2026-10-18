@@ -57,3 +57,13 @@ def test_hash_is_a_function_of_the_active_set():
     for fid in ("f1", "f2"):
         a.deltas.pop(fid), a.keys.pop(fid), a.notes.pop(fid)
     assert a.state_hash() == empty
+
+
+def test_canary_divergence_is_finite_when_a_probability_underflows():
+    from ledger import sym_kl
+
+    base, edited = torch.tensor([0.0, 0.0]), torch.tensor([0.0, -120.0])
+    kld = sym_kl(base, edited)
+    assert kld == pytest.approx(60.0, abs=0.01)
+    # the old ratio form gave NaN here, which passed `kld > limit` unrejected
+    assert sym_kl(base, base) == 0.0

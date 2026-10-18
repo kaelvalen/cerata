@@ -28,6 +28,16 @@ R = 16  # rank per fact
 CAP = 64  # capacity, in facts
 
 
+def sym_kl(x: torch.Tensor, y: torch.Tensor) -> float:
+    """Symmetric KL between the next-token distributions of two logit vectors.
+
+    Computed from log-probabilities: a probability that underflows to 0 would make the
+    ratio form NaN, and a NaN compares False against the canary limit.
+    """
+    lx, ly = torch.log_softmax(x, -1), torch.log_softmax(y, -1)
+    return float((lx.exp() * (lx - ly)).sum() + (ly.exp() * (ly - lx)).sum())
+
+
 class DeltaStore:
     def __init__(
         self,
@@ -216,12 +226,7 @@ class DeltaStore:
             b = [self._logits(self.model, q) for q in self.kl_prompts]
         self.deltas = full
         self.materialize()
-        ks = []
-        for x, y in zip(b, a):
-            pb, pa = torch.softmax(x, -1), torch.softmax(y, -1)
-            ks.append(
-                float((pb * (pb / pa).log()).sum() + (pa * (pa / pb).log()).sum())
-            )
+        ks = [sym_kl(x, y) for x, y in zip(b, a)]
         return sum(ks) / len(ks)
 
     def propose_and_commit(
@@ -240,7 +245,7 @@ class DeltaStore:
         key = key or pairs[0][0]
         delta = self._train_delta(pairs)
         kld = self._expert_kld(delta)
-        if kld > kld_limit:
+        if not kld <= kld_limit:  # a NaN divergence is rejected, not committed
             return {"committed": False, "kld": kld}
         self.deltas[fid] = delta
         self.keys[fid] = key
