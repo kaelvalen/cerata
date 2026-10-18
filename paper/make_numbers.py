@@ -3,8 +3,11 @@
 Turn the SS64 routed-eval JSONs into paper/numbers.tex macros + a diagnostic dump."""
 
 import json, sys
+from pathlib import Path
 
-R = "/home/kael/cerata/results/live_learning/confirm/"
+ROOT = Path(__file__).resolve().parents[1]
+R = f"{ROOT}/results/live_learning/confirm/"
+missing = []  # input files not found; nothing is written if any
 
 
 def f3(x):
@@ -32,8 +35,8 @@ for tag, fn in [
 ]:
     try:
         d = json.load(open(R + fn))
-    except FileNotFoundError:
-        print("missing", fn)
+    except FileNotFoundError as e:
+        missing.append(e.filename)
         continue
     m = d["metrics"]
 
@@ -134,8 +137,8 @@ def emit_diff(name, d):
 for tag, fn in [("Cf", "cf_n1000_v4_eval.json"), ("Zs", "zsre_n1000_v4_eval.json")]:
     try:
         d = json.load(open(R + fn))
-    except FileNotFoundError:
-        print("missing", fn)
+    except FileNotFoundError as e:
+        missing.append(e.filename)
         continue
     sv = d["serving"]
     emit(f"v{tag}Eff", sv["probe"]["adapter"])
@@ -183,8 +186,8 @@ try:
     emit("chkHeldMax", c["benign_heldout"]["max"])
     emit("chkKappa", c["kappa_heldout_p99"])
     emit("chkWrongRoute", c["wrong_route_retained"])
-except FileNotFoundError:
-    print("missing canary_eval.json")
+except FileNotFoundError as e:
+    missing.append(e.filename)
 
 # SS71 serving-arm locality under v4, SS74 operating points and trade-off curve.
 try:
@@ -196,8 +199,8 @@ try:
         ("tiered", "Tiered"),
     ]:
         emit(f"vCfEthreeLeak{short}", sl["E3_other_relation"][pol]["leak"])
-except FileNotFoundError:
-    print("missing serving_locality.json")
+except FileNotFoundError as e:
+    missing.append(e.filename)
 try:
     rv = json.load(open(R + "relevance_eval.json"))
     for prefix, point in [("y", "youden"), ("s", "cf_fpr_0.05")]:
@@ -237,7 +240,7 @@ try:
             out.append(
                 f"\\newcommand{{\\auc{name}{ps}}}{{{rv['dev_auc'][sc][part]:.3f}}}"
             )
-    with open("/home/kael/cerata/paper/figures/tradeoff.dat", "w") as fh:
+    with open(ROOT / "paper/figures/tradeoff.dat", "w") as fh:
         fh.write(
             "theta para_both para_adapter leak_both leak_note leak_adapter routed\n"
         )
@@ -246,8 +249,8 @@ try:
                 f"{c['theta'] or 0.6308} {c['cf_para_both']} {c['cf_para_adapter']} "
                 f"{c['e3_leak_both']} {c['e3_leak_note']} {c['e3_leak_adapter']} {c['e3_routed']}\n"
             )
-except FileNotFoundError:
-    print("missing relevance_eval.json")
+except FileNotFoundError as e:
+    missing.append(e.filename)
 
 # SS75 router v7 (prefix "w") and SS76 trained relation encoder (prefix "x").
 for pre, tag, fn in [
@@ -260,8 +263,8 @@ for pre, tag, fn in [
 ]:
     try:
         d = json.load(open(R + fn))
-    except FileNotFoundError:
-        print("missing", fn)
+    except FileNotFoundError as e:
+        missing.append(e.filename)
         continue
     sv = d["serving"]
     for kind, k in [("Eff", "probe"), ("Para", "paraphrase")]:
@@ -295,8 +298,8 @@ for pre, tag, fn in [
 try:
     sel = json.load(open(R + "router_v7_select.json"))
     out.append(f"\\newcommand{{\\wTheta}}{{{sel['theta']:.3f}}}")
-except FileNotFoundError:
-    print("missing router_v7_select.json")
+except FileNotFoundError as e:
+    missing.append(e.filename)
 try:
     sel = json.load(open(R + "router_v8_select.json"))
     out.append(f"\\newcommand{{\\xTheta}}{{{sel['theta']:.3f}}}")
@@ -320,8 +323,8 @@ try:
         emit(f"xEthree{g}Def", sp["E3"][grp]["default_leak_both"], fixed=True)
         emit(f"xEthree{g}Leak", sp["E3"][grp]["trained_leak_both"], fixed=True)
         out.append(f"\\newcommand{{\\xEthree{g}N}}{{{sp['E3'][grp]['n']}}}")
-except FileNotFoundError:
-    print("missing router_v8_select.json or relenc_split.json")
+except FileNotFoundError as e:
+    missing.append(e.filename)
 # SS77 Wikidata-trained encoders: B (prefix "u") end to end, A routing only (prefix "a").
 try:
     sel = json.load(open(R + "router_v9_select.json"))
@@ -379,7 +382,9 @@ try:
     )
     emit("mpParaSeenRoute", sp["routing_only"]["mpnet"]["paraphrase_seen"], fixed=True)
 except FileNotFoundError as e:
-    print("missing SS77 file", e)
+    missing.append(e.filename)
 
-open("/home/kael/cerata/paper/numbers.tex", "w").write("\n".join(out) + "\n")
+if missing:
+    sys.exit("not writing paper/numbers.tex; missing inputs:\n" + "\n".join(missing))
+(ROOT / "paper/numbers.tex").write_text("\n".join(out) + "\n")
 print(json.dumps(diag, indent=1))
